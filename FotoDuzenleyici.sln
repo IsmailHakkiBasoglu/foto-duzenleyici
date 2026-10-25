@@ -1,0 +1,40 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FotoDuzenleyici.Core", "FotoDuzenleyici.Core\FotoDuzenleyici.Core.csproj", "{ADC6515B-EE32-4271-8EA7-66835BFEEF05}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FotoDuzenleyici.Cli", "FotoDuzenleyici.Cli\FotoDuzenleyici.Cli.csproj", "{983FB54B-0B5A-491E-9318-B812E04B3988}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FotoDuzenleyici.App", "FotoDuzenleyici.App\FotoDuzenleyici.App.csproj", "{B30FDEA3-EC89-43AD-8763-4D7B57F91C87}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FotoDuzenleyici.Tests", "FotoDuzenleyici.Tests\FotoDuzenleyici.Tests.csproj", "{9381E91A-FA1A-4FC2-8C94-58F0D2E989CB}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{ADC6515B-EE32-4271-8EA7-66835BFEEF05}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{ADC6515B-EE32-4271-8EA7-66835BFEEF05}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{ADC6515B-EE32-4271-8EA7-66835BFEEF05}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{ADC6515B-EE32-4271-8EA7-66835BFEEF05}.Release|Any CPU.Build.0 = Release|Any CPU
+		{983FB54B-0B5A-491E-9318-B812E04B3988}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{983FB54B-0B5A-491E-9318-B812E04B3988}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{983FB54B-0B5A-491E-9318-B812E04B3988}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{983FB54B-0B5A-491E-9318-B812E04B3988}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B30FDEA3-EC89-43AD-8763-4D7B57F91C87}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B30FDEA3-EC89-43AD-8763-4D7B57F91C87}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B30FDEA3-EC89-43AD-8763-4D7B57F91C87}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B30FDEA3-EC89-43AD-8763-4D7B57F91C87}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9381E91A-FA1A-4FC2-8C94-58F0D2E989CB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9381E91A-FA1A-4FC2-8C94-58F0D2E989CB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9381E91A-FA1A-4FC2-8C94-58F0D2E989CB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9381E91A-FA1A-4FC2-8C94-58F0D2E989CB}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal
