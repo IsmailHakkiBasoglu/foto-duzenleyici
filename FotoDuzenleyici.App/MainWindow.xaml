@@ -1,7 +1,7 @@
 <Window x:Class="FotoDuzenleyici.App.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Foto Düzenleyici" Width="1280" Height="820" MinWidth="980" MinHeight="600"
+        Title="Foto Düzenleyici" Icon="/app.ico" Width="1280" Height="820" MinWidth="980" MinHeight="600"
         WindowStartupLocation="CenterScreen" FontFamily="Segoe UI" FontSize="13">
     <Window.Resources>
         <Style TargetType="Button">
