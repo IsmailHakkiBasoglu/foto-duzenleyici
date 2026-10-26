@@ -1,3 +1,5 @@
+﻿using System.Text.RegularExpressions;
+
 namespace FotoDuzenleyici.Core;
 
 public sealed class Plan
@@ -7,7 +9,7 @@ public sealed class Plan
     public int Renamed => Items.Count(i => i.Renamed);
 }
 
-/// <summary>Hiçbir dosyaya dokunmaz; sadece "şu dosya şuraya gidecek" planını üretir.</summary>
+/// <summary>HiÃ§bir dosyaya dokunmaz; sadece "ÅŸu dosya ÅŸuraya gidecek" planÄ±nÄ± Ã¼retir.</summary>
 public static class Planner
 {
     public static Plan Build(IReadOnlyList<MediaFile> files, IReadOnlyList<DuplicateGroup> dupGroups, PlanOptions opt)
@@ -15,19 +17,27 @@ public static class Planner
         PropagateRawJpgPairs(files);
 
         var plan = new Plan();
-        var dupOf = new Dictionary<MediaFile, MediaFile>();
-        foreach (var g in dupGroups) foreach (var c in g.Copies) dupOf[c] = g.Keeper;
-
         var dest = Path.GetFullPath(opt.DestinationRoot).TrimEnd('\\');
-        var scanned = new HashSet<string>(files.Select(f => f.Path), StringComparer.OrdinalIgnoreCase);
+        var dupDir = Path.Combine(dest, opt.DuplicatesFolderName) + "\\";
+        bool InDest(MediaFile f) => Path.GetFullPath(f.Path).StartsWith(dest + "\\", StringComparison.OrdinalIgnoreCase);
+        bool Organized(MediaFile f) => InDest(f) && !Path.GetFullPath(f.Path).StartsWith(dupDir, StringComparison.OrdinalIgnoreCase);
+
+        // Tekrar Ã§alÄ±ÅŸtÄ±rmada dÃ¼zenli klasÃ¶rdeki kopya kalÄ±r; dÄ±ÅŸarÄ±dan gelen eÅŸi _Tekrarlar'a gider.
+        // OrderByDescending kararlÄ±dÄ±r: dÃ¼zenli kopya yoksa DuplicateFinder'Ä±n seÃ§imi (en eski) korunur.
+        var dupOf = new Dictionary<MediaFile, MediaFile>();
+        foreach (var g in dupGroups)
+        {
+            var members = g.Copies.Prepend(g.Keeper).OrderByDescending(Organized).ToList();
+            foreach (var c in members.Skip(1)) dupOf[c] = members[0];
+        }
+
+        var scanned = new HashSet<string>(files.Select(f => Path.GetFullPath(f.Path)), StringComparer.OrdinalIgnoreCase);
         var taken = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         if (Directory.Exists(dest))
             foreach (var f in Directory.EnumerateFiles(dest, "*", SearchOption.AllDirectories))
                 if (!scanned.Contains(f)) taken.Add(f);
 
-        bool InDest(MediaFile f) => f.Path.StartsWith(dest + "\\", StringComparison.OrdinalIgnoreCase);
-
-        // Hedefte zaten duran dosyalar önce: yerlerini korusunlar.
+        // Hedefte zaten duran dosyalar Ã¶nce: yerlerini korusunlar.
         foreach (var f in files.OrderByDescending(InDest).ThenBy(f => f.Path, StringComparer.OrdinalIgnoreCase))
         {
             var date = f.Taken ?? DateTime.MinValue;
@@ -52,9 +62,9 @@ public static class Planner
                 Renamed = renamed,
                 Action = keeper is not null ? PlanAction.Duplicate : PlanAction.Move,
             };
-            if (string.Equals(item.TargetPath, f.Path, StringComparison.OrdinalIgnoreCase))
+            if (string.Equals(item.TargetPath, Path.GetFullPath(f.Path), StringComparison.OrdinalIgnoreCase))
                 item.Action = PlanAction.AlreadyInPlace;
-            if (collided) item.Note = "İsim çakışması: tarih eklendi";
+            if (collided) item.Note = "Ä°sim Ã§akÄ±ÅŸmasÄ±: tarih eklendi";
             plan.Items.Add(item);
         }
         return plan;
@@ -75,8 +85,12 @@ public static class Planner
     {
         var ext = Path.GetExtension(f.Path);
         var stem = Path.GetFileNameWithoutExtension(f.Path);
+        var self = Path.GetFullPath(f.Path);
         var day = date.ToString("yyyy-MM-dd");
-        var src = opt.AppendSourceToName && f.Source is not null ? " " + f.Source : "";
+        // Ã–nceki turda eklenmiÅŸ kaynak ("... Fuji" ya da "... Fuji (2)") tekrar eklenmez.
+        bool hasSrc = f.Source is not null &&
+            Regex.IsMatch(stem, $@" {Regex.Escape(f.Source)}( \(\d+\))?$", RegexOptions.IgnoreCase);
+        var src = opt.AppendSourceToName && f.Source is not null && !hasSrc ? " " + f.Source : "";
 
         string Compose(bool dated, bool withTime, int n = 0)
         {
@@ -88,17 +102,17 @@ public static class Planner
         bool Free(string n)
         {
             var full = Path.Combine(dir, n);
-            return !taken.Contains(full) && !(File.Exists(full) && !full.Equals(f.Path, StringComparison.OrdinalIgnoreCase));
+            return !taken.Contains(full) && !(File.Exists(full) && !full.Equals(self, StringComparison.OrdinalIgnoreCase));
         }
 
         bool alreadyDated = opt.RenameWithDate;
         var candidate = Compose(alreadyDated, false);
         bool collided = false;
 
-        if (!Free(candidate) && !(inPlaceCandidate && Path.Combine(dir, candidate).Equals(f.Path, StringComparison.OrdinalIgnoreCase)))
+        if (!Free(candidate) && !(inPlaceCandidate && Path.Combine(dir, candidate).Equals(self, StringComparison.OrdinalIgnoreCase)))
         {
             collided = true;
-            // Çakışmada tarih zorunlu; sonra saat; en son sayaç.
+            // Ã‡akÄ±ÅŸmada tarih zorunlu; sonra saat; en son sayaÃ§.
             candidate = Compose(true, false);
             if (!Free(candidate)) candidate = Compose(true, true);
             for (int n = 2; !Free(candidate); n++) candidate = Compose(true, true, n);
@@ -107,7 +121,7 @@ public static class Planner
         return (candidate, !candidate.Equals(Path.GetFileName(f.Path), StringComparison.Ordinal), collided);
     }
 
-    /// <summary>EXIF'i okunamayan RAW/JPG eşini, aynı klasör ve aynı adlı eşinden gelen tarih/kaynakla eşitler.</summary>
+    /// <summary>EXIF'i okunamayan RAW/JPG eÅŸini, aynÄ± klasÃ¶r ve aynÄ± adlÄ± eÅŸinden gelen tarih/kaynakla eÅŸitler.</summary>
     static void PropagateRawJpgPairs(IReadOnlyList<MediaFile> files)
     {
         foreach (var g in files.Where(f => f.Kind is FileKind.Photo or FileKind.Raw)

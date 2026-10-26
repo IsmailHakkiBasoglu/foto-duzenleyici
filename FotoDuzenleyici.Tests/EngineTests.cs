@@ -90,6 +90,87 @@ public class EngineTests : IDisposable
         Assert.Null(Scanner.DateFromFileName("IMG_4564.JPG"));
     }
 
+    // --- Tekrar çalıştırma: düzenlenmiş klasör ikinci kez işlenince hiçbir şey değişmemeli ---
+
+    List<PlanItem> OrganizeThenRescan(PlanOptions opt, Func<string, string> pathStyle)
+    {
+        Make(@"src\a\IMG_0001.pdf", "AAA", new DateTime(2026, 1, 15, 10, 0, 0));
+        Make(@"src\b\IMG_0001.pdf", "BBBB", new DateTime(2026, 1, 15, 11, 0, 0));
+        Make(@"src\c\kopya.pdf", "AAA", new DateTime(2026, 1, 16));
+        var (files, dups) = ScanAll(Path.Combine(_tmp, "src"));
+        var plan = Planner.Build(files, dups, opt);
+        var r = new Executor(Path.Combine(_tmp, "j.jsonl")).Run(plan.Items, recycleSource: false);
+        Assert.Equal(0, r.Failed);
+
+        var (again, dups2) = ScanAll(pathStyle(opt.DestinationRoot));
+        var opt2 = new PlanOptions
+        {
+            DestinationRoot = pathStyle(opt.DestinationRoot), RenameWithDate = opt.RenameWithDate,
+            AppendSourceToName = opt.AppendSourceToName, SourceFolder = opt.SourceFolder,
+        };
+        return Planner.Build(again, dups2, opt2).Items;
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void Rerun_OnOrganizedFolder_ChangesNothing(bool forwardSlashes)
+    {
+        var items = OrganizeThenRescan(new PlanOptions { DestinationRoot = Path.Combine(_tmp, "out"), RenameWithDate = true },
+            p => forwardSlashes ? p.Replace('\\', '/') : p);
+        Assert.Equal(3, items.Count);
+        Assert.All(items, i => Assert.Equal(PlanAction.AlreadyInPlace, i.Action));
+    }
+
+    [Theory]
+    [InlineData("2026-01-03 DSCF0001 Fuji.JPG")]
+    [InlineData("2026-01-03 101500 DSCF0001 Fuji.JPG")]
+    [InlineData("2026-01-03 DSCF0001 Fuji (2).JPG")]
+    public void Rerun_WithAppendSource_DoesNotRepeatSourceOrDate(string name)
+    {
+        var f = new MediaFile
+        {
+            Path = $@"Z:\out\2026-01\2026-01-Foto\{name}", Kind = FileKind.Photo,
+            Taken = new DateTime(2026, 1, 3, 10, 15, 0), Source = "Fuji",
+        };
+        var plan = Planner.Build(new[] { f }, new List<DuplicateGroup>(),
+            new PlanOptions { DestinationRoot = @"Z:\out", RenameWithDate = true, AppendSourceToName = true });
+        Assert.Equal(PlanAction.AlreadyInPlace, plan.Items[0].Action);
+        Assert.Equal(name, plan.Items[0].TargetName);
+    }
+
+    [Fact]
+    public void NewFile_AddedByHand_GetsSameNamingAsOthers()
+    {
+        var f = new MediaFile
+        {
+            Path = @"Z:\out\2026-01\2026-01-Foto\DSCF0002.JPG", Kind = FileKind.Photo,
+            Taken = new DateTime(2026, 1, 3, 10, 15, 0), Source = "Fuji",
+        };
+        var plan = Planner.Build(new[] { f }, new List<DuplicateGroup>(),
+            new PlanOptions { DestinationRoot = @"Z:\out", RenameWithDate = true, AppendSourceToName = true });
+        Assert.Equal("2026-01-03 DSCF0002 Fuji.JPG", plan.Items[0].TargetName);
+    }
+
+    [Fact]
+    public void Duplicate_KeeperIsTheOrganizedCopy_EvenIfNewer()
+    {
+        var old = new DateTime(2020, 1, 1);
+        Make(@"a_yeni\x.pdf", "SAME", old);
+        var (files, dups) = ScanAll(Path.Combine(_tmp, "a_yeni"));
+        var dest = Path.Combine(_tmp, "z_out");
+        var placed = Planner.Build(files, dups, new PlanOptions { DestinationRoot = dest }).Items[0];
+        // Elle kopyalanmış gibi: yazma zamanı aynı (aynı ay), oluşturma zamanı daha yeni.
+        var organized = Make(Path.GetRelativePath(_tmp, placed.TargetPath), "SAME", old);
+        File.SetCreationTime(organized, old.AddYears(5));
+
+        var s = new Scanner(new ScanOptions { Roots = { Path.Combine(_tmp, "a_yeni"), dest }, IncludedKinds = { FileKind.Pdf } });
+        var all = s.Scan();
+        var plan = Planner.Build(all, DuplicateFinder.Find(all), new PlanOptions { DestinationRoot = dest });
+        Assert.Equal(PlanAction.AlreadyInPlace, plan.Items.Single(i => i.File.Path.Contains("z_out")).Action);
+        Assert.Equal(PlanAction.Duplicate, plan.Items.Single(i => i.File.Path.Contains("a_yeni")).Action);
+    }
+
     [Fact]
     public void SourceSubfolder_Option_AddsLevel()
     {
