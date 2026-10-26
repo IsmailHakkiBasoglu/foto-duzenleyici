@@ -9,9 +9,12 @@ public sealed class Plan
     public int Renamed => Items.Count(i => i.Renamed);
 }
 
-/// <summary>HiÃ§bir dosyaya dokunmaz; sadece "ÅŸu dosya ÅŸuraya gidecek" planÄ±nÄ± Ã¼retir.</summary>
+/// <summary>Hiçbir dosyaya dokunmaz; sadece "şu dosya şuraya gidecek" planını üretir.</summary>
 public static class Planner
 {
+    // Uygulamanın kendi eklediği önek: "yyyy-MM-dd " ya da "yyyy-MM-dd HHmmss ".
+    static readonly Regex DatePrefix = new(@"^\d{4}-\d{2}-\d{2} (\d{6} )?", RegexOptions.Compiled);
+
     public static Plan Build(IReadOnlyList<MediaFile> files, IReadOnlyList<DuplicateGroup> dupGroups, PlanOptions opt)
     {
         PropagateRawJpgPairs(files);
@@ -22,8 +25,8 @@ public static class Planner
         bool InDest(MediaFile f) => Path.GetFullPath(f.Path).StartsWith(dest + "\\", StringComparison.OrdinalIgnoreCase);
         bool Organized(MediaFile f) => InDest(f) && !Path.GetFullPath(f.Path).StartsWith(dupDir, StringComparison.OrdinalIgnoreCase);
 
-        // Tekrar Ã§alÄ±ÅŸtÄ±rmada dÃ¼zenli klasÃ¶rdeki kopya kalÄ±r; dÄ±ÅŸarÄ±dan gelen eÅŸi _Tekrarlar'a gider.
-        // OrderByDescending kararlÄ±dÄ±r: dÃ¼zenli kopya yoksa DuplicateFinder'Ä±n seÃ§imi (en eski) korunur.
+        // Tekrar çalıştırmada düzenli klasördeki kopya kalır; dışarıdan gelen eşi _Tekrarlar'a gider.
+        // OrderByDescending kararlıdır: düzenli kopya yoksa DuplicateFinder'ın seçimi (en eski) korunur.
         var dupOf = new Dictionary<MediaFile, MediaFile>();
         foreach (var g in dupGroups)
         {
@@ -37,7 +40,7 @@ public static class Planner
             foreach (var f in Directory.EnumerateFiles(dest, "*", SearchOption.AllDirectories))
                 if (!scanned.Contains(f)) taken.Add(f);
 
-        // Hedefte zaten duran dosyalar Ã¶nce: yerlerini korusunlar.
+        // Hedefte zaten duran dosyalar önce: yerlerini korusunlar.
         foreach (var f in files.OrderByDescending(InDest).ThenBy(f => f.Path, StringComparer.OrdinalIgnoreCase))
         {
             var date = f.Taken ?? DateTime.MinValue;
@@ -64,7 +67,7 @@ public static class Planner
             };
             if (string.Equals(item.TargetPath, Path.GetFullPath(f.Path), StringComparison.OrdinalIgnoreCase))
                 item.Action = PlanAction.AlreadyInPlace;
-            if (collided) item.Note = "Ä°sim Ã§akÄ±ÅŸmasÄ±: tarih eklendi";
+            if (collided) item.Note = "İsim çakışması: tarih eklendi";
             plan.Items.Add(item);
         }
         return plan;
@@ -87,16 +90,19 @@ public static class Planner
         var stem = Path.GetFileNameWithoutExtension(f.Path);
         var self = Path.GetFullPath(f.Path);
         var day = date.ToString("yyyy-MM-dd");
-        // Ã–nceki turda eklenmiÅŸ kaynak ("... Fuji" ya da "... Fuji (2)") tekrar eklenmez.
+        // Önceki turda eklenmiş kaynak ("... Fuji" ya da "... Fuji (2)") tekrar eklenmez.
         bool hasSrc = f.Source is not null &&
             Regex.IsMatch(stem, $@" {Regex.Escape(f.Source)}( \(\d+\))?$", RegexOptions.IgnoreCase);
         var src = opt.AppendSourceToName && f.Source is not null && !hasSrc ? " " + f.Source : "";
 
         string Compose(bool dated, bool withTime, int n = 0)
         {
+            // Tarih sonradan düzelirse (ör. video UTC düzeltmesi) eski önek yenisiyle değiştirilir;
+            // yoksa "2023-03-20 2023-03-19 MVI_3028" gibi çift tarih oluşur.
+            var body = dated && !stem.StartsWith(day) ? DatePrefix.Replace(stem, "") : stem;
             var prefix = dated && !stem.StartsWith(day) ? (withTime ? $"{day} {date:HHmmss} " : day + " ") : "";
             var suffix = n > 0 ? $" ({n})" : "";
-            return FileClassifier.SafeName($"{prefix}{stem}{src}{suffix}") + ext;
+            return FileClassifier.SafeName($"{prefix}{body}{src}{suffix}") + ext;
         }
 
         bool Free(string n)
@@ -112,7 +118,7 @@ public static class Planner
         if (!Free(candidate) && !(inPlaceCandidate && Path.Combine(dir, candidate).Equals(self, StringComparison.OrdinalIgnoreCase)))
         {
             collided = true;
-            // Ã‡akÄ±ÅŸmada tarih zorunlu; sonra saat; en son sayaÃ§.
+            // Çakışmada tarih zorunlu; sonra saat; en son sayaç.
             candidate = Compose(true, false);
             if (!Free(candidate)) candidate = Compose(true, true);
             for (int n = 2; !Free(candidate); n++) candidate = Compose(true, true, n);
@@ -121,7 +127,7 @@ public static class Planner
         return (candidate, !candidate.Equals(Path.GetFileName(f.Path), StringComparison.Ordinal), collided);
     }
 
-    /// <summary>EXIF'i okunamayan RAW/JPG eÅŸini, aynÄ± klasÃ¶r ve aynÄ± adlÄ± eÅŸinden gelen tarih/kaynakla eÅŸitler.</summary>
+    /// <summary>EXIF'i okunamayan RAW/JPG eşini, aynı klasör ve aynı adlı eşinden gelen tarih/kaynakla eşitler.</summary>
     static void PropagateRawJpgPairs(IReadOnlyList<MediaFile> files)
     {
         foreach (var g in files.Where(f => f.Kind is FileKind.Photo or FileKind.Raw)
