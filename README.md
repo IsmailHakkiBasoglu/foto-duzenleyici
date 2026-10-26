@@ -43,7 +43,12 @@ dotnet test
 
 - `FotoDuzenleyici.Core` – tarama, tarih okuma, yinelenen bulma, planlama, güvenli uygulama
 - `FotoDuzenleyici.App` – WPF arayüzü
-- `FotoDuzenleyici.Cli` – salt okunur rapor aracı
+- `FotoDuzenleyici.Cli` – rapor aracı; `--apply` verilmedikçe hiçbir dosyaya dokunmaz, `--undo <günlük>` ile geri alır
 - `FotoDuzenleyici.Tests` – birim testleri
+
+## Plan ve değişiklikler
+
+- [YOL_HARITASI.md](YOL_HARITASI.md) – yapılanlar ve sıradaki aşamalar
+- [CHANGELOG.md](CHANGELOG.md) – sürüm sürüm değişiklikler
 
 Metadata okuma: [MetadataExtractor](https://github.com/drewnoakes/metadata-extractor-dotnet) (Apache-2.0).
