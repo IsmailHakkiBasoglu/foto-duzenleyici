@@ -6,6 +6,20 @@ Biçim [Keep a Changelog](https://keepachangelog.com/tr-TR/1.1.0/), sürüm numa
 
 ## [Yayınlanmamış]
 
+### Düzeltildi
+- Video tarihleri artık yerel saate çevriliyor. Kameralar (Canon ve Fuji'de doğrulandı)
+  video tarihini UTC yazıyor; bu yüzden akşam 21:00'den sonra çekilen videolar bir önceki güne,
+  ay sonundaysa önceki aya düşüyordu.
+- iPhone gibi cihazların saat dilimiyle birlikte yazdığı video tarihi varsa o kullanılıyor.
+- Tarihi sonradan düzelen bir dosyanın adındaki eski tarih öneki yenisiyle değiştiriliyor;
+  önceden `2023-03-20 2023-03-19 MVI_3028.MP4` gibi çift tarihli ad oluşuyordu.
+- Planlayıcıdaki bozuk Türkçe karakterler düzeltildi; arayüzdeki "İsim çakışması: tarih
+  eklendi" notu artık düzgün görünüyor.
+
+### Eklendi
+- GitHub Actions: her gönderimde derleme ve test; `v*` etiketi gönderilince zip derlenip
+  sürüm notuyla birlikte GitHub sürümüne ekleniyor.
+
 ## [0.1.2] - 2026-10-27
 
 ### Düzeltildi

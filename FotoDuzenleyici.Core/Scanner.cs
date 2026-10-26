@@ -128,16 +128,40 @@ public sealed class Scanner
             foreach (var d in dirs.OfType<ExifIfd0Directory>())
                 if (d.TryGetDateTime(ExifDirectoryBase.TagDateTime, out var dt) && Valid(dt))
                 { m.Taken = dt; m.DateSource = DateSource.Exif; break; }
+        // iPhone gibi cihazlar çekildiği yerin saat dilimiyle birlikte yazar; en doğru kaynak budur.
+        if (m.Taken is null)
+            foreach (var d in dirs.OfType<QuickTimeMetadataHeaderDirectory>())
+                if (ParseOffsetDate(d.GetString(QuickTimeMetadataHeaderDirectory.TagCreationDate)) is { } dt && Valid(dt))
+                { m.Taken = dt; m.DateSource = DateSource.VideoMetadata; break; }
+        // Film başlığındaki tarih UTC'dir (Canon ve Fuji'de doğrulandı); yerel saate çevrilmezse
+        // akşam çekilen videolar önceki güne, ay sonundaysa önceki aya düşer.
         if (m.Taken is null)
             foreach (var d in dirs.OfType<QuickTimeMovieHeaderDirectory>())
-                if (d.TryGetDateTime(QuickTimeMovieHeaderDirectory.TagCreated, out var dt) && Valid(dt))
-                { m.Taken = dt; m.DateSource = DateSource.VideoMetadata; break; }
+            {
+                if (!d.TryGetDateTime(QuickTimeMovieHeaderDirectory.TagCreated, out var raw)) continue;
+                var dt = UtcToLocal(raw);
+                if (Valid(dt)) { m.Taken = dt; m.DateSource = DateSource.VideoMetadata; break; }
+            }
 
         var src = FileClassifier.SourceName(m.Make, m.Model);
         if (src is not null) { m.Source = src; m.SourceFromExif = true; }
     }
 
     static bool Valid(DateTime dt) => dt.Year >= 1990 && dt <= DateTime.Now.AddDays(2);
+
+    /// <summary>QuickTime film başlığı tarihini (UTC) verilen saat dilimine (varsayılan: bilgisayarınki) çevirir.</summary>
+    public static DateTime UtcToLocal(DateTime raw, TimeZoneInfo? zone = null) =>
+        TimeZoneInfo.ConvertTimeFromUtc(DateTime.SpecifyKind(raw, DateTimeKind.Utc), zone ?? TimeZoneInfo.Local);
+
+    /// <summary>"2023-05-01T12:34:56+0300" gibi saat dilimli tarihi çekildiği yerin saatiyle döndürür.</summary>
+    public static DateTime? ParseOffsetDate(string? s)
+    {
+        if (string.IsNullOrWhiteSpace(s)) return null;
+        // "+0300" biçimini .NET'in tanıdığı "+03:00" biçimine getir.
+        var fixedS = Regex.Replace(s.Trim(), @"([+-]\d{2})(\d{2})$", "$1:$2");
+        return DateTimeOffset.TryParse(fixedS, System.Globalization.CultureInfo.InvariantCulture,
+            System.Globalization.DateTimeStyles.None, out var dto) ? dto.DateTime : null;
+    }
 
     public static DateTime? DateFromFileName(string name)
     {

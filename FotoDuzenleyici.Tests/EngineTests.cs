@@ -181,4 +181,49 @@ public class EngineTests : IDisposable
         Assert.Equal(@"Z:\out\2026-01\2026-01-Foto\2026-01-Fuji", on.Items[0].TargetDir);
         Assert.Equal(@"Z:\out\2026-01\2026-01-Foto", off.Items[0].TargetDir);
     }
+
+    static readonly TimeZoneInfo Turkey = TimeZoneInfo.CreateCustomTimeZone("TR", TimeSpan.FromHours(3), "TR", "TR");
+
+    [Fact]
+    public void VideoUtcDate_IsConvertedToLocal_EvenAcrossMonthEnd()
+    {
+        // Gerçek örnek: MVI_3028 dosyada 19 Mart 21:45 (UTC), çekim 20 Mart 00:45.
+        Assert.Equal(new DateTime(2023, 3, 20, 0, 45, 0), Scanner.UtcToLocal(new DateTime(2023, 3, 19, 21, 45, 0), Turkey));
+        Assert.Equal(new DateTime(2024, 2, 1, 1, 30, 0), Scanner.UtcToLocal(new DateTime(2024, 1, 31, 22, 30, 0), Turkey));
+        Assert.Equal(new DateTime(2022, 10, 29, 13, 54, 44), Scanner.UtcToLocal(new DateTime(2022, 10, 29, 10, 54, 44), Turkey));
+    }
+
+    [Theory]
+    [InlineData("2023-05-01T23:34:56+0300", 2023, 5, 1, 23)]
+    [InlineData("2023-05-01T23:34:56+03:00", 2023, 5, 1, 23)]
+    [InlineData("2023-12-31T22:10:00-0500", 2023, 12, 31, 22)]
+    public void AppleCreationDate_KeepsWallClockOfShootingPlace(string s, int y, int mo, int d, int h)
+    {
+        var dt = Scanner.ParseOffsetDate(s);
+        Assert.NotNull(dt);
+        Assert.Equal(new DateTime(y, mo, d, h, dt!.Value.Minute, dt.Value.Second), dt);
+    }
+
+    [Theory]
+    [InlineData("2023-03-19 MVI_3028.MP4", "2023-03-20 MVI_3028.MP4")]
+    [InlineData("2023-03-19 214500 MVI_3028.MP4", "2023-03-20 MVI_3028.MP4")]
+    [InlineData("2023-03-20 MVI_3028.MP4", "2023-03-20 MVI_3028.MP4")]
+    [InlineData("MVI_3028.MP4", "2023-03-20 MVI_3028.MP4")]
+    public void CorrectedDate_ReplacesOldPrefix_InsteadOfStacking(string name, string expected)
+    {
+        var f = new MediaFile
+        {
+            Path = @"Z:\out\2023-03\2023-03-Video\" + name, Kind = FileKind.Video,
+            Taken = new DateTime(2023, 3, 20, 0, 45, 0), DateSource = DateSource.VideoMetadata,
+        };
+        var plan = Planner.Build(new[] { f }, new List<DuplicateGroup>(),
+            new PlanOptions { DestinationRoot = @"Z:\out", RenameWithDate = true });
+        Assert.Equal(expected, plan.Items[0].TargetName);
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData("tarih değil")]
+    public void AppleCreationDate_InvalidReturnsNull(string? s) => Assert.Null(Scanner.ParseOffsetDate(s));
 }

@@ -12,8 +12,8 @@ Durum işaretleri: ✅ bitti · 🔄 sürüyor · ⬜ planlandı
 - ✅ Uygula ve Geri Al'ı gerçek veride uçtan uca denemek (0.1.2)
 - ✅ Tekrar çalıştırmaya uygun yapı: düzenli klasör tekrar işlenince hiçbir şey değişmez,
   elle eklenen dosyalar aynı düzende adlandırılır (0.1.2)
-- ⬜ Videolarda saat dilimi düzeltmesi (QuickTime tarihleri UTC tutar)
-- ⬜ GitHub Actions: her gönderimde derleme ve test, sürüm etiketinde zip'i otomatik yayınlama
+- ✅ Videolarda saat dilimi düzeltmesi (QuickTime tarihleri UTC tutar)
+- ✅ GitHub Actions: her gönderimde derleme ve test, sürüm etiketinde zip'i otomatik yayınlama
 - ⬜ Kesintiye dayanıklılık: işlem yarıda kalırsa günlükten kaldığı yerden devam
 - ⬜ Uygula / Geri Al için örnek dosyalarla otomatik entegrasyon testi
 
@@ -51,3 +51,5 @@ Durum işaretleri: ✅ bitti · 🔄 sürüyor · ⬜ planlandı
 
 - `18.10.2026 CANON 250D` klasörü, düzenlenmiş `100CANON_DUZENLI` ile birebir aynı
   içerikte (~28,7 GB). Bir sonraki çalıştırmada `_Tekrarlar`'a ayrılması beklenir.
+- 258 videonun yalnızca biri (`MVI_3028`, iki kopyası var) UTC düzeltmesinden etkileniyor:
+  19 Mart olarak adlandırılmış, gerçek çekim 20 Mart 00:45. Ay değiştiren video yok.
