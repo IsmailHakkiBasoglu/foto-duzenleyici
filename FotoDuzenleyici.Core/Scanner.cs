@@ -22,7 +22,9 @@ public sealed class Scanner
     {
         var excluded = _opt.ExcludedFolders.Select(Normalize).ToList();
         foreach (var root in _opt.Roots)
-            foreach (var f in Walk(root, excluded))
+            // Kök "C:/x" gibi verilse bile yollar hep "C:\x\..." biçiminde dönsün; yoksa planlayıcı
+            // hedefteki dosyaları tanıyamaz ve hepsini yeniden adlandırmaya kalkar.
+            foreach (var f in Walk(Normalize(root), excluded))
                 yield return f;
     }
 

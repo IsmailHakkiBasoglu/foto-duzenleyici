@@ -1,11 +1,13 @@
 using System.Text;
 using FotoDuzenleyici.Core;
 
-// Salt okunur tarama raporu. Hiçbir dosyayı değiştirmez.
+// Tarama raporu. --apply verilmedikçe hiçbir dosyayı değiştirmez.
 // Kullanım: Cli --root <klasör> [--exclude <klasör>]... [--dest <klasör>] [--source-folder] [--rename-date]
-//              [--append-source] [--no-hash] [--csv <dosya>]
+//              [--append-source] [--no-hash] [--csv <dosya>] [--apply [--keep-source]]
+//           Cli --undo <günlük.jsonl>
 var roots = new List<string>(); var excl = new List<string>();
-string? dest = null, csv = null; bool srcFolder = false, renameDate = false, appendSrc = false, noHash = false;
+string? dest = null, csv = null, undo = null;
+bool srcFolder = false, renameDate = false, appendSrc = false, noHash = false, apply = false, keepSource = false;
 for (int i = 0; i < args.Length; i++)
     switch (args[i])
     {
@@ -17,7 +19,17 @@ for (int i = 0; i < args.Length; i++)
         case "--rename-date": renameDate = true; break;
         case "--append-source": appendSrc = true; break;
         case "--no-hash": noHash = true; break;
+        case "--apply": apply = true; break;
+        case "--keep-source": keepSource = true; break;
+        case "--undo": undo = args[++i]; break;
     }
+if (undo != null)
+{
+    var u = Executor.Undo(undo);
+    Console.WriteLine($"Geri alındı: {u.Done}  Atlandı: {u.Skipped}  Hatalı: {u.Failed}");
+    u.Errors.ForEach(Console.WriteLine);
+    return u.Failed == 0 ? 0 : 2;
+}
 if (roots.Count == 0) { Console.WriteLine("--root gerekli"); return 1; }
 dest ??= Path.Combine(roots[0], "_YENI_DUZEN");
 
@@ -83,5 +95,15 @@ if (csv != null)
         sb.AppendLine($"{i.Action};{i.File.Path};{i.TargetPath};{i.File.DateSource};{i.File.Source};{i.Note}");
     File.WriteAllText(csv, sb.ToString(), new UTF8Encoding(true));
     Console.WriteLine($"\nCSV: {csv}");
+}
+
+if (apply)
+{
+    if (noHash) { Console.WriteLine("--apply ile --no-hash birlikte kullanılamaz"); return 1; }
+    var journal = Path.Combine(Path.GetFullPath(dest), "_Gunluk", $"islem-{DateTime.Now:yyyyMMdd-HHmmss}.jsonl");
+    var r = new Executor(journal).Run(plan.Items, recycleSource: !keepSource);
+    Console.WriteLine($"\n== Uygulandı ==\nBaşarılı: {r.Done}  Hatalı: {r.Failed}\nGünlük: {journal}");
+    r.Errors.ForEach(Console.WriteLine);
+    return r.Failed == 0 ? 0 : 2;
 }
 return 0;
