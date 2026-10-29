@@ -5,8 +5,9 @@ using FotoDuzenleyici.Core;
 // Kullanım: Cli --root <klasör> [--exclude <klasör>]... [--dest <klasör>] [--source-folder] [--rename-date]
 //              [--append-source] [--no-hash] [--csv <dosya>] [--apply [--keep-source]]
 //           Cli --undo <günlük.jsonl>
+//           Cli --resume <günlük.jsonl>   (yarıda kalan --apply işlemini kaldığı yerden sürdürür)
 var roots = new List<string>(); var excl = new List<string>();
-string? dest = null, csv = null, undo = null;
+string? dest = null, csv = null, undo = null, resume = null;
 bool srcFolder = false, renameDate = false, appendSrc = false, noHash = false, apply = false, keepSource = false;
 for (int i = 0; i < args.Length; i++)
     switch (args[i])
@@ -22,6 +23,7 @@ for (int i = 0; i < args.Length; i++)
         case "--apply": apply = true; break;
         case "--keep-source": keepSource = true; break;
         case "--undo": undo = args[++i]; break;
+        case "--resume": resume = args[++i]; break;
     }
 if (undo != null)
 {
@@ -29,6 +31,14 @@ if (undo != null)
     Console.WriteLine($"Geri alındı: {u.Done}  Atlandı: {u.Skipped}  Hatalı: {u.Failed}");
     u.Errors.ForEach(Console.WriteLine);
     return u.Failed == 0 ? 0 : 2;
+}
+if (resume != null)
+{
+    Console.WriteLine($"Kalan dosya: {Executor.Pending(resume).Count}");
+    var r = new Executor(resume).Resume();
+    Console.WriteLine($"Başarılı: {r.Done}  Hatalı: {r.Failed}\nGünlük: {resume}");
+    r.Errors.ForEach(Console.WriteLine);
+    return r.Failed == 0 ? 0 : 2;
 }
 if (roots.Count == 0) { Console.WriteLine("--root gerekli"); return 1; }
 dest ??= Path.Combine(roots[0], "_YENI_DUZEN");
@@ -100,6 +110,8 @@ if (csv != null)
 if (apply)
 {
     if (noHash) { Console.WriteLine("--apply ile --no-hash birlikte kullanılamaz"); return 1; }
+    foreach (var (j, left) in Executor.FindUnfinished(Path.GetFullPath(dest)))
+        Console.WriteLine($"Uyarı: yarım kalan işlem ({left} dosya): --resume \"{j}\"");
     var journal = Path.Combine(Path.GetFullPath(dest), "_Gunluk", $"islem-{DateTime.Now:yyyyMMdd-HHmmss}.jsonl");
     var r = new Executor(journal).Run(plan.Items, recycleSource: !keepSource);
     Console.WriteLine($"\n== Uygulandı ==\nBaşarılı: {r.Done}  Hatalı: {r.Failed}\nGünlük: {journal}");

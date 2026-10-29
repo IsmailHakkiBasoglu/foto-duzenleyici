@@ -63,19 +63,22 @@ public partial class MainWindow : Window
         UndoBtn.IsEnabled = !busy;
     }
 
-    void PickRoot_Click(object s, RoutedEventArgs e)
+    async void PickRoot_Click(object s, RoutedEventArgs e)
     {
         var dlg = new OpenFolderDialog { Title = "Taranacak ana klasörü seç" };
         if (dlg.ShowDialog() != true) return;
         RootBox.Text = dlg.FolderName;
         if (string.IsNullOrWhiteSpace(DestBox.Text)) DestBox.Text = dlg.FolderName + "_DUZENLI";
         BuildTree(dlg.FolderName);
+        await OfferResumeAsync(DestBox.Text.Trim());
     }
 
-    void PickDest_Click(object s, RoutedEventArgs e)
+    async void PickDest_Click(object s, RoutedEventArgs e)
     {
         var dlg = new OpenFolderDialog { Title = "Düzenli yapının oluşturulacağı hedef klasör" };
-        if (dlg.ShowDialog() == true) DestBox.Text = dlg.FolderName;
+        if (dlg.ShowDialog() != true) return;
+        DestBox.Text = dlg.FolderName;
+        await OfferResumeAsync(dlg.FolderName);
     }
 
     void BuildTree(string root)
@@ -143,10 +146,11 @@ public partial class MainWindow : Window
         SeparateRawFolder = OptRawSeparate.IsChecked == true,
     };
 
-    void Plan_Click(object s, RoutedEventArgs e)
+    async void Plan_Click(object s, RoutedEventArgs e)
     {
         if (string.IsNullOrWhiteSpace(DestBox.Text)) { MessageBox.Show("Hedef klasörü seç."); return; }
         var dest = Path.GetFullPath(DestBox.Text.Trim());
+        if (await OfferResumeAsync(dest)) { StatusText.Text += "  Dosyalar değişti; plan için yeniden Tara."; return; }
         _plan = Planner.Build(_files, _dups, BuildPlanOptions());
         PlanGrid.ItemsSource = _plan.Items.Select(i => new PlanRow(
             i.Action.ToString(), i.File.Path, i.TargetPath,
@@ -193,19 +197,50 @@ public partial class MainWindow : Window
 
         var dest = Path.GetFullPath(DestBox.Text.Trim());
         var journal = Path.Combine(dest, "_Gunluk", $"islem-{DateTime.Now:yyyyMMdd-HHmmss}.jsonl");
+        await ExecuteAsync(journal, (ex, prog, ct) => ex.Run(todo, recycle, prog, ct));
+    }
+
+    /// <summary>Uygula ve devam etme için ortak: ilerlemeyi gösterir, sonucu bildirir, planı geçersiz kılar.</summary>
+    async Task ExecuteAsync(string journal,
+        Func<Executor, IProgress<(int, int, string)>, CancellationToken, ExecuteResult> work)
+    {
         _cts = new CancellationTokenSource();
         SetBusy(true);
         var prog = new Progress<(int d, int t, string c)>(p => { Progress.Maximum = p.t; Progress.Value = p.d; StatusText.Text = $"{p.d}/{p.t}  {p.c}"; });
         try
         {
-            var r = await Task.Run(() => new Executor(journal).Run(todo, recycle, prog, _cts.Token));
+            var r = await Task.Run(() => work(new Executor(journal), prog, _cts.Token));
             StatusText.Text = $"Bitti. Başarılı: {r.Done}, Hatalı: {r.Failed}. Günlük: {journal}";
             if (r.Failed > 0)
                 MessageBox.Show(string.Join("\n", r.Errors.Take(15)), $"{r.Failed} dosya işlenemedi (bu dosyalara dokunulmadı)");
-            _plan = null; ApplyBtn.IsEnabled = false;
+            _plan = null;
         }
         catch (Exception ex) { StatusText.Text = "Hata: " + ex.Message; }
         SetBusy(false);
+    }
+
+    /// <summary>
+    /// Hedefte yarıda kalmış işlem varsa sorar. Evet → kaldığı yerden sürer, Hayır → vazgeçilir (bir daha sorulmaz),
+    /// İptal → şimdilik geçilir. Devam edildiyse true döner (dosyalar değişti, tarama eskidi).
+    /// </summary>
+    async Task<bool> OfferResumeAsync(string dest)
+    {
+        bool resumed = false;
+        if (!Directory.Exists(dest)) return false;
+        foreach (var (journal, remaining) in Executor.FindUnfinished(dest))
+        {
+            var ans = MessageBox.Show(
+                $"Yarım kalan bir işlem var ({Path.GetFileName(journal)}): {remaining} dosya henüz işlenmedi.\n\n" +
+                "Evet: kaldığı yerden devam et (yeniden tarama gerekmez)\n" +
+                "Hayır: vazgeç; kalan dosyalara dokunulmaz, bir daha sorulmaz\n" +
+                "İptal: şimdilik geç, sonra yine sor",
+                "Yarım kalan işlem", MessageBoxButton.YesNoCancel, MessageBoxImage.Question);
+            if (ans == MessageBoxResult.No) Executor.Abandon(journal);
+            if (ans != MessageBoxResult.Yes) continue;
+            await ExecuteAsync(journal, (ex, prog, ct) => ex.Resume(prog, ct));
+            resumed = true;
+        }
+        return resumed;
     }
 
     async void Undo_Click(object s, RoutedEventArgs e)

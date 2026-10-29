@@ -226,4 +226,161 @@ public class EngineTests : IDisposable
     [InlineData("")]
     [InlineData("tarih değil")]
     public void AppleCreationDate_InvalidReturnsNull(string? s) => Assert.Null(Scanner.ParseOffsetDate(s));
+
+    // --- Kesintiye dayanıklılık: yarıda kalan işlem günlükten kaldığı yerden sürer ---
+
+    /// <summary>İlerleme bildirimi geldiğinde, belirli sayıda dosya bittiyse işlemi keser (çökmeyi taklit eder).</summary>
+    sealed class CancelAfter(int files, CancellationTokenSource cts) : IProgress<(int done, int total, string current)>
+    {
+        public void Report((int done, int total, string current) p) { if (p.done >= files) cts.Cancel(); }
+    }
+
+    (List<PlanItem> items, string journal) PlanThree()
+    {
+        var t = new DateTime(2024, 5, 6, 7, 8, 9);
+        Make(@"src\a.pdf", "AAA", t);
+        Make(@"src\b.pdf", "BBBB", t);
+        Make(@"src\c.pdf", "CCCCC", t);
+        var (files, dups) = ScanAll(Path.Combine(_tmp, "src"));
+        var dest = Path.Combine(_tmp, "out");
+        var plan = Planner.Build(files, dups, new PlanOptions { DestinationRoot = dest });
+        return (plan.Items, Path.Combine(dest, "_Gunluk", "islem-1.jsonl"));
+    }
+
+    [Fact]
+    public void Interrupted_Run_ResumesRemainingFiles_WithoutRescan()
+    {
+        var (items, journal) = PlanThree();
+        var cts = new CancellationTokenSource();
+        Assert.ThrowsAny<OperationCanceledException>(() =>
+            new Executor(journal).Run(items, recycleSource: false, new CancelAfter(1, cts), cts.Token));
+        Assert.Equal(2, Executor.Pending(journal).Count);
+        Assert.Single(Executor.FindUnfinished(Path.Combine(_tmp, "out")));
+
+        var r = new Executor(journal).Resume();
+        Assert.Equal(2, r.Done); Assert.Equal(0, r.Failed);
+        Assert.All(items, i => Assert.True(File.Exists(i.TargetPath)));
+        Assert.Empty(Executor.Pending(journal));
+        Assert.Empty(Executor.FindUnfinished(Path.Combine(_tmp, "out")));
+        Assert.All(Executor.FinalStates(journal), e => Assert.Equal("Copied", e.State));
+        Assert.All(Executor.FinalStates(journal), e => Assert.NotEmpty(e.Sha256)); // Geri Al için gerekli
+    }
+
+    [Fact]
+    public void Resume_RemovesLeftoverTempCopy_AndFinishesFile()
+    {
+        var (items, journal) = PlanThree();
+        var cts = new CancellationTokenSource(); cts.Cancel();
+        Assert.ThrowsAny<OperationCanceledException>(() => new Executor(journal).Run(items, false, null, cts.Token));
+        var first = items[0];
+        Directory.CreateDirectory(first.TargetDir);
+        File.WriteAllText(first.TargetPath + ".kopya_tmp", "YARI"); // kopyalama ortasında kesilmiş
+
+        var r = new Executor(journal).Resume();
+        Assert.Equal(3, r.Done); Assert.Equal(0, r.Failed);
+        Assert.False(File.Exists(first.TargetPath + ".kopya_tmp"));
+        Assert.Equal(File.ReadAllText(first.File.Path), File.ReadAllText(first.TargetPath));
+    }
+
+    [Fact]
+    public void Resume_TargetAlreadyCopied_IsNotCopiedAgain_AndRecorded()
+    {
+        var (items, journal) = PlanThree();
+        var cts = new CancellationTokenSource(); cts.Cancel();
+        Assert.ThrowsAny<OperationCanceledException>(() => new Executor(journal).Run(items, false, null, cts.Token));
+        // Hedefe yerleşmiş ama günlüğe yazılamamış: hedef zaten var, kaynak da duruyor.
+        var first = items[0];
+        Directory.CreateDirectory(first.TargetDir);
+        File.Copy(first.File.Path, first.TargetPath);
+        var stamp = new DateTime(2001, 1, 1);
+        File.SetLastWriteTime(first.TargetPath, stamp);
+
+        var r = new Executor(journal).Resume();
+        Assert.Equal(3, r.Done); Assert.Equal(0, r.Failed);
+        Assert.Equal(stamp, File.GetLastWriteTime(first.TargetPath)); // yeniden kopyalanmadı
+        Assert.Equal("Copied", Executor.FinalStates(journal).First(e => e.Target == first.TargetPath).State);
+    }
+
+    [Fact]
+    public void Resume_SourceAlreadyRecycled_CountsAsRecycled()
+    {
+        var (items, journal) = PlanThree();
+        // Gerçekte kaynak ancak Started satırı (hash'iyle) yazıldıktan sonra gidebilir.
+        foreach (var i in items) i.File.Sha256 = DuplicateFinder.Hash(i.File.Path);
+        var cts = new CancellationTokenSource(); cts.Cancel();
+        Assert.ThrowsAny<OperationCanceledException>(() => new Executor(journal).Run(items, true, null, cts.Token));
+        // Kaynak Geri Dönüşüm Kutusu'na gitmiş, günlük satırı yazılamamış.
+        var first = items[0];
+        Directory.CreateDirectory(first.TargetDir);
+        File.Move(first.File.Path, first.TargetPath);
+        // Kalan dosyalar Geri Dönüşüm Kutusu'na gitmesin diye onları önceden yerleştir.
+        foreach (var i in items.Skip(1)) { Directory.CreateDirectory(i.TargetDir); File.Move(i.File.Path, i.TargetPath); }
+
+        var r = new Executor(journal).Resume();
+        Assert.Equal(3, r.Done); Assert.Equal(0, r.Failed);
+        Assert.All(Executor.FinalStates(journal), e => Assert.Equal("Recycled", e.State));
+    }
+
+    [Fact]
+    public void Resume_TargetWithDifferentContent_IsNeverOverwritten()
+    {
+        var (items, journal) = PlanThree();
+        var cts = new CancellationTokenSource(); cts.Cancel();
+        Assert.ThrowsAny<OperationCanceledException>(() => new Executor(journal).Run(items, false, null, cts.Token));
+        Directory.CreateDirectory(items[0].TargetDir);
+        File.WriteAllText(items[0].TargetPath, "BAŞKA");
+
+        var r = new Executor(journal).Resume();
+        Assert.Equal(2, r.Done); Assert.Equal(1, r.Failed);
+        Assert.Equal("BAŞKA", File.ReadAllText(items[0].TargetPath));
+    }
+
+    [Fact]
+    public void Journal_WithTruncatedLastLine_StillReadable_AndUndoWorks()
+    {
+        var (items, journal) = PlanThree();
+        Assert.Equal(3, new Executor(journal).Run(items, recycleSource: false).Done);
+        File.AppendAllText(journal, "{\"Source\":\"C:\\\\yar"); // elektrik kesildi
+
+        Assert.Equal(3, Executor.FinalStates(journal).Count);
+        var u = Executor.Undo(journal); // kaynaklar durduğu için hepsi atlanır, ama günlük okunur
+        Assert.Equal(0, u.Failed); Assert.Equal(3, u.Skipped);
+    }
+
+    [Fact]
+    public void Journal_WithTruncatedLastLine_NextEntryStartsOnNewLine()
+    {
+        var (items, journal) = PlanThree();
+        var cts = new CancellationTokenSource(); cts.Cancel();
+        Assert.ThrowsAny<OperationCanceledException>(() => new Executor(journal).Run(items, false, null, cts.Token));
+        File.AppendAllText(journal, "{\"Source\":\"C:\\\\yar"); // elektrik kesildi
+
+        Executor.Abandon(journal); // ilk Skipped satırı yarım satıra yapışmamalı
+        Assert.Empty(Executor.Pending(journal));
+    }
+
+    [Fact]
+    public void OldFormatJournal_OneLinePerFile_StillWorks()
+    {
+        var j = Path.Combine(_tmp, "eski.jsonl");
+        File.WriteAllText(j,
+            "{\"Source\":\"C:\\\\a.jpg\",\"Target\":\"D:\\\\x\\\\a.jpg\",\"Action\":\"Move\",\"Sha256\":\"AB\",\"State\":\"Recycled\",\"Error\":null}\n" +
+            "{\"Source\":\"C:\\\\b.jpg\",\"Target\":\"D:\\\\x\\\\b.jpg\",\"Action\":\"Move\",\"Sha256\":\"\",\"State\":\"Failed\",\"Error\":\"Kaynak yok\"}\n");
+        Assert.Equal(new[] { "Recycled", "Failed" }, Executor.FinalStates(j).Select(e => e.State));
+        Assert.Empty(Executor.Pending(j));
+    }
+
+    [Fact]
+    public void Abandon_MarksRemainingAsSkipped_AndStopsAsking()
+    {
+        var (items, journal) = PlanThree();
+        var cts = new CancellationTokenSource(); cts.Cancel();
+        Assert.ThrowsAny<OperationCanceledException>(() => new Executor(journal).Run(items, false, null, cts.Token));
+
+        Executor.Abandon(journal);
+        Assert.Empty(Executor.Pending(journal));
+        Assert.Empty(Executor.FindUnfinished(Path.Combine(_tmp, "out")));
+        Assert.All(Executor.FinalStates(journal), e => Assert.Equal("Skipped", e.State));
+        Assert.All(items, i => Assert.False(File.Exists(i.TargetPath)));
+    }
 }
