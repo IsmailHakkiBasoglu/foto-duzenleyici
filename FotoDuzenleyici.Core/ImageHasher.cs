@@ -19,6 +19,7 @@ public static class ImageHasher
 {
     const int HashDecodeWidth = 72;
     const int FlatRange = 8; // 9×8 ızgarada en açık ile en koyu arasındaki fark bundan azsa görüntü düzdür
+    const int DegenerateBits = 4; // izde en fazla bu kadar 1 (ya da 0) varsa görüntüde ayrıntı yoktur
 
     /// <summary>Fotoğrafı en fazla <paramref name="decodePixelWidth"/> genişlikte çözer ve EXIF yönünü uygular.
     /// Dosya yoksa ya da çözülemezse null.</summary>
@@ -59,6 +60,9 @@ public static class ImageHasher
             for (int y = 0; y < 8; y++)
             for (int x = 0; x < 8; x++, bit++)
                 if (g[y, x] < g[y, x + 1]) hash |= 1UL << bit;
+            // Yumuşak gradyan (gökyüzü, gün batımı): iz neredeyse hep 1 ya da 0; alakasız görüntüler eşleşir.
+            if (BitOperations.PopCount(hash) is <= DegenerateBits or >= 64 - DegenerateBits)
+            { error = "ayrıntısız görüntü"; return null; }
 
             var thumb = new byte[256];
             for (int y = 0; y < 16; y++)

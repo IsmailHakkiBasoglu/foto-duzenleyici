@@ -30,7 +30,10 @@ Biçim [Keep a Changelog](https://keepachangelog.com/tr-TR/1.1.0/), sürüm numa
   yeniden adlandırılsa da önbellek geçerli kalıyor.
 - Tarama için **Durdur** düğmesi. Benzerlik adımında durdurulursa hesaplanan izler saklanıyor.
 - "Benzer fotoğrafları da ara" seçeneği (varsayılan açık); komut satırında `--similar`.
-- Tek renk / düz görüntülerin (siyah kare, boş gökyüzü) izi çıkarılmıyor; özette sayılıyor.
+- Tek renk ya da ayrıntısız görüntülerin (siyah kare, yumuşak gradyanlı gökyüzü) izi
+  çıkarılmıyor; özette sayılıyor.
+- Seri çekim kareleri hiçbir durumda ★ almıyor: aynı saniyede çekilmiş kareler (saniye kesri
+  farklı) de, bir karenin kopyası üzerinden gruba bağlanan kareler de.
 
 ### Değişti
 - Core, komut satırı ve test projeleri `net8.0-windows` oldu (görüntü çözme için Windows'un

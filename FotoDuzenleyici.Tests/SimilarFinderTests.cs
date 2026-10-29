@@ -69,6 +69,41 @@ public class SimilarFinderTests
     }
 
     [Fact]
+    public void SameSecondBurst_DifferentSubSec_IsBurstNotCopy()
+    {
+        // Telefon/DSLR seri çekimi: aynı saniyede 10 kare; saniye kesri farklı.
+        var a = Photo("1.jpg"); a.SubSec = "10";
+        var b = Photo("2.jpg"); b.SubSec = "45";
+        var g = Assert.Single(Find(new() { [a] = Base, [b] = Flip(1) }));
+        Assert.Equal(SimilarKind.Burst, g.Kind);
+        Assert.Null(g.Suggested);
+    }
+
+    [Fact]
+    public void SameMomentExport_StaysSameFrame_WithSuggestion()
+    {
+        // Orijinal + Lightroom dışa aktarımı: aynı kamera, aynı an, izleri yakın. Seri çekim değil, aynı kare.
+        var orig = Photo("IMG_0300.JPG");
+        var export = Photo("IMG_0300-duzenlenmis.jpg", w: 600, h: 400, modified: T0.AddDays(5));
+        var same = new List<SameFrameGroup> { new() { Members = new() { orig, export }, Suggested = orig } };
+        var g = Assert.Single(Find(new() { [orig] = Base, [export] = Flip(6) }, same));
+        Assert.Equal(SimilarKind.SameFrame, g.Kind);
+        Assert.Same(orig, g.Suggested);
+    }
+
+    [Fact]
+    public void BurstJoinedByCopy_GetsNoSuggestion()
+    {
+        // A, B, C seri çekim; A' de A'nın WhatsApp kopyası. Ayrı kareler ★ yüzünden ayıklanmamalı.
+        var a = Photo("A.jpg"); var b = Photo("B.jpg", taken: T0.AddSeconds(2)); var c = Photo("C.jpg", taken: T0.AddSeconds(4));
+        var copy = Photo("A-whatsapp.jpg", exif: false, w: 1600, h: 1067);
+        var g = Assert.Single(Find(new() { [a] = Base, [b] = Flip(8), [c] = Flip(9), [copy] = Flip(1) }));
+        Assert.Equal(4, g.Members.Count);
+        Assert.Equal(SimilarKind.Burst, g.Kind);
+        Assert.Null(g.Suggested);
+    }
+
+    [Fact]
     public void NearlyIdentical_ExifMinutesApart_IsNotGrouped() =>
         Assert.Empty(Find(new() { [Photo("1.jpg")] = Base, [Photo("2.jpg", taken: T0.AddMinutes(5))] = Flip(1) }));
 

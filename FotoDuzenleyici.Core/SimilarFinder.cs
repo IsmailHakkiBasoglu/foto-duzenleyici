@@ -78,7 +78,8 @@ public static class SimilarFinder
             for (int j = i + 1; j < dated.Count && dated[j].Taken!.Value - dated[i].Taken!.Value < opt.BurstWindow; j++)
             {
                 var (a, b) = (dated[i], dated[j]);
-                if (SameCamera(a, b) && ImageHasher.Distance(hashes[a], hashes[b]) <= opt.BurstMaxDistance)
+                // Aynı anı taşıyanlar seri çekim değil, aynı karedir (o bağı SameFrameFinder kurar).
+                if (DistinctShots(a, b) && ImageHasher.Distance(hashes[a], hashes[b]) <= opt.BurstMaxDistance)
                     edges.Add((Id(a), Id(b), SimilarKind.Burst));
             }
 
@@ -87,11 +88,14 @@ public static class SimilarFinder
         int Root(int x) { while (parent[x] != x) x = parent[x] = parent[parent[x]]; return x; }
         foreach (var (a, b, _) in edges) parent[Root(a)] = Root(b);
 
+        // İçinde seri çekim bağı olan grup seri çekimdir: ayrı kareler bir kopya üzerinden bağlansa da ★ almasın.
+        // Diğerlerinde SameFrame > ResizedCopy.
         var kindOf = new Dictionary<int, SimilarKind>();
         foreach (var (a, _, kind) in edges)
         {
             var r = Root(a);
-            if (!kindOf.TryGetValue(r, out var k) || kind < k) kindOf[r] = kind; // SameFrame > ResizedCopy > Burst
+            if (!kindOf.TryGetValue(r, out var k)) kindOf[r] = kind;
+            else if (k != SimilarKind.Burst && (kind == SimilarKind.Burst || kind < k)) kindOf[r] = kind;
         }
 
         return Enumerable.Range(0, nodes.Count).GroupBy(Root)
@@ -113,7 +117,11 @@ public static class SimilarFinder
     static bool DistinctShots(MediaFile a, MediaFile b) =>
         a.DateSource == DateSource.Exif && b.DateSource == DateSource.Exif && a.Taken is { } ta && b.Taken is { } tb &&
         !string.IsNullOrEmpty(a.Make) && SameCamera(a, b) &&
-        ta.ToString("yyyyMMddHHmmss") != tb.ToString("yyyyMMddHHmmss");
+        (ta.ToString("yyyyMMddHHmmss") != tb.ToString("yyyyMMddHHmmss") // aynı saniyede 10 kare: kesir ve gövde de bakılır
+         || Differ(a.SubSec, b.SubSec) || Differ(a.Serial, b.Serial));
+
+    static bool Differ(string? x, string? y) =>
+        !string.IsNullOrEmpty(x) && !string.IsNullOrEmpty(y) && !x.Equals(y, StringComparison.OrdinalIgnoreCase);
 
     static bool SameCamera(MediaFile a, MediaFile b) =>
         string.Equals(a.Make, b.Make, StringComparison.OrdinalIgnoreCase) &&
