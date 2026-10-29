@@ -43,6 +43,25 @@ static class TestImages
         return ms.ToArray();
     }
 
+    /// <summary>Soldan sağa yumuşak gri gradyan (gökyüzü gibi), 600×400.</summary>
+    public static byte[] GradientJpeg(byte from, byte to)
+    {
+        const int w = 600, h = 400;
+        var px = new byte[w * h * 3];
+        for (int y = 0; y < h; y++)
+        for (int x = 0; x < w; x++)
+        {
+            byte v = (byte)(from + (to - from) * x / (w - 1));
+            int i = (y * w + x) * 3;
+            px[i] = px[i + 1] = px[i + 2] = v;
+        }
+        var enc = new JpegBitmapEncoder();
+        enc.Frames.Add(BitmapFrame.Create(BitmapSource.Create(w, h, 96, 96, PixelFormats.Bgr24, null, px, w * 3)));
+        using var ms = new MemoryStream();
+        enc.Save(ms);
+        return ms.ToArray();
+    }
+
     /// <summary>8×8 dama deseni PNG; istenirse yarısı saydam.</summary>
     public static byte[] TinyPng(bool transparent)
     {

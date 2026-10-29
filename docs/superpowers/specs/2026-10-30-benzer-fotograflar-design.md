@@ -40,6 +40,11 @@ belirgin biçimde hızlanır.
   farklıysa, görüntü ne kadar benzese de kopya bağı kurulmaz (sabit sahnede seri çekim ★ alıp
   ayıklanmasın); yalnızca seri çekim kuralıyla gruplanabilir.
 - **Düz görüntüler:** 9×8 ızgarada en açık–en koyu farkı < 8 olan görüntünün izi çıkarılmaz.
+- **Ayrıntısız görüntüler:** izindeki 1 sayısı ≤ 4 ya da ≥ 60 ise (yumuşak gradyan, gökyüzü) iz
+  çıkarılmaz.
+- **Ayrı kare tanımı** saniye kesrini ve gövde seri numarasını da kullanır (aynı saniyede seri
+  çekim). İçinde seri çekim bağı olan grup her zaman *Seri çekim* türündedir ve öneri almaz;
+  bir kopya ya da aynı kare bağı bunu değiştirmez.
 
 ## Bileşenler (Core)
 

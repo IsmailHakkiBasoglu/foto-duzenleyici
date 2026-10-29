@@ -87,6 +87,15 @@ public class ImageHasherTests : IDisposable
         Assert.Equal("düz görüntü", error);
     }
 
+    [Fact]
+    public void SmoothGradient_ReturnsNull_AsLowDetail()
+    {
+        // Boş gökyüzü / gün batımı: düz değil ama izi hep 1; alakasız iki gökyüzü kopya sanılmasın.
+        var p = Put("gokyuzu.jpg", TestImages.GradientJpeg(90, 220));
+        Assert.Null(ImageHasher.Print(p, 1, out var error));
+        Assert.Equal("ayrıntısız görüntü", error);
+    }
+
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
