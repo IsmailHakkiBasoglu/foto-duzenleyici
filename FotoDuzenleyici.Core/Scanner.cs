@@ -115,6 +115,20 @@ public sealed class Scanner
             m.Model ??= d.GetString(QuickTimeMetadataHeaderDirectory.TagModel)?.Trim();
         }
 
+        // Gerçek piksel boyutu JPEG çerçevesindedir; bazı programlar dışa aktarırken EXIF'teki eski boyutu bırakır.
+        foreach (var d in dirs.OfType<MetadataExtractor.Formats.Jpeg.JpegDirectory>())
+        {
+            if (m.Width is null && d.TryGetInt32(MetadataExtractor.Formats.Jpeg.JpegDirectory.TagImageWidth, out var w)) m.Width = w;
+            if (m.Height is null && d.TryGetInt32(MetadataExtractor.Formats.Jpeg.JpegDirectory.TagImageHeight, out var h)) m.Height = h;
+        }
+        foreach (var d in dirs.OfType<ExifSubIfdDirectory>())
+        {
+            m.SubSec ??= d.GetString(ExifDirectoryBase.TagSubsecondTimeOriginal)?.Trim();
+            m.Serial ??= d.GetString(ExifDirectoryBase.TagBodySerialNumber)?.Trim();
+            if (m.Width is null && d.TryGetInt32(ExifDirectoryBase.TagExifImageWidth, out var w)) m.Width = w;
+            if (m.Height is null && d.TryGetInt32(ExifDirectoryBase.TagExifImageHeight, out var h)) m.Height = h;
+        }
+
         foreach (var d in dirs.OfType<ExifSubIfdDirectory>())
         {
             if (d.TryGetDateTime(ExifDirectoryBase.TagDateTimeOriginal, out var dt) && Valid(dt))

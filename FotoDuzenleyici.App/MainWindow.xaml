@@ -97,6 +97,34 @@
                             </DataGrid.Columns>
                         </DataGrid>
                     </TabItem>
+                    <TabItem x:Name="SimilarTab" Header="Muhtemelen aynı kare">
+                        <DockPanel>
+                            <DockPanel DockPanel.Dock="Top" Margin="0,4,0,6">
+                                <Button Content="Önerileri uygula (yalnız ★ kalsın)" Click="SuggestSimilar_Click"/>
+                                <Button Content="Hepsini koru" Click="KeepAllSimilar_Click"/>
+                                <TextBlock VerticalAlignment="Center" Foreground="Gray" TextWrapping="Wrap"
+                                           Text="Aynı kamera ve aynı çekim anı. İşareti kaldırılan dosya Uygula'da _Benzerler klasörüne gider (silinmez). Değiştirince planı yeniden oluştur."/>
+                            </DockPanel>
+                            <DataGrid x:Name="SimilarGrid" AutoGenerateColumns="False" CanUserAddRows="False"
+                                      EnableRowVirtualization="True" GridLinesVisibility="Horizontal">
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="Grup" Binding="{Binding Group}" Width="50" IsReadOnly="True"/>
+                                    <DataGridTemplateColumn Header="Kalsın" Width="55">
+                                        <DataGridTemplateColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <CheckBox IsChecked="{Binding Keep, UpdateSourceTrigger=PropertyChanged}" HorizontalAlignment="Center"/>
+                                            </DataTemplate>
+                                        </DataGridTemplateColumn.CellTemplate>
+                                    </DataGridTemplateColumn>
+                                    <DataGridTextColumn Header="Öneri" Binding="{Binding Star}" Width="45" IsReadOnly="True"/>
+                                    <DataGridTextColumn Header="Dosya" Binding="{Binding Path}" Width="*" IsReadOnly="True"/>
+                                    <DataGridTextColumn Header="Çözünürlük" Binding="{Binding Resolution}" Width="95" IsReadOnly="True"/>
+                                    <DataGridTextColumn Header="MB" Binding="{Binding SizeMb}" Width="60" IsReadOnly="True"/>
+                                    <DataGridTextColumn Header="Çekim anı" Binding="{Binding Taken}" Width="150" IsReadOnly="True"/>
+                                </DataGrid.Columns>
+                            </DataGrid>
+                        </DockPanel>
+                    </TabItem>
                 </TabControl>
             </DockPanel>
         </Grid>

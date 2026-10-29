@@ -81,6 +81,12 @@ foreach (var g in files.Where(f => f.DateSource is not (DateSource.Exif or DateS
 long reclaim = groups.Sum(g => g.Copies.Sum(c => c.Size));
 Console.WriteLine($"\n== Yinelenen ==\nGrup: {groups.Count}  Fazla kopya: {groups.Sum(g => g.Copies.Count)}  Kazanılacak: {reclaim / 1e9:N2} GB");
 
+var same = SameFrameFinder.Find(files, groups, Path.Combine(Path.GetFullPath(dest), "_Benzerler"));
+Console.WriteLine($"\n== Muhtemelen aynı kare (yalnızca rapor; arayüzden ayıklanır) ==\nGrup: {same.Count}  Dosya: {same.Sum(g => g.Members.Count)}");
+foreach (var g in same.Take(10))
+    Console.WriteLine($"  {g.Members[0].Taken:yyyy-MM-dd HH:mm:ss}  " +
+                      string.Join("  |  ", g.Members.Select(m => (m == g.Suggested ? "★ " : "") + m.FileName)));
+
 var plan = Planner.Build(files, groups, new PlanOptions
 {
     DestinationRoot = dest, SourceFolder = srcFolder ? SourceFolderMode.SubFolder : SourceFolderMode.None,

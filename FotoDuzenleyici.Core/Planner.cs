@@ -15,13 +15,16 @@ public static class Planner
     // Uygulamanın kendi eklediği önek: "yyyy-MM-dd " ya da "yyyy-MM-dd HHmmss ".
     static readonly Regex DatePrefix = new(@"^\d{4}-\d{2}-\d{2} (\d{6} )?", RegexOptions.Compiled);
 
-    public static Plan Build(IReadOnlyList<MediaFile> files, IReadOnlyList<DuplicateGroup> dupGroups, PlanOptions opt)
+    /// <param name="similarOf">Kullanıcının ayıkladığı "muhtemelen aynı kare" dosyaları → grupta kalan eşi.</param>
+    public static Plan Build(IReadOnlyList<MediaFile> files, IReadOnlyList<DuplicateGroup> dupGroups, PlanOptions opt,
+        IReadOnlyDictionary<MediaFile, MediaFile>? similarOf = null)
     {
         PropagateRawJpgPairs(files);
 
         var plan = new Plan();
         var dest = Path.GetFullPath(opt.DestinationRoot).TrimEnd('\\');
         var dupDir = Path.Combine(dest, opt.DuplicatesFolderName) + "\\";
+        var simDir = Path.Combine(dest, opt.SimilarFolderName) + "\\";
         bool InDest(MediaFile f) => Path.GetFullPath(f.Path).StartsWith(dest + "\\", StringComparison.OrdinalIgnoreCase);
         bool Organized(MediaFile f) => InDest(f) && !Path.GetFullPath(f.Path).StartsWith(dupDir, StringComparison.OrdinalIgnoreCase);
 
@@ -46,14 +49,31 @@ public static class Planner
             var date = f.Taken ?? DateTime.MinValue;
             var month = f.Taken is null ? opt.UndatedFolderName : date.ToString("yyyy-MM");
             dupOf.TryGetValue(f, out var keeper);
+            MediaFile? similar = null;
+            if (keeper is null) similarOf?.TryGetValue(f, out similar);
+
+            // Kullanıcı önceki turda _Benzerler'e ayırdıysa orada kalır.
+            if (keeper is null && similar is null && Path.GetFullPath(f.Path).StartsWith(simDir, StringComparison.OrdinalIgnoreCase))
+            {
+                var full = Path.GetFullPath(f.Path);
+                taken.Add(full);
+                plan.Items.Add(new PlanItem
+                {
+                    File = f, TargetDir = Path.GetDirectoryName(full)!, TargetName = Path.GetFileName(full),
+                    Action = PlanAction.AlreadyInPlace,
+                });
+                continue;
+            }
 
             string dir;
             if (keeper is not null)
                 dir = Path.Combine(dest, opt.DuplicatesFolderName, month);
+            else if (similar is not null)
+                dir = Path.Combine(dest, opt.SimilarFolderName, month);
             else
                 dir = Path.Combine(dest, month, KindFolder(f, month, opt));
 
-            var (name, renamed, collided) = ResolveName(f, date, dir, opt, taken, keeper is null && InDest(f));
+            var (name, renamed, collided) = ResolveName(f, date, dir, opt, taken, keeper is null && similar is null && InDest(f));
             if (collided) plan.Collisions++;
 
             var item = new PlanItem
@@ -63,11 +83,12 @@ public static class Planner
                 TargetName = name,
                 DuplicateOf = keeper,
                 Renamed = renamed,
-                Action = keeper is not null ? PlanAction.Duplicate : PlanAction.Move,
+                Action = keeper is not null ? PlanAction.Duplicate : similar is not null ? PlanAction.Similar : PlanAction.Move,
             };
             if (string.Equals(item.TargetPath, Path.GetFullPath(f.Path), StringComparison.OrdinalIgnoreCase))
                 item.Action = PlanAction.AlreadyInPlace;
             if (collided) item.Note = "İsim çakışması: tarih eklendi";
+            if (similar is not null) item.Note = "Muhtemelen aynı kare: " + similar.FileName;
             plan.Items.Add(item);
         }
         return plan;

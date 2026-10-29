@@ -6,6 +6,18 @@ Biçim [Keep a Changelog](https://keepachangelog.com/tr-TR/1.1.0/), sürüm numa
 
 ## [Yayınlanmamış]
 
+### Eklendi
+- "Muhtemelen aynı kare" sekmesi: adı ya da baytları farklı ama kamerası, modeli ve çekim anı
+  aynı olan fotoğraflar (yeniden kaydedilmiş, dışa aktarılmış, başka yerden tekrar gelmiş)
+  gruplanıyor. Saniye kesri ve gövde seri numarası farklıysa (seri çekim, iki gövde) gruplanmıyor;
+  RAW + JPG eşleri ve videolar hiç gruplanmıyor.
+- Gruplar otomatik taşınmıyor: her dosyanın "Kalsın" işareti var, işareti kaldırılan dosya
+  Uygula'da `_Benzerler` klasörüne gidiyor (silinmiyor, Geri Al çalışıyor). ★ ile önerilen
+  dosya en yüksek çözünürlüklü, eşitlikte orijinal (ilk yazılan) olanı; "Önerileri uygula"
+  düğmesi tek tıkla yalnızca önerileri bırakıyor.
+- Tarama artık fotoğrafların piksel boyutunu, saniye kesrini ve gövde seri numarasını da okuyor.
+- Komut satırı aracı bu grupları raporluyor.
+
 ## [0.1.3] - 2026-10-30
 
 ### Düzeltildi
