@@ -31,6 +31,16 @@ belirgin biçimde hızlanır.
   ve System.Drawing (yavaş, önerilmiyor) elendi.
 - Arşiv boyutu bilinmediği için **önbellek zorunlu**.
 
+## Uygulama sırasında verilen kararlar (2026-10-30)
+
+- **Kopya doğrulaması:** iz (Hamming ≤ 4) tek başına yetmiyor; 2000 alakasız, sade desende
+  35 sahte kopya grubu çıktı (çakışma + zincirleme). Kopya bağı ayrıca 16×16 gri küçük
+  resimlerin ortalama mutlak farkı ≤ 8 ister. Önbellek iz + küçük resmi saklar (`ImagePrint`).
+- **Seri kareler kopya sayılmaz:** iki dosyada da aynı kameranın EXIF'i varsa ve çekim anları
+  farklıysa, görüntü ne kadar benzese de kopya bağı kurulmaz (sabit sahnede seri çekim ★ alıp
+  ayıklanmasın); yalnızca seri çekim kuralıyla gruplanabilir.
+- **Düz görüntüler:** 9×8 ızgarada en açık–en koyu farkı < 8 olan görüntünün izi çıkarılmaz.
+
 ## Bileşenler (Core)
 
 ### `ImageHasher`
