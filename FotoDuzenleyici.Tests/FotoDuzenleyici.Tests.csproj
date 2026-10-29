@@ -1,7 +1,9 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net8.0</TargetFramework>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <!-- UseWPF, System.IO'yu örtük using listesinden çıkarır. -->
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
 
@@ -24,4 +26,7 @@
     <ProjectReference Include="..\FotoDuzenleyici.Core\FotoDuzenleyici.Core.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Using Include="System.IO" />
+  </ItemGroup>
 </Project>
