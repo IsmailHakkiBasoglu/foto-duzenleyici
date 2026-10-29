@@ -25,6 +25,8 @@ public sealed class MediaFile
     public int? Height { get; set; }
     /// <summary>EXIF BodySerialNumber: aynı model iki gövdeyi ayırır.</summary>
     public string? Serial { get; set; }
+    /// <summary>EXIF yönü (1–8); 1 = olduğu gibi. Benzerlik izi ve önizleme bunu uygular.</summary>
+    public int Orientation { get; set; } = 1;
 
     /// <summary>Gösterim adı: Canon, Fuji, ... EXIF yoksa null.</summary>
     public string? Source { get; set; }

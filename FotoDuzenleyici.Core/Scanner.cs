@@ -108,6 +108,7 @@ public sealed class Scanner
         {
             m.Make ??= d.GetString(ExifDirectoryBase.TagMake)?.Trim();
             m.Model ??= d.GetString(ExifDirectoryBase.TagModel)?.Trim();
+            if (d.TryGetInt32(ExifDirectoryBase.TagOrientation, out var o) && o is >= 1 and <= 8) m.Orientation = o;
         }
         foreach (var d in dirs.OfType<QuickTimeMetadataHeaderDirectory>())
         {
