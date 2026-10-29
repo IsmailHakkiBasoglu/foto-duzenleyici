@@ -5,13 +5,13 @@ using System.Text.Json;
 namespace FotoDuzenleyici.Core;
 
 /// <summary>
-/// Benzerlik izlerinin önbelleği. Yalnızca 64 bitlik izler saklanır, görüntü saklanmaz. Anahtar dosya yolundan
+/// Benzerlik izlerinin önbelleği. Yalnızca iz ve 16×16 gri küçük resim saklanır, görüntü saklanmaz. Anahtar dosya yolundan
 /// bağımsızdır: Uygula dosyaları taşıyıp yeniden adlandırır ama zaman damgalarını korur, iz yine bulunur.
 /// </summary>
 public sealed class HashCache
 {
     readonly string _path;
-    readonly ConcurrentDictionary<string, ulong> _map = new();
+    readonly ConcurrentDictionary<string, ImagePrint> _map = new();
 
     public static string DefaultPath => Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "FotoDuzenleyici", "benzerlik-onbellek.json");
@@ -22,8 +22,8 @@ public sealed class HashCache
         _path = path;
         try
         {
-            if (File.Exists(path) && JsonSerializer.Deserialize<Dictionary<string, ulong>>(File.ReadAllText(path)) is { } d)
-                foreach (var kv in d) _map[kv.Key] = kv.Value;
+            if (File.Exists(path) && JsonSerializer.Deserialize<Dictionary<string, Entry>>(File.ReadAllText(path)) is { } d)
+                foreach (var kv in d) _map[kv.Key] = new ImagePrint(kv.Value.H, Convert.FromBase64String(kv.Value.T));
         }
         catch (Exception) { _map.Clear(); }
     }
@@ -40,15 +40,19 @@ public sealed class HashCache
         return $"{info.Length}:{info.LastWriteTimeUtc.Ticks}:{Convert.ToHexString(SHA256.HashData(head))}";
     }
 
-    public bool TryGet(string key, out ulong hash) => _map.TryGetValue(key, out hash);
-    public void Set(string key, ulong hash) => _map[key] = hash;
+    public bool TryGet(string key, out ImagePrint print) => _map.TryGetValue(key, out print);
+    public void Set(string key, ImagePrint print) => _map[key] = print;
 
     /// <summary>Önce geçici dosyaya yazar, sonra değiştirir: kesinti önbelleği bozmaz.</summary>
     public void Save()
     {
         Directory.CreateDirectory(Path.GetDirectoryName(_path)!);
         var tmp = _path + ".tmp";
-        File.WriteAllText(tmp, JsonSerializer.Serialize(new Dictionary<string, ulong>(_map)));
+        var entries = _map.ToDictionary(kv => kv.Key, kv => new Entry(kv.Value.Hash, Convert.ToBase64String(kv.Value.Thumb)));
+        File.WriteAllText(tmp, JsonSerializer.Serialize(entries));
         File.Move(tmp, _path, overwrite: true);
     }
+
+    /// <summary>JSON kaydı: iz ve küçük resim (base64).</summary>
+    sealed record Entry(ulong H, string T);
 }

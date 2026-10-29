@@ -40,15 +40,21 @@ public sealed class FolderNode : INotifyPropertyChanged
     void Raise(string n) => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(n));
 }
 
-/// <summary>"Muhtemelen aynı kare" sekmesinde bir dosya. Kalsın işareti kaldırılırsa _Benzerler'e gider.</summary>
+/// <summary>"Benzerler" sekmesinde bir dosya. Kalsın işareti kaldırılırsa _Benzerler'e gider.</summary>
 public sealed class SimilarRow : INotifyPropertyChanged
 {
     bool _keep = true;
     public required int Group { get; init; }
     public required MediaFile File { get; init; }
+    public required SimilarKind Kind { get; init; }
+    public string KindText => Kind switch
+    {
+        SimilarKind.SameFrame => "Aynı kare", SimilarKind.ResizedCopy => "Küçültülmüş kopya", _ => "Seri çekim",
+    };
     public bool Suggested { get; init; }
     public string Star => Suggested ? "★" : "";
     public string Path => File.Path;
+    public string Name => File.FileName;
     public string Resolution => File.Width is { } w && File.Height is { } h ? $"{w}×{h}" : "-";
     public string SizeMb => (File.Size / 1048576.0).ToString("N1");
     public string Taken => File.Taken?.ToString("yyyy-MM-dd HH:mm:ss") + (File.SubSec is { Length: > 0 } s ? "." + s : "");
@@ -84,15 +90,18 @@ public partial class MainWindow : Window
     List<MediaFile> _files = new();
     List<DuplicateGroup> _dups = new();
     List<SimilarRow> _similar = new();
+    List<string> _simErrors = new();
     Plan? _plan;
     FolderNode? _rootNode;
     CancellationTokenSource? _cts;
+    int _previewVersion;
 
     public MainWindow() => InitializeComponent();
 
     void SetBusy(bool busy)
     {
         ScanBtn.IsEnabled = !busy;
+        StopBtn.IsEnabled = busy;
         PlanBtn.IsEnabled = !busy && _files.Count > 0;
         ApplyBtn.IsEnabled = !busy && _plan != null;
         UndoBtn.IsEnabled = !busy;
@@ -150,38 +159,66 @@ public partial class MainWindow : Window
         if (string.IsNullOrWhiteSpace(RootBox.Text) || !Directory.Exists(RootBox.Text))
         { MessageBox.Show("Önce geçerli bir ana klasör seç."); return; }
 
-        _plan = null; PlanGrid.ItemsSource = null; DupGrid.ItemsSource = null; SimilarGrid.ItemsSource = null; _similar = new();
+        _plan = null; PlanGrid.ItemsSource = null; DupGrid.ItemsSource = null; SimilarGrid.ItemsSource = null;
+        _similar = new(); _simErrors = new(); _files = new(); _dups = new();
+        _cts = new CancellationTokenSource();
+        var ct = _cts.Token;
         SetBusy(true);
         var opts = BuildScanOptions();
+        var dest = DestBox.Text.Trim();
+        var ignore = dest.Length == 0 ? null : Path.Combine(Path.GetFullPath(dest), "_Benzerler");
         var prog = new Progress<(int d, int t)>(p => { Progress.Maximum = p.t; Progress.Value = p.d; StatusText.Text = $"Metadata okunuyor… {p.d}/{p.t}"; });
         try
         {
-            _files = await Task.Run(() => new Scanner(opts).Scan(prog));
+            var files = await Task.Run(() => new Scanner(opts).Scan(prog, ct));
             StatusText.Text = "Aynı içerikli dosyalar aranıyor (SHA-256)…";
             var hprog = new Progress<(int d, int t)>(p => { Progress.Maximum = p.t; Progress.Value = p.d; StatusText.Text = $"Hash hesaplanıyor… {p.d}/{p.t}"; });
-            _dups = await Task.Run(() => DuplicateFinder.Find(_files, 4, hprog));
+            var dups = await Task.Run(() => DuplicateFinder.Find(files, 4, hprog, ct));
+            (_files, _dups) = (files, dups);
             ShowDuplicates();
-            ShowSimilar();
+
+            var hashes = new Dictionary<MediaFile, ImagePrint>();
+            string? note = null;
+            if (OptSimilar.IsChecked == true)
+            {
+                var sprog = new Progress<(int d, int t, int c)>(p =>
+                {
+                    Progress.Maximum = p.t; Progress.Value = p.d;
+                    StatusText.Text = $"Benzerlik izi… {p.d}/{p.t} ({p.c}'i önbellekten)";
+                });
+                try
+                {
+                    hashes = await Task.Run(() => SimilarityScan.Compute(_files, _dups, ignore,
+                        new HashCache(HashCache.DefaultPath), _simErrors, sprog, ct));
+                }
+                catch (OperationCanceledException)
+                {
+                    hashes = new();
+                    note = "Benzerlik araması durduruldu; hesaplanan izler kaydedildi, bir sonraki taramada kaldığı yerden sürer.";
+                }
+            }
+            ShowSimilar(hashes, ignore);
             SummaryBox.Text = BuildSummary(null);
-            StatusText.Text = $"Tarama bitti: {_files.Count} dosya, {_dups.Count} yinelenen grup, " +
-                              $"{_similar.Select(r => r.Group).Distinct().Count()} muhtemelen aynı kare grubu. Şimdi plan oluşturabilirsin.";
+            StatusText.Text = note ?? $"Tarama bitti: {_files.Count} dosya, {_dups.Count} yinelenen grup, " +
+                $"{_similar.Select(r => r.Group).Distinct().Count()} benzer grup. Şimdi plan oluşturabilirsin.";
         }
+        catch (OperationCanceledException) { _files = new(); _dups = new(); StatusText.Text = "Tarama durduruldu."; }
         catch (Exception ex) { StatusText.Text = "Hata: " + ex.Message; }
         SetBusy(false);
     }
+
+    void Stop_Click(object s, RoutedEventArgs e) => _cts?.Cancel();
 
     void ShowDuplicates() =>
         DupGrid.ItemsSource = _dups.SelectMany(g => g.Copies.Select(c =>
             new DupRow(g.Keeper.Path, c.Path, (c.Size / 1048576.0).ToString("N1")))).ToList();
 
-    void ShowSimilar()
+    void ShowSimilar(Dictionary<MediaFile, ImagePrint> hashes, string? ignore)
     {
-        var dest = DestBox.Text.Trim();
-        var ignore = dest.Length == 0 ? null : Path.Combine(Path.GetFullPath(dest), "_Benzerler");
-        var groups = SameFrameFinder.Find(_files, _dups, ignore);
+        var groups = SimilarFinder.Find(_files, hashes, SameFrameFinder.Find(_files, _dups, ignore));
         _similar = groups.SelectMany((g, i) => g.Members.Select(m => new SimilarRow
         {
-            Group = i + 1, File = m, Suggested = m == g.Suggested,
+            Group = i + 1, File = m, Kind = g.Kind, Suggested = m == g.Suggested,
         })).ToList();
         foreach (var r in _similar)
         {
@@ -218,8 +255,23 @@ public partial class MainWindow : Window
 
     void SuggestSimilar_Click(object s, RoutedEventArgs e)
     {
+        // Önerisi olmayan gruplara (seri çekim) dokunulmaz.
+        var suggested = _similar.Where(r => r.Suggested).Select(r => r.Group).ToHashSet();
         foreach (var r in _similar.Where(r => r.Suggested)) r.Keep = true; // önce öneriler, sonra diğerleri bırakılır
-        foreach (var r in _similar.Where(r => !r.Suggested)) r.Keep = false;
+        foreach (var r in _similar.Where(r => !r.Suggested && suggested.Contains(r.Group))) r.Keep = false;
+    }
+
+    /// <summary>Seçili dosyanın önizlemesi; hızlı gezinmede yalnızca son seçim gösterilir.</summary>
+    async void SimilarGrid_SelectionChanged(object s, System.Windows.Controls.SelectionChangedEventArgs e)
+    {
+        if (SimilarGrid.SelectedItem is not SimilarRow row) return;
+        var version = ++_previewVersion;
+        var f = row.File;
+        PreviewInfo.Text = $"{f.FileName}\n{row.Resolution} · {row.SizeMb} MB\n{row.Taken}\n{f.Make} {f.Model}".Trim();
+        var img = await Task.Run(() => ImageHasher.Decode(f.Path, f.Orientation, 1000));
+        if (version != _previewVersion) return;
+        PreviewImage.Source = img;
+        if (img is null) PreviewInfo.Text = "Önizleme yok (dosya bulunamadı ya da açılamadı).\n" + PreviewInfo.Text;
     }
 
     void KeepAllSimilar_Click(object s, RoutedEventArgs e)
@@ -260,8 +312,14 @@ public partial class MainWindow : Window
         sb.AppendLine("\nKaynak (kamera):");
         foreach (var g in _files.GroupBy(f => f.Source ?? "(bilinmiyor)")) sb.AppendLine($"  {g.Key,-14} {g.Count(),6}");
         sb.AppendLine($"\nYinelenen: {_dups.Sum(g => g.Copies.Count)} dosya, kazanılacak {_dups.Sum(g => g.Copies.Sum(c => c.Size)) / 1e9:N2} GB");
-        sb.AppendLine($"Muhtemelen aynı kare: {_similar.Select(r => r.Group).Distinct().Count()} grup, {_similar.Count} dosya; " +
+        var byKind = _similar.GroupBy(r => r.KindText).Select(g => $"{g.Key}: {g.Select(r => r.Group).Distinct().Count()}");
+        sb.AppendLine($"Benzerler: {string.Join(", ", byKind.DefaultIfEmpty("yok"))} grup; " +
                       $"_Benzerler'e ayrılacak: {_similar.Count(r => !r.Keep)}");
+        if (_simErrors.Count > 0)
+        {
+            sb.AppendLine($"Benzerlik izi çıkarılamayan: {_simErrors.Count}");
+            foreach (var err in _simErrors.Take(3)) sb.AppendLine("  " + err);
+        }
         if (_plan != null)
         {
             sb.AppendLine($"\nPlan → {dest}");

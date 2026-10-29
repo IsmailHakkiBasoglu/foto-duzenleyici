@@ -64,6 +64,17 @@ public class IntegrationTests : IDisposable
     }
 
     [Fact]
+    public void DistinctLowDetailImages_AreNotGroupedAsCopies()
+    {
+        // Arayüz denemesinde 2000 alakasız desen 35 sahte "kopya" grubu vermişti (iz çakışması + zincirleme).
+        var t = new DateTime(2024, 3, 10);
+        for (int i = 0; i < 300; i++) Put($"IMG_{i:0000}.JPG", TestImages.PatternJpeg(400, 300, 5000 + i, 85), t, t);
+        var (files, dups) = Scan(_src);
+        var prints = SimilarityScan.Compute(files, dups, null, new HashCache(Path.Combine(_tmp, "c.json")), new List<string>());
+        Assert.Empty(SimilarFinder.Find(files, prints, SameFrameFinder.Find(files, dups)));
+    }
+
+    [Fact]
     public void ResizedCopy_EndToEnd_ToSimilarFolder_AndUndo()
     {
         var t = new DateTime(2024, 3, 10, 12, 0, 0);
