@@ -235,7 +235,11 @@ public partial class MainWindow : Window
                 "Hayır: vazgeç; kalan dosyalara dokunulmaz, bir daha sorulmaz\n" +
                 "İptal: şimdilik geç, sonra yine sor",
                 "Yarım kalan işlem", MessageBoxButton.YesNoCancel, MessageBoxImage.Question);
-            if (ans == MessageBoxResult.No) Executor.Abandon(journal);
+            if (ans == MessageBoxResult.No)
+            {
+                Executor.Abandon(journal);
+                StatusText.Text = $"Yarım kalan işlemden vazgeçildi ({remaining} dosyaya dokunulmadı).";
+            }
             if (ans != MessageBoxResult.Yes) continue;
             await ExecuteAsync(journal, (ex, prog, ct) => ex.Resume(prog, ct));
             resumed = true;
