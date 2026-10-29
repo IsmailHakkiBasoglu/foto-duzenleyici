@@ -26,6 +26,9 @@ Biçim [Keep a Changelog](https://keepachangelog.com/tr-TR/1.1.0/), sürüm numa
   edilsin mi?" diye soruluyor; yeniden tarama ve hash olmadan kalan dosyalarla sürüyor.
   "Hayır" denirse kalan dosyalara dokunulmuyor ve bir daha sorulmuyor.
 - Komut satırı aracına `--resume <günlük>` seçeneği; `--apply` yarım kalan işlem varsa uyarıyor.
+- Uçtan uca entegrasyon testi: EXIF'li fotoğraflar, UTC tarihli video, birebir kopya ve aynı
+  adlı farklı dosyalarla Tara → Plan → Uygula (kaynaklar silinerek) → tekrar çalıştır → Geri Al.
+  Örnek dosyalar test sırasında üretiliyor; Geri Dönüşüm Kutusu yerine geçici klasör kullanılıyor.
 - GitHub Actions: her gönderimde derleme ve test; `v*` etiketi gönderilince zip derlenip
   sürüm notuyla birlikte GitHub sürümüne ekleniyor.
 

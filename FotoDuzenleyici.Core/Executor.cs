@@ -35,7 +35,17 @@ public sealed class Executor
 {
     const string TempSuffix = ".kopya_tmp";
     readonly string _journalPath;
-    public Executor(string journalPath) => _journalPath = journalPath;
+    readonly Action<string> _recycle;
+
+    /// <param name="recycle">Kaynağı kaldırma adımı; verilmezse Windows Geri Dönüşüm Kutusu (testler başka klasör verir).</param>
+    public Executor(string journalPath, Action<string>? recycle = null)
+    {
+        _journalPath = journalPath;
+        _recycle = recycle ?? RecycleBin;
+    }
+
+    static void RecycleBin(string path) =>
+        FileSystem.DeleteFile(path, UIOption.OnlyErrorDialogs, RecycleOption.SendToRecycleBin);
 
     public ExecuteResult Run(IEnumerable<PlanItem> items, bool recycleSource = true,
         IProgress<(int done, int total, string current)>? progress = null, CancellationToken ct = default)
@@ -99,7 +109,7 @@ public sealed class Executor
     }
 
     /// <summary>Tek dosya. Önceki bir turda yarıda kalmışsa oradan tamamlar; State'i sonuca göre ayarlar.</summary>
-    static void Process(JournalEntry e)
+    void Process(JournalEntry e)
     {
         var tmp = e.Target + TempSuffix;
         if (File.Exists(tmp)) File.Delete(tmp); // kopyalama ortasında kesilmiş, kaynak hâlâ yerinde
@@ -138,7 +148,7 @@ public sealed class Executor
         e.State = "Copied";
         if (!e.KeepSource)
         {
-            FileSystem.DeleteFile(e.Source, UIOption.OnlyErrorDialogs, RecycleOption.SendToRecycleBin);
+            _recycle(e.Source);
             e.State = "Recycled";
         }
     }
@@ -148,8 +158,9 @@ public sealed class Executor
     /// Eski yerde başka bir dosya varsa dokunmaz.
     /// </summary>
     public static ExecuteResult Undo(string journalPath, IProgress<(int done, int total, string current)>? progress = null,
-        CancellationToken ct = default)
+        CancellationToken ct = default, Action<string>? recycle = null)
     {
+        recycle ??= RecycleBin;
         var entries = FinalStates(journalPath).Where(e => e.State is "Copied" or "Recycled").ToList();
         var res = new ExecuteResult(); int n = 0;
         foreach (var e in entries)
@@ -168,7 +179,7 @@ public sealed class Executor
                 if (DuplicateFinder.Hash(tmp) != e.Sha256) { File.Delete(tmp); throw new IOException("Doğrulama başarısız"); }
                 File.SetCreationTime(tmp, t.CreationTime); File.SetLastWriteTime(tmp, t.LastWriteTime);
                 File.Move(tmp, e.Source);
-                FileSystem.DeleteFile(e.Target, UIOption.OnlyErrorDialogs, RecycleOption.SendToRecycleBin);
+                recycle(e.Target);
                 res.Done++;
             }
             catch (Exception ex) { res.Failed++; res.Errors.Add($"{e.Target}: {ex.Message}"); }
