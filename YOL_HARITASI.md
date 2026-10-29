@@ -15,7 +15,7 @@ Durum işaretleri: ✅ bitti · 🔄 sürüyor · ⬜ planlandı
 - ✅ Videolarda saat dilimi düzeltmesi (QuickTime tarihleri UTC tutar)
 - ✅ GitHub Actions: her gönderimde derleme ve test, sürüm etiketinde zip'i otomatik yayınlama
 - ✅ Kesintiye dayanıklılık: işlem yarıda kalırsa günlükten kaldığı yerden devam
-- ⬜ Uygula / Geri Al için örnek dosyalarla otomatik entegrasyon testi
+- ✅ Uygula / Geri Al için örnek dosyalarla otomatik entegrasyon testi
 
 ## Aşama 2 — Akıllı ayıklama
 
