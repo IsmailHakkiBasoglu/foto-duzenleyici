@@ -5,6 +5,12 @@ using System.Windows.Media.Imaging;
 namespace FotoDuzenleyici.Core;
 
 /// <summary>
+/// Görüntünün parmak izi: 64 bitlik dHash (hızlı aday bulma) + 16×16 gri küçük resim (doğrulama). Ayrıntısı az
+/// görüntülerde iz çakışabilir; küçük resimler piksel piksel yakın değilse kopya sayılmaz.
+/// </summary>
+public readonly record struct ImagePrint(ulong Hash, byte[] Thumb);
+
+/// <summary>
 /// Algısal iz (dHash): fotoğraf Windows'un görüntü bileşeniyle (WIC) küçük boyutta çözülür, EXIF yönü uygulanır,
 /// gri tonda 9×8'e küçültülür; her satırda komşu farkının işareti 64 bit verir. Küçültme ve yeniden sıkıştırma
 /// izi pek değiştirmez, farklı görüntüler çok farklı iz verir. Dosyaya yazmaz.
@@ -19,7 +25,17 @@ public static class ImageHasher
     public static BitmapSource? Decode(string path, int orientation, int decodePixelWidth) =>
         TryDecode(path, orientation, decodePixelWidth, out _);
 
-    public static ulong? DHash(string path, int orientation, out string? error)
+    public static ulong? DHash(string path, int orientation, out string? error) => Print(path, orientation, out error)?.Hash;
+
+    /// <summary>Ortalama mutlak gri farkı (0–255): küçültülmüş kopyada birkaç, alakasız görüntüde onlarca.</summary>
+    public static double ThumbDiff(byte[] a, byte[] b)
+    {
+        long sum = 0;
+        for (int i = 0; i < a.Length; i++) sum += Math.Abs(a[i] - b[i]);
+        return (double)sum / a.Length;
+    }
+
+    public static ImagePrint? Print(string path, int orientation, out string? error)
     {
         var src = TryDecode(path, orientation, HashDecodeWidth, out error);
         if (src is null) return null;
@@ -30,18 +46,8 @@ public static class ImageHasher
             var buf = new byte[stride * h];
             gray.CopyPixels(buf, stride, 0);
 
-            // Alan ortalamasıyla 9×8 ızgara (küçük görüntülerde her hücre en az bir piksel).
-            var g = new double[8, 9];
-            for (int cy = 0; cy < 8; cy++)
-            for (int cx = 0; cx < 9; cx++)
-            {
-                int x0 = Math.Min(cx * w / 9, w - 1), x1 = Math.Max(x0 + 1, (cx + 1) * w / 9);
-                int y0 = Math.Min(cy * h / 8, h - 1), y1 = Math.Max(y0 + 1, (cy + 1) * h / 8);
-                long sum = 0;
-                for (int y = y0; y < y1; y++)
-                for (int x = x0; x < x1; x++) sum += buf[y * stride + x];
-                g[cy, cx] = (double)sum / ((x1 - x0) * (y1 - y0));
-            }
+            var g = Grid(buf, stride, w, h, 9, 8);
+            var t = Grid(buf, stride, w, h, 16, 16);
 
             double min = double.MaxValue, max = double.MinValue;
             foreach (var v in g) { min = Math.Min(min, v); max = Math.Max(max, v); }
@@ -53,9 +59,30 @@ public static class ImageHasher
             for (int y = 0; y < 8; y++)
             for (int x = 0; x < 8; x++, bit++)
                 if (g[y, x] < g[y, x + 1]) hash |= 1UL << bit;
-            return hash;
+
+            var thumb = new byte[256];
+            for (int y = 0; y < 16; y++)
+            for (int x = 0; x < 16; x++) thumb[y * 16 + x] = (byte)Math.Round(t[y, x]);
+            return new ImagePrint(hash, thumb);
         }
         catch (Exception ex) { error = ex.Message; return null; }
+    }
+
+    /// <summary>Alan ortalamasıyla cols×rows ızgara (küçük görüntülerde her hücre en az bir piksel).</summary>
+    static double[,] Grid(byte[] buf, int stride, int w, int h, int cols, int rows)
+    {
+        var g = new double[rows, cols];
+        for (int cy = 0; cy < rows; cy++)
+        for (int cx = 0; cx < cols; cx++)
+        {
+            int x0 = Math.Min(cx * w / cols, w - 1), x1 = Math.Max(x0 + 1, (cx + 1) * w / cols);
+            int y0 = Math.Min(cy * h / rows, h - 1), y1 = Math.Max(y0 + 1, (cy + 1) * h / rows);
+            long sum = 0;
+            for (int y = y0; y < y1; y++)
+            for (int x = x0; x < x1; x++) sum += buf[y * stride + x];
+            g[cy, cx] = (double)sum / ((x1 - x0) * (y1 - y0));
+        }
+        return g;
     }
 
     public static int Distance(ulong a, ulong b) => BitOperations.PopCount(a ^ b);

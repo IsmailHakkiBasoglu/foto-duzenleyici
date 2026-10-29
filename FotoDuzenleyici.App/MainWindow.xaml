@@ -27,7 +27,8 @@
             <TextBox x:Name="RootBox" Grid.Column="1" Margin="0,0,8,6" Padding="4" IsReadOnly="True"/>
             <StackPanel Grid.Column="2" Orientation="Horizontal" Margin="0,0,0,6">
                 <Button Content="Seç…" Click="PickRoot_Click"/>
-                <Button x:Name="ScanBtn" Content="Tara" Click="Scan_Click" FontWeight="SemiBold" Margin="0"/>
+                <Button x:Name="ScanBtn" Content="Tara" Click="Scan_Click" FontWeight="SemiBold"/>
+                <Button x:Name="StopBtn" Content="Durdur" Click="Stop_Click" IsEnabled="False" Margin="0"/>
             </StackPanel>
             <TextBlock Text="Hedef klasör:" Grid.Row="1" VerticalAlignment="Center" Margin="0,0,10,0"/>
             <TextBox x:Name="DestBox" Grid.Row="1" Grid.Column="1" Margin="0,0,8,0" Padding="4"/>
@@ -48,6 +49,7 @@
                         <CheckBox x:Name="OptRawSeparate" Content="RAW dosyaları ayrı -Raw klasörüne" IsChecked="True"/>
                         <CheckBox x:Name="OptPdf" Content="PDF dosyalarını dahil et" IsChecked="True"/>
                         <CheckBox x:Name="OptRecycle" Content="İşlem sonrası eski dosyayı Geri Dönüşüm Kutusu'na al" IsChecked="True"/>
+                        <CheckBox x:Name="OptSimilar" Content="Benzer fotoğrafları da ara (küçültülmüş kopya, seri çekim)" IsChecked="True"/>
                         <TextBlock Text="İsim çakışmasında tarih eklemek her zaman zorunludur." Foreground="Gray" TextWrapping="Wrap" Margin="0,6,0,0"/>
                     </StackPanel>
                 </GroupBox>
@@ -97,30 +99,48 @@
                             </DataGrid.Columns>
                         </DataGrid>
                     </TabItem>
-                    <TabItem x:Name="SimilarTab" Header="Muhtemelen aynı kare">
+                    <TabItem x:Name="SimilarTab" Header="Benzerler">
                         <DockPanel>
-                            <DockPanel DockPanel.Dock="Top" Margin="0,4,0,6">
-                                <Button Content="Önerileri uygula (yalnız ★ kalsın)" Click="SuggestSimilar_Click"/>
-                                <Button Content="Hepsini koru" Click="KeepAllSimilar_Click"/>
-                                <TextBlock VerticalAlignment="Center" Foreground="Gray" TextWrapping="Wrap"
-                                           Text="Aynı kamera ve aynı çekim anı. İşareti kaldırılan dosya Uygula'da _Benzerler klasörüne gider (silinmez). Değiştirince planı yeniden oluştur."/>
-                            </DockPanel>
-                            <DataGrid x:Name="SimilarGrid" AutoGenerateColumns="False" CanUserAddRows="False"
-                                      EnableRowVirtualization="True" GridLinesVisibility="Horizontal">
+                            <StackPanel DockPanel.Dock="Top" Margin="0,4,0,6">
+                                <StackPanel Orientation="Horizontal">
+                                    <Button Content="Önerileri uygula (yalnız ★ kalsın)" Click="SuggestSimilar_Click"/>
+                                    <Button Content="Hepsini koru" Click="KeepAllSimilar_Click"/>
+                                </StackPanel>
+                                <TextBlock Margin="0,6,0,0" Foreground="#555" TextWrapping="Wrap"
+                                           Text="İşareti kaldırılan dosya Uygula'da _Benzerler klasörüne gider (silinmez). Seri çekimlerde öneri yoktur; önizlemeye bakıp sen seç. Değiştirince planı yeniden oluştur."/>
+                            </StackPanel>
+                            <Border DockPanel.Dock="Right" Width="260" Margin="8,0,0,0" BorderBrush="#DDD" BorderThickness="1" Padding="6">
+                                <DockPanel>
+                                    <TextBlock x:Name="PreviewInfo" DockPanel.Dock="Bottom" Margin="0,6,0,0" TextWrapping="Wrap"
+                                               Text="Önizleme için bir satır seç."/>
+                                    <Image x:Name="PreviewImage" Stretch="Uniform"/>
+                                </DockPanel>
+                            </Border>
+                            <DataGrid x:Name="SimilarGrid" AutoGenerateColumns="False" CanUserAddRows="False" SelectionMode="Single"
+                                      EnableRowVirtualization="True" GridLinesVisibility="Horizontal"
+                                      SelectionChanged="SimilarGrid_SelectionChanged">
                                 <DataGrid.Columns>
-                                    <DataGridTextColumn Header="Grup" Binding="{Binding Group}" Width="50" IsReadOnly="True"/>
-                                    <DataGridTemplateColumn Header="Kalsın" Width="55">
+                                    <DataGridTextColumn Header="Grup" Binding="{Binding Group}" Width="40" IsReadOnly="True"/>
+                                    <DataGridTextColumn Header="Tür" Binding="{Binding KindText}" Width="105" IsReadOnly="True"/>
+                                    <DataGridTemplateColumn Header="Kalsın" Width="50">
                                         <DataGridTemplateColumn.CellTemplate>
                                             <DataTemplate>
                                                 <CheckBox IsChecked="{Binding Keep, UpdateSourceTrigger=PropertyChanged}" HorizontalAlignment="Center"/>
                                             </DataTemplate>
                                         </DataGridTemplateColumn.CellTemplate>
                                     </DataGridTemplateColumn>
-                                    <DataGridTextColumn Header="Öneri" Binding="{Binding Star}" Width="45" IsReadOnly="True"/>
-                                    <DataGridTextColumn Header="Dosya" Binding="{Binding Path}" Width="*" IsReadOnly="True"/>
-                                    <DataGridTextColumn Header="Çözünürlük" Binding="{Binding Resolution}" Width="95" IsReadOnly="True"/>
-                                    <DataGridTextColumn Header="MB" Binding="{Binding SizeMb}" Width="60" IsReadOnly="True"/>
-                                    <DataGridTextColumn Header="Çekim anı" Binding="{Binding Taken}" Width="150" IsReadOnly="True"/>
+                                    <DataGridTextColumn Header="Öneri" Binding="{Binding Star}" Width="42" IsReadOnly="True"/>
+                                    <DataGridTextColumn Header="Dosya (tam yol için üzerine gel)" Binding="{Binding Name}" Width="*" MinWidth="140" IsReadOnly="True">
+                                        <DataGridTextColumn.ElementStyle>
+                                            <Style TargetType="TextBlock">
+                                                <Setter Property="ToolTip" Value="{Binding Path}"/>
+                                                <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
+                                            </Style>
+                                        </DataGridTextColumn.ElementStyle>
+                                    </DataGridTextColumn>
+                                    <DataGridTextColumn Header="Çözünürlük" Binding="{Binding Resolution}" Width="80" IsReadOnly="True"/>
+                                    <DataGridTextColumn Header="MB" Binding="{Binding SizeMb}" Width="45" IsReadOnly="True"/>
+                                    <DataGridTextColumn Header="Çekim anı" Binding="{Binding Taken}" Width="125" IsReadOnly="True"/>
                                 </DataGrid.Columns>
                             </DataGrid>
                         </DockPanel>

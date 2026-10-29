@@ -21,6 +21,8 @@ public sealed class SimilarGroup
 public sealed class SimilarOptions
 {
     public int CopyMaxDistance { get; init; } = 4;
+    /// <summary>Kopya doğrulaması: 16×16 gri küçük resimlerin ortalama mutlak farkı (0–255) en fazla bu kadar.</summary>
+    public double CopyMaxThumbDiff { get; init; } = 8;
     public int BurstMaxDistance { get; init; } = 12;
     public TimeSpan BurstWindow { get; init; } = TimeSpan.FromSeconds(10);
 }
@@ -31,10 +33,11 @@ public sealed class SimilarOptions
 /// </summary>
 public static class SimilarFinder
 {
-    public static List<SimilarGroup> Find(IReadOnlyList<MediaFile> files, IReadOnlyDictionary<MediaFile, ulong> hashes,
+    public static List<SimilarGroup> Find(IReadOnlyList<MediaFile> files, IReadOnlyDictionary<MediaFile, ImagePrint> prints,
         IReadOnlyList<SameFrameGroup> sameFrame, SimilarOptions? options = null)
     {
         var opt = options ?? new SimilarOptions();
+        var hashes = prints.ToDictionary(kv => kv.Key, kv => kv.Value.Hash);
         var index = new Dictionary<MediaFile, int>();
         var nodes = new List<MediaFile>();
         int Id(MediaFile f)
@@ -64,7 +67,8 @@ public static class SimilarFinder
             for (int i = 0; i < list.Count; i++)
             for (int j = i + 1; j < list.Count; j++)
                 if (seen.Add((list[i], list[j])) && !DistinctShots(list[i], list[j]) &&
-                    ImageHasher.Distance(hashes[list[i]], hashes[list[j]]) <= opt.CopyMaxDistance)
+                    ImageHasher.Distance(hashes[list[i]], hashes[list[j]]) <= opt.CopyMaxDistance &&
+                    ImageHasher.ThumbDiff(prints[list[i]].Thumb, prints[list[j]].Thumb) <= opt.CopyMaxThumbDiff)
                     edges.Add((Id(list[i]), Id(list[j]), SimilarKind.ResizedCopy));
 
         // Seri çekim: aynı kamera, EXIF tarihli, aradaki süre pencereden kısa.

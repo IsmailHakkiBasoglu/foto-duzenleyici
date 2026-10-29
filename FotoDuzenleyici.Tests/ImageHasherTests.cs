@@ -41,6 +41,27 @@ public class ImageHasherTests : IDisposable
     }
 
     [Fact]
+    public void DHashCollision_IsSeparatedByThumbnail()
+    {
+        // Gerçek çakışma: iki alakasız desen, izleri 4 bit farklı. Küçük resim farkı ayırmalı.
+        var a = Put("a.jpg", TestImages.PatternJpeg(1200, 900, 5004, 85));
+        var b = Put("b.jpg", TestImages.PatternJpeg(1200, 900, 5259, 85));
+        var pa = ImageHasher.Print(a, 1, out _)!.Value;
+        var pb = ImageHasher.Print(b, 1, out _)!.Value;
+        Assert.InRange(ImageHasher.Distance(pa.Hash, pb.Hash), 0, 4);
+        Assert.True(ImageHasher.ThumbDiff(pa.Thumb, pb.Thumb) > 8, $"{ImageHasher.ThumbDiff(pa.Thumb, pb.Thumb)}");
+    }
+
+    [Fact]
+    public void ResizedCopy_ThumbnailsAreClose()
+    {
+        var a = Put("orijinal.jpg", TestImages.PatternJpeg(1200, 800, seed: 1, quality: 95));
+        var b = Put("whatsapp.jpg", TestImages.PatternJpeg(400, 267, seed: 1, quality: 60));
+        var d = ImageHasher.ThumbDiff(ImageHasher.Print(a, 1, out _)!.Value.Thumb, ImageHasher.Print(b, 1, out _)!.Value.Thumb);
+        Assert.True(d <= 8, $"{d}");
+    }
+
+    [Fact]
     public void DifferentPattern_IsFarApart()
     {
         var a = Put("a.jpg", TestImages.PatternJpeg(800, 600, 1));

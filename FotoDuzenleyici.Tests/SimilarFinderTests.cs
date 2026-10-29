@@ -21,8 +21,21 @@ public class SimilarFinderTests
         Width = w, Height = h, Modified = modified ?? T0,
     };
 
+    static readonly byte[] Gray = Enumerable.Repeat((byte)128, 256).ToArray();
+
+    /// <summary>İzler elle verilir; küçük resimler aynı (yalnızca izin etkisi sınanır).</summary>
     static List<SimilarGroup> Find(Dictionary<MediaFile, ulong> hashes, List<SameFrameGroup>? same = null) =>
-        SimilarFinder.Find(hashes.Keys.ToList(), hashes, same ?? new List<SameFrameGroup>());
+        SimilarFinder.Find(hashes.Keys.ToList(), hashes.ToDictionary(kv => kv.Key, kv => new ImagePrint(kv.Value, Gray)),
+            same ?? new List<SameFrameGroup>());
+
+    [Fact]
+    public void CopyEdge_RequiresSimilarThumbnail()
+    {
+        var a = Photo("a.jpg", exif: false); var b = Photo("b.jpg", exif: false);
+        var dark = Enumerable.Repeat((byte)60, 256).ToArray();
+        var prints = new Dictionary<MediaFile, ImagePrint> { [a] = new(Base, Gray), [b] = new(Flip(1), dark) };
+        Assert.Empty(SimilarFinder.Find(new[] { a, b }, prints, new List<SameFrameGroup>()));
+    }
 
     [Fact]
     public void FourBitsApart_IsResizedCopy_EvenWithoutExif()
@@ -91,7 +104,7 @@ public class SimilarFinderTests
     {
         var a = Photo("a.jpg"); var b = Photo("b.jpg", w: 2048, h: 1365);
         var same = new List<SameFrameGroup> { new() { Members = new() { a, b }, Suggested = a } };
-        var g = Assert.Single(SimilarFinder.Find(new[] { a, b }, new Dictionary<MediaFile, ulong>(), same));
+        var g = Assert.Single(SimilarFinder.Find(new[] { a, b }, new Dictionary<MediaFile, ImagePrint>(), same));
         Assert.Equal(SimilarKind.SameFrame, g.Kind);
         Assert.Same(a, g.Suggested);
     }

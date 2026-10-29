@@ -35,7 +35,7 @@ public class HashCacheTests : IDisposable
 
     static List<MediaFile> Scan(string root) => new Scanner(new ScanOptions { Roots = { root } }).Scan();
 
-    (Dictionary<MediaFile, ulong> hashes, Recorder rec, List<string> errors) Run(string root, CancellationToken ct = default,
+    (Dictionary<MediaFile, ImagePrint> hashes, Recorder rec, List<string> errors) Run(string root, CancellationToken ct = default,
         Recorder? rec = null, string? cachePath = null)
     {
         rec ??= new Recorder();
@@ -45,7 +45,7 @@ public class HashCacheTests : IDisposable
         return (r, rec, errors);
     }
 
-    static Dictionary<string, ulong> ByName(Dictionary<MediaFile, ulong> h) => h.ToDictionary(kv => kv.Key.FileName, kv => kv.Value);
+    static Dictionary<string, ulong> ByName(Dictionary<MediaFile, ImagePrint> h) => h.ToDictionary(kv => kv.Key.FileName, kv => kv.Value.Hash);
 
     [Fact]
     public void SecondRun_ComesFromCache()
