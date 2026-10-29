@@ -63,7 +63,7 @@ public static class SimilarFinder
         foreach (var list in buckets.Values)
             for (int i = 0; i < list.Count; i++)
             for (int j = i + 1; j < list.Count; j++)
-                if (seen.Add((list[i], list[j])) &&
+                if (seen.Add((list[i], list[j])) && !DistinctShots(list[i], list[j]) &&
                     ImageHasher.Distance(hashes[list[i]], hashes[list[j]]) <= opt.CopyMaxDistance)
                     edges.Add((Id(list[i]), Id(list[j]), SimilarKind.ResizedCopy));
 
@@ -101,6 +101,15 @@ public static class SimilarFinder
             .OrderBy(g => g.Members.Min(m => m.Taken ?? DateTime.MaxValue))
             .ToList();
     }
+
+    /// <summary>
+    /// İkisi de aynı kameranın EXIF'ini taşıyor ama çekim anları farklı: görüntü ne kadar benzese de ayrı karelerdir
+    /// (sabit sahnede seri çekim). Kopya değil; ancak seri çekim kuralıyla gruplanabilir.
+    /// </summary>
+    static bool DistinctShots(MediaFile a, MediaFile b) =>
+        a.DateSource == DateSource.Exif && b.DateSource == DateSource.Exif && a.Taken is { } ta && b.Taken is { } tb &&
+        !string.IsNullOrEmpty(a.Make) && SameCamera(a, b) &&
+        ta.ToString("yyyyMMddHHmmss") != tb.ToString("yyyyMMddHHmmss");
 
     static bool SameCamera(MediaFile a, MediaFile b) =>
         string.Equals(a.Make, b.Make, StringComparison.OrdinalIgnoreCase) &&

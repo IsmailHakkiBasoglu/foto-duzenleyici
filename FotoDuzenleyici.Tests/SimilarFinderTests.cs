@@ -47,6 +47,19 @@ public class SimilarFinderTests
     }
 
     [Fact]
+    public void NearlyIdentical_ButDifferentExifMoments_IsBurstNotCopy()
+    {
+        // Sabit sahnede seri çekim: görüntü neredeyse aynı ama kareler farklı; ★ önerisi almamalı.
+        var g = Assert.Single(Find(new() { [Photo("1.jpg")] = Base, [Photo("2.jpg", taken: T0.AddSeconds(2))] = Flip(1) }));
+        Assert.Equal(SimilarKind.Burst, g.Kind);
+        Assert.Null(g.Suggested);
+    }
+
+    [Fact]
+    public void NearlyIdentical_ExifMinutesApart_IsNotGrouped() =>
+        Assert.Empty(Find(new() { [Photo("1.jpg")] = Base, [Photo("2.jpg", taken: T0.AddMinutes(5))] = Flip(1) }));
+
+    [Fact]
     public void TwelveBitsApart_ElevenSecondsApart_IsNotGrouped() =>
         Assert.Empty(Find(new() { [Photo("1.jpg")] = Base, [Photo("2.jpg", taken: T0.AddSeconds(11))] = Flip(12) }));
 

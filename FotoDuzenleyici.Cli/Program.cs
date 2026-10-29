@@ -3,12 +3,13 @@ using FotoDuzenleyici.Core;
 
 // Tarama raporu. --apply verilmedikçe hiçbir dosyayı değiştirmez.
 // Kullanım: Cli --root <klasör> [--exclude <klasör>]... [--dest <klasör>] [--source-folder] [--rename-date]
-//              [--append-source] [--no-hash] [--csv <dosya>] [--apply [--keep-source]]
+//              [--append-source] [--no-hash] [--similar] [--csv <dosya>] [--apply [--keep-source]]
+//           --similar: benzer fotoğrafları da arar (görüntü çözer, yavaş; izler önbelleğe yazılır)
 //           Cli --undo <günlük.jsonl>
 //           Cli --resume <günlük.jsonl>   (yarıda kalan --apply işlemini kaldığı yerden sürdürür)
 var roots = new List<string>(); var excl = new List<string>();
 string? dest = null, csv = null, undo = null, resume = null;
-bool srcFolder = false, renameDate = false, appendSrc = false, noHash = false, apply = false, keepSource = false;
+bool srcFolder = false, renameDate = false, appendSrc = false, noHash = false, apply = false, keepSource = false, similar = false;
 for (int i = 0; i < args.Length; i++)
     switch (args[i])
     {
@@ -22,6 +23,7 @@ for (int i = 0; i < args.Length; i++)
         case "--no-hash": noHash = true; break;
         case "--apply": apply = true; break;
         case "--keep-source": keepSource = true; break;
+        case "--similar": similar = true; break;
         case "--undo": undo = args[++i]; break;
         case "--resume": resume = args[++i]; break;
     }
@@ -81,11 +83,41 @@ foreach (var g in files.Where(f => f.DateSource is not (DateSource.Exif or DateS
 long reclaim = groups.Sum(g => g.Copies.Sum(c => c.Size));
 Console.WriteLine($"\n== Yinelenen ==\nGrup: {groups.Count}  Fazla kopya: {groups.Sum(g => g.Copies.Count)}  Kazanılacak: {reclaim / 1e9:N2} GB");
 
-var same = SameFrameFinder.Find(files, groups, Path.Combine(Path.GetFullPath(dest), "_Benzerler"));
-Console.WriteLine($"\n== Muhtemelen aynı kare (yalnızca rapor; arayüzden ayıklanır) ==\nGrup: {same.Count}  Dosya: {same.Sum(g => g.Members.Count)}");
-foreach (var g in same.Take(10))
-    Console.WriteLine($"  {g.Members[0].Taken:yyyy-MM-dd HH:mm:ss}  " +
-                      string.Join("  |  ", g.Members.Select(m => (m == g.Suggested ? "★ " : "") + m.FileName)));
+var similarDir = Path.Combine(Path.GetFullPath(dest), "_Benzerler");
+var same = SameFrameFinder.Find(files, groups, similarDir);
+if (!similar)
+{
+    Console.WriteLine($"\n== Muhtemelen aynı kare (yalnızca rapor; arayüzden ayıklanır) ==\nGrup: {same.Count}  Dosya: {same.Sum(g => g.Members.Count)}");
+    foreach (var g in same.Take(10))
+        Console.WriteLine($"  {g.Members[0].Taken:yyyy-MM-dd HH:mm:ss}  " +
+                          string.Join("  |  ", g.Members.Select(m => (m == g.Suggested ? "★ " : "") + m.FileName)));
+}
+else
+{
+    sw.Restart(); lastPct = -1;
+    var simErrors = new List<string>();
+    int cached = 0;
+    var hashes = SimilarityScan.Compute(files, groups, similarDir, new HashCache(HashCache.DefaultPath), simErrors,
+        new Progress<(int d, int t, int c)>(p =>
+        {
+            cached = Math.Max(cached, p.c);
+            int pct = p.t == 0 ? 100 : p.d * 100 / p.t;
+            if (pct != lastPct && pct % 10 == 0) { lastPct = pct; Console.Error.WriteLine($"  benzerlik izi %{pct}"); }
+        }));
+    var sims = SimilarFinder.Find(files, hashes, same);
+    Console.WriteLine($"Benzerlik izi süresi: {sw.Elapsed:mm\\:ss}  (iz: {hashes.Count}, önbellekten yaklaşık: {cached})");
+    string Name(SimilarKind k) => k switch
+    {
+        SimilarKind.SameFrame => "Aynı kare", SimilarKind.ResizedCopy => "Küçültülmüş kopya", _ => "Seri çekim",
+    };
+    Console.WriteLine("\n== Benzerler (yalnızca rapor; arayüzden ayıklanır) ==\n" +
+                      string.Join("  ", Enum.GetValues<SimilarKind>().Select(k => $"{Name(k)}: {sims.Count(g => g.Kind == k)} grup")));
+    Console.WriteLine($"İz çıkarılamayan: {simErrors.Count}");
+    foreach (var e in simErrors.Take(5)) Console.WriteLine($"  {e}");
+    foreach (var k in Enum.GetValues<SimilarKind>())
+        foreach (var g in sims.Where(g => g.Kind == k).Take(5))
+            Console.WriteLine($"  [{Name(k)}] " + string.Join("  |  ", g.Members.Select(m => (m == g.Suggested ? "★ " : "") + m.FileName)));
+}
 
 var plan = Planner.Build(files, groups, new PlanOptions
 {
