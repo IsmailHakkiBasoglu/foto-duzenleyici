@@ -64,6 +64,37 @@ public class IntegrationTests : IDisposable
     }
 
     [Fact]
+    public void ResizedCopy_EndToEnd_ToSimilarFolder_AndUndo()
+    {
+        var t = new DateTime(2024, 3, 10, 12, 0, 0);
+        var big = Put("IMG_0001.JPG", TestImages.PatternJpeg(1200, 800, 5, 95), t, t);
+        var small = Put("WhatsApp Image 2024-03-10.jpeg", TestImages.PatternJpeg(400, 267, 5, 60), t, t);
+        var cachePath = Path.Combine(_tmp, "onbellek.json");
+
+        var (files, dups) = Scan(_src);
+        var hashes = SimilarityScan.Compute(files, dups, null, new HashCache(cachePath), new List<string>());
+        var g = Assert.Single(SimilarFinder.Find(files, hashes, SameFrameFinder.Find(files, dups)));
+        Assert.Equal(SimilarKind.ResizedCopy, g.Kind);
+        Assert.Equal(big.Path, g.Suggested!.Path);
+
+        var other = g.Members.Single(m => m != g.Suggested);
+        var plan = Planner.Build(files, dups, Options(_dest), new Dictionary<MediaFile, MediaFile> { [other] = g.Suggested });
+        var journal = Path.Combine(_dest, "_Gunluk", "islem-benzer.jsonl");
+        Assert.Equal(2, new Executor(journal, FakeRecycle).Run(plan.Items).Done);
+        Assert.Single(Directory.GetFiles(Path.Combine(_dest, "_Benzerler"), "*", SearchOption.AllDirectories));
+
+        // Tekrar çalıştırma: grup bir daha önerilmez, hiçbir şey taşınmaz.
+        var (again, dups2) = Scan(_dest);
+        var ignore = Path.Combine(_dest, "_Benzerler");
+        var hashes2 = SimilarityScan.Compute(again, dups2, ignore, new HashCache(cachePath), new List<string>());
+        Assert.Empty(SimilarFinder.Find(again, hashes2, SameFrameFinder.Find(again, dups2, ignore)));
+        Assert.All(Planner.Build(again, dups2, Options(_dest)).Items, i => Assert.Equal(PlanAction.AlreadyInPlace, i.Action));
+
+        Assert.Equal(2, Executor.Undo(journal, recycle: FakeRecycle).Done);
+        Assert.True(File.Exists(big.Path)); Assert.True(File.Exists(small.Path));
+    }
+
+    [Fact]
     public void Apply_Rerun_Undo_EndToEnd()
     {
         var old = new DateTime(2024, 6, 1, 12, 0, 0);
