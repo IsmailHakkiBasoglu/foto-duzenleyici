@@ -19,6 +19,12 @@ public sealed class MediaFile
     /// <summary>EXIF Make alanı (ham).</summary>
     public string? Make { get; set; }
     public string? Model { get; set; }
+    /// <summary>EXIF SubSecTimeOriginal: aynı saniyedeki seri çekimleri ayırır.</summary>
+    public string? SubSec { get; set; }
+    public int? Width { get; set; }
+    public int? Height { get; set; }
+    /// <summary>EXIF BodySerialNumber: aynı model iki gövdeyi ayırır.</summary>
+    public string? Serial { get; set; }
 
     /// <summary>Gösterim adı: Canon, Fuji, ... EXIF yoksa null.</summary>
     public string? Source { get; set; }
@@ -38,6 +44,8 @@ public enum PlanAction
     Duplicate,
     /// <summary>Zaten olması gereken yerde.</summary>
     AlreadyInPlace,
+    /// <summary>Kullanıcının ayıkladığı "muhtemelen aynı kare"; _Benzerler klasörüne alınır.</summary>
+    Similar,
 }
 
 public sealed class PlanItem
@@ -80,6 +88,7 @@ public sealed class PlanOptions
     /// <summary>Dosya adının sonuna kaynak (Canon/Fuji) ekle.</summary>
     public bool AppendSourceToName { get; set; }
     public string DuplicatesFolderName { get; set; } = "_Tekrarlar";
+    public string SimilarFolderName { get; set; } = "_Benzerler";
     public string UndatedFolderName { get; set; } = "Tarihsiz";
     /// <summary>true ise CR3/RAF gibi RAW'lar -Raw klasörüne, false ise -Foto içine gider.</summary>
     public bool SeparateRawFolder { get; set; } = true;

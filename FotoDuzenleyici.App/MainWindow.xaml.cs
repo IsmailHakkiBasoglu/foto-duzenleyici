@@ -40,6 +40,40 @@ public sealed class FolderNode : INotifyPropertyChanged
     void Raise(string n) => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(n));
 }
 
+/// <summary>"Muhtemelen aynı kare" sekmesinde bir dosya. Kalsın işareti kaldırılırsa _Benzerler'e gider.</summary>
+public sealed class SimilarRow : INotifyPropertyChanged
+{
+    bool _keep = true;
+    public required int Group { get; init; }
+    public required MediaFile File { get; init; }
+    public bool Suggested { get; init; }
+    public string Star => Suggested ? "★" : "";
+    public string Path => File.Path;
+    public string Resolution => File.Width is { } w && File.Height is { } h ? $"{w}×{h}" : "-";
+    public string SizeMb => (File.Size / 1048576.0).ToString("N1");
+    public string Taken => File.Taken?.ToString("yyyy-MM-dd HH:mm:ss") + (File.SubSec is { Length: > 0 } s ? "." + s : "");
+
+    /// <summary>İşaret kaldırılmadan önce sorulur: grubun son işaretli dosyası bırakılamaz.</summary>
+    public Func<SimilarRow, bool>? CanRelease { get; set; }
+    public Action? Changed { get; set; }
+
+    public bool Keep
+    {
+        get => _keep;
+        set
+        {
+            if (_keep == value) return;
+            if (!value && CanRelease?.Invoke(this) == false) { Raise(nameof(Keep)); return; }
+            _keep = value;
+            Raise(nameof(Keep));
+            Changed?.Invoke();
+        }
+    }
+
+    public event PropertyChangedEventHandler? PropertyChanged;
+    void Raise(string n) => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(n));
+}
+
 public sealed record PlanRow(string Action, string Source, string Target, string Date, string DateSource, string Camera);
 public sealed record DupRow(string Keeper, string Copy, string SizeMb);
 
@@ -49,6 +83,7 @@ public partial class MainWindow : Window
 
     List<MediaFile> _files = new();
     List<DuplicateGroup> _dups = new();
+    List<SimilarRow> _similar = new();
     Plan? _plan;
     FolderNode? _rootNode;
     CancellationTokenSource? _cts;
@@ -115,7 +150,7 @@ public partial class MainWindow : Window
         if (string.IsNullOrWhiteSpace(RootBox.Text) || !Directory.Exists(RootBox.Text))
         { MessageBox.Show("Önce geçerli bir ana klasör seç."); return; }
 
-        _plan = null; PlanGrid.ItemsSource = null; DupGrid.ItemsSource = null;
+        _plan = null; PlanGrid.ItemsSource = null; DupGrid.ItemsSource = null; SimilarGrid.ItemsSource = null; _similar = new();
         SetBusy(true);
         var opts = BuildScanOptions();
         var prog = new Progress<(int d, int t)>(p => { Progress.Maximum = p.t; Progress.Value = p.d; StatusText.Text = $"Metadata okunuyor… {p.d}/{p.t}"; });
@@ -126,8 +161,10 @@ public partial class MainWindow : Window
             var hprog = new Progress<(int d, int t)>(p => { Progress.Maximum = p.t; Progress.Value = p.d; StatusText.Text = $"Hash hesaplanıyor… {p.d}/{p.t}"; });
             _dups = await Task.Run(() => DuplicateFinder.Find(_files, 4, hprog));
             ShowDuplicates();
+            ShowSimilar();
             SummaryBox.Text = BuildSummary(null);
-            StatusText.Text = $"Tarama bitti: {_files.Count} dosya, {_dups.Count} yinelenen grup. Şimdi plan oluşturabilirsin.";
+            StatusText.Text = $"Tarama bitti: {_files.Count} dosya, {_dups.Count} yinelenen grup, " +
+                              $"{_similar.Select(r => r.Group).Distinct().Count()} muhtemelen aynı kare grubu. Şimdi plan oluşturabilirsin.";
         }
         catch (Exception ex) { StatusText.Text = "Hata: " + ex.Message; }
         SetBusy(false);
@@ -136,6 +173,59 @@ public partial class MainWindow : Window
     void ShowDuplicates() =>
         DupGrid.ItemsSource = _dups.SelectMany(g => g.Copies.Select(c =>
             new DupRow(g.Keeper.Path, c.Path, (c.Size / 1048576.0).ToString("N1")))).ToList();
+
+    void ShowSimilar()
+    {
+        var dest = DestBox.Text.Trim();
+        var ignore = dest.Length == 0 ? null : Path.Combine(Path.GetFullPath(dest), "_Benzerler");
+        var groups = SameFrameFinder.Find(_files, _dups, ignore);
+        _similar = groups.SelectMany((g, i) => g.Members.Select(m => new SimilarRow
+        {
+            Group = i + 1, File = m, Suggested = m == g.Suggested,
+        })).ToList();
+        foreach (var r in _similar)
+        {
+            r.CanRelease = row =>
+            {
+                bool ok = _similar.Any(o => o.Group == row.Group && o != row && o.Keep);
+                if (!ok) StatusText.Text = "Her grupta en az bir dosya kalmalı.";
+                return ok;
+            };
+            r.Changed = SimilarChanged;
+        }
+        SimilarGrid.ItemsSource = _similar;
+    }
+
+    /// <summary>İşaretler değişince eski plan geçersiz: yeniden oluşturulmadan uygulanamaz.</summary>
+    void SimilarChanged()
+    {
+        if (_plan is null) return;
+        _plan = null; ApplyBtn.IsEnabled = false;
+        StatusText.Text = "Seçim değişti; Uygula'dan önce planı yeniden oluştur.";
+    }
+
+    /// <summary>Kalsın işareti kaldırılan dosya → grubunda kalan dosya (öneri işaretliyse o).</summary>
+    Dictionary<MediaFile, MediaFile> BuildSimilarMap()
+    {
+        var map = new Dictionary<MediaFile, MediaFile>();
+        foreach (var g in _similar.GroupBy(r => r.Group))
+        {
+            var keeper = g.FirstOrDefault(r => r.Keep && r.Suggested) ?? g.First(r => r.Keep);
+            foreach (var r in g.Where(r => !r.Keep)) map[r.File] = keeper.File;
+        }
+        return map;
+    }
+
+    void SuggestSimilar_Click(object s, RoutedEventArgs e)
+    {
+        foreach (var r in _similar.Where(r => r.Suggested)) r.Keep = true; // önce öneriler, sonra diğerleri bırakılır
+        foreach (var r in _similar.Where(r => !r.Suggested)) r.Keep = false;
+    }
+
+    void KeepAllSimilar_Click(object s, RoutedEventArgs e)
+    {
+        foreach (var r in _similar) r.Keep = true;
+    }
 
     PlanOptions BuildPlanOptions() => new()
     {
@@ -151,7 +241,7 @@ public partial class MainWindow : Window
         if (string.IsNullOrWhiteSpace(DestBox.Text)) { MessageBox.Show("Hedef klasörü seç."); return; }
         var dest = Path.GetFullPath(DestBox.Text.Trim());
         if (await OfferResumeAsync(dest)) { StatusText.Text += "  Dosyalar değişti; plan için yeniden Tara."; return; }
-        _plan = Planner.Build(_files, _dups, BuildPlanOptions());
+        _plan = Planner.Build(_files, _dups, BuildPlanOptions(), BuildSimilarMap());
         PlanGrid.ItemsSource = _plan.Items.Select(i => new PlanRow(
             i.Action.ToString(), i.File.Path, i.TargetPath,
             i.File.Taken?.ToString("yyyy-MM-dd HH:mm") ?? "-", i.File.DateSource.ToString(), i.File.Source ?? "")).ToList();
@@ -170,6 +260,8 @@ public partial class MainWindow : Window
         sb.AppendLine("\nKaynak (kamera):");
         foreach (var g in _files.GroupBy(f => f.Source ?? "(bilinmiyor)")) sb.AppendLine($"  {g.Key,-14} {g.Count(),6}");
         sb.AppendLine($"\nYinelenen: {_dups.Sum(g => g.Copies.Count)} dosya, kazanılacak {_dups.Sum(g => g.Copies.Sum(c => c.Size)) / 1e9:N2} GB");
+        sb.AppendLine($"Muhtemelen aynı kare: {_similar.Select(r => r.Group).Distinct().Count()} grup, {_similar.Count} dosya; " +
+                      $"_Benzerler'e ayrılacak: {_similar.Count(r => !r.Keep)}");
         if (_plan != null)
         {
             sb.AppendLine($"\nPlan → {dest}");
