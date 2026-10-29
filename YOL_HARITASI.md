@@ -12,10 +12,10 @@ Durum işaretleri: ✅ bitti · 🔄 sürüyor · ⬜ planlandı
 - ✅ Uygula ve Geri Al'ı gerçek veride uçtan uca denemek (0.1.2)
 - ✅ Tekrar çalıştırmaya uygun yapı: düzenli klasör tekrar işlenince hiçbir şey değişmez,
   elle eklenen dosyalar aynı düzende adlandırılır (0.1.2)
-- ✅ Videolarda saat dilimi düzeltmesi (QuickTime tarihleri UTC tutar)
-- ✅ GitHub Actions: her gönderimde derleme ve test, sürüm etiketinde zip'i otomatik yayınlama
-- ✅ Kesintiye dayanıklılık: işlem yarıda kalırsa günlükten kaldığı yerden devam
-- ✅ Uygula / Geri Al için örnek dosyalarla otomatik entegrasyon testi
+- ✅ Videolarda saat dilimi düzeltmesi (QuickTime tarihleri UTC tutar) (0.1.3)
+- ✅ GitHub Actions: her gönderimde derleme ve test, sürüm etiketinde zip'i otomatik yayınlama (0.1.3)
+- ✅ Kesintiye dayanıklılık: işlem yarıda kalırsa günlükten kaldığı yerden devam (0.1.3)
+- ✅ Uygula / Geri Al için örnek dosyalarla otomatik entegrasyon testi (0.1.3)
 
 ## Aşama 2 — Akıllı ayıklama
 

@@ -6,6 +6,8 @@ Biçim [Keep a Changelog](https://keepachangelog.com/tr-TR/1.1.0/), sürüm numa
 
 ## [Yayınlanmamış]
 
+## [0.1.3] - 2026-10-30
+
 ### Düzeltildi
 - Video tarihleri artık yerel saate çevriliyor. Kameralar (Canon ve Fuji'de doğrulandı)
   video tarihini UTC yazıyor; bu yüzden akşam 21:00'den sonra çekilen videolar bir önceki güne,
@@ -61,7 +63,8 @@ Biçim [Keep a Changelog](https://keepachangelog.com/tr-TR/1.1.0/), sürüm numa
   SHA-256 ile birebir kopya tespiti, kopyala → doğrula → Geri Dönüşüm Kutusu ile güvenli
   taşıma, işlem günlüğü ve Geri Al, WPF arayüzü.
 
-[Yayınlanmamış]: https://github.com/IsmailHakkiBasoglu/foto-duzenleyici/compare/v0.1.2...HEAD
+[Yayınlanmamış]: https://github.com/IsmailHakkiBasoglu/foto-duzenleyici/compare/v0.1.3...HEAD
+[0.1.3]: https://github.com/IsmailHakkiBasoglu/foto-duzenleyici/compare/v0.1.2...v0.1.3
 [0.1.2]: https://github.com/IsmailHakkiBasoglu/foto-duzenleyici/compare/v0.1.1...v0.1.2
 [0.1.1]: https://github.com/IsmailHakkiBasoglu/foto-duzenleyici/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/IsmailHakkiBasoglu/foto-duzenleyici/releases/tag/v0.1.0
