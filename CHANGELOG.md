@@ -17,6 +17,24 @@ Biçim [Keep a Changelog](https://keepachangelog.com/tr-TR/1.1.0/), sürüm numa
   düğmesi tek tıkla yalnızca önerileri bırakıyor.
 - Tarama artık fotoğrafların piksel boyutunu, saniye kesrini ve gövde seri numarasını da okuyor.
 - Komut satırı aracı bu grupları raporluyor.
+- **Benzer fotoğraflar:** görüntünün kendisine bakılarak (algısal iz) iki yeni grup türü:
+  - *Küçültülmüş kopya* — WhatsApp, mesaj ya da yedekten gelen, EXIF'i silinmiş, küçültülmüş
+    kopyalar. Önce 64 bitlik iz, sonra 16×16 küçük resim karşılaştırılır; alakasız ama sade
+    görüntüler (gradyan, gökyüzü) kopya sanılmıyor.
+  - *Seri çekim* — aynı kameranın 10 saniye içinde çektiği çok benzer kareler. Öneri yok;
+    hangisinin kalacağını önizlemeye bakıp sen seçiyorsun, "Önerileri uygula" bunlara dokunmuyor.
+- Sekmenin adı artık "Benzerler"; yeni Tür sütunu ve sağda seçili fotoğrafın önizlemesi
+  (ok tuşlarıyla gezilir). EXIF'teki yön bilgisi uygulanıyor.
+- Benzerlik izleri `%LOCALAPPDATA%\FotoDuzenleyici\benzerlik-onbellek.json` dosyasında
+  saklanıyor (fotoğrafın kendisi değil); sonraki taramalar çok daha hızlı. Dosyalar taşınıp
+  yeniden adlandırılsa da önbellek geçerli kalıyor.
+- Tarama için **Durdur** düğmesi. Benzerlik adımında durdurulursa hesaplanan izler saklanıyor.
+- "Benzer fotoğrafları da ara" seçeneği (varsayılan açık); komut satırında `--similar`.
+- Tek renk / düz görüntülerin (siyah kare, boş gökyüzü) izi çıkarılmıyor; özette sayılıyor.
+
+### Değişti
+- Core, komut satırı ve test projeleri `net8.0-windows` oldu (görüntü çözme için Windows'un
+  kendi bileşeni WIC kullanılıyor; yeni paket yok).
 
 ## [0.1.3] - 2026-10-30
 
