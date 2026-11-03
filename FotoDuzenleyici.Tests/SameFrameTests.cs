@@ -51,6 +51,24 @@ public class SameFrameTests : IDisposable
     public void SubSecondMissingOnOneSide_StillGrouped() =>
         Assert.Single(Find(Photo(@"C:\a\1.jpg", subSec: "10"), Photo(@"C:\b\1.jpg")));
 
+    // Gerçek veride bulundu: Fuji X-H2 saniye kesri yazmıyor; aynı saniyedeki ardışık kareler
+    // (DSCF8746 / DSCF8747) "aynı kare" sanılıyordu. Kamera her çekimde numarayı artırır.
+    [Theory]
+    [InlineData(@"C:\a\DSCF8746.JPG", @"C:\a\DSCF8747.JPG")]
+    [InlineData(@"C:\a\IMG_0617.JPG", @"C:\b\IMG_0618.JPG")]
+    [InlineData(@"C:\a\1H2A2165.JPG", @"C:\a\1H2A2166.JPG")]
+    [InlineData(@"C:\out\2025-12-19 DSCF8746.JPG", @"C:\a\DSCF8747.JPG")]
+    [InlineData(@"C:\out\2025-12-19 193846 DSCF8746 Fuji (2).JPG", @"C:\a\DSCF8747.JPG")]
+    public void ConsecutiveCameraFrameNumbers_WithoutSubSec_AreNotGrouped(string a, string b) =>
+        Assert.Empty(Find(Photo(a), Photo(b)));
+
+    [Theory]
+    [InlineData(@"C:\a\DSCF8746.JPG", @"C:\out\2025-12-19 DSCF8746.JPG")]
+    [InlineData(@"C:\a\DSCF8746.JPG", @"C:\b\DSCF8746-duzenlenmis.jpg")]
+    [InlineData(@"C:\a\DSCF8746.JPG", @"C:\b\tatil.jpg")]
+    public void SameFrameNumber_OrNonCameraName_StillGrouped(string a, string b) =>
+        Assert.Single(Find(Photo(a), Photo(b)));
+
     [Fact]
     public void TwoBodiesOfSameModel_AreNotGrouped() =>
         Assert.Empty(Find(Photo(@"C:\a\1.jpg", serial: "111"), Photo(@"C:\b\1.jpg", serial: "222")));

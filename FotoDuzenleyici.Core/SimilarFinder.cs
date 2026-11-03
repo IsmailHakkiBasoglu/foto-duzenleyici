@@ -117,8 +117,9 @@ public static class SimilarFinder
     static bool DistinctShots(MediaFile a, MediaFile b) =>
         a.DateSource == DateSource.Exif && b.DateSource == DateSource.Exif && a.Taken is { } ta && b.Taken is { } tb &&
         !string.IsNullOrEmpty(a.Make) && SameCamera(a, b) &&
-        (ta.ToString("yyyyMMddHHmmss") != tb.ToString("yyyyMMddHHmmss") // aynı saniyede 10 kare: kesir ve gövde de bakılır
-         || Differ(a.SubSec, b.SubSec) || Differ(a.Serial, b.Serial));
+        (ta.ToString("yyyyMMddHHmmss") != tb.ToString("yyyyMMddHHmmss") // aynı saniyede 10 kare: kesir, gövde ve
+         || Differ(a.SubSec, b.SubSec) || Differ(a.Serial, b.Serial)      // kamera dosya numarası da bakılır
+         || SameFrameFinder.DifferentFrameNumbers(a, b));
 
     static bool Differ(string? x, string? y) =>
         !string.IsNullOrEmpty(x) && !string.IsNullOrEmpty(y) && !x.Equals(y, StringComparison.OrdinalIgnoreCase);

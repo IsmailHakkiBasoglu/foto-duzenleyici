@@ -117,6 +117,23 @@ else
     foreach (var k in Enum.GetValues<SimilarKind>())
         foreach (var g in sims.Where(g => g.Kind == k).Take(5))
             Console.WriteLine($"  [{Name(k)}] " + string.Join("  |  ", g.Members.Select(m => (m == g.Suggested ? "★ " : "") + m.FileName)));
+
+    // Tüm gruplar ayrı bir CSV'ye: elle incelemek için (yalnızca rapor).
+    if (csv != null)
+    {
+        var simCsv = Path.ChangeExtension(csv, null) + "-benzerler.csv";
+        var sb = new StringBuilder("Tur;Grup;Oneri;Dosya;Boyut;Cozunurluk;Cekim;Kamera\n");
+        int no = 0;
+        foreach (var g in sims)
+        {
+            no++;
+            foreach (var m in g.Members)
+                sb.AppendLine($"{Name(g.Kind)};{no};{(m == g.Suggested ? "★" : "")};{m.Path};{m.Size};" +
+                              $"{m.Width}x{m.Height};{m.Taken:yyyy-MM-dd HH:mm:ss}{(m.SubSec is null ? "" : "." + m.SubSec)};{m.Model}");
+        }
+        File.WriteAllText(simCsv, sb.ToString(), new UTF8Encoding(true));
+        Console.WriteLine($"Benzer grupları CSV: {simCsv}");
+    }
 }
 
 var plan = Planner.Build(files, groups, new PlanOptions

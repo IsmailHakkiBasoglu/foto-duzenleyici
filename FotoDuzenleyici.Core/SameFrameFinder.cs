@@ -1,3 +1,5 @@
+using System.Text.RegularExpressions;
+
 namespace FotoDuzenleyici.Core;
 
 public sealed class SameFrameGroup
@@ -53,8 +55,30 @@ public static class SameFrameFinder
         return groups.OrderBy(g => g.Members[0].Taken).ToList();
     }
 
-    static bool Compatible(MediaFile a, MediaFile b) => Same(a.SubSec, b.SubSec) && Same(a.Serial, b.Serial);
+    static bool Compatible(MediaFile a, MediaFile b) =>
+        Same(a.SubSec, b.SubSec) && Same(a.Serial, b.Serial) && !DifferentFrameNumbers(a, b);
 
     static bool Same(string? x, string? y) =>
         string.IsNullOrEmpty(x) || string.IsNullOrEmpty(y) || x.Equals(y, StringComparison.OrdinalIgnoreCase);
+
+    // Kamera her çekimde dosya numarasını artırır (DSCF8746 → DSCF8747). Saniye kesri yazmayan kameralarda
+    // (ör. Fuji X-H2) aynı saniyedeki ardışık kareleri ayırmanın tek güvenilir yolu bu.
+    static readonly Regex OwnPrefix = new(@"^\d{4}-\d{2}-\d{2} (\d{6} )?", RegexOptions.Compiled);
+    static readonly Regex FrameNo = new(@"(?<![A-Za-z0-9])(?<p>[A-Za-z0-9_]{3,5}?)(?<n>\d{4})(?![A-Za-z0-9])",
+        RegexOptions.Compiled);
+
+    internal static bool DifferentFrameNumbers(MediaFile a, MediaFile b) =>
+        CameraFrame(a) is { } x && CameraFrame(b) is { } y &&
+        x.Prefix.Equals(y.Prefix, StringComparison.OrdinalIgnoreCase) && x.Number != y.Number;
+
+    static (string Prefix, string Number)? CameraFrame(MediaFile f)
+    {
+        var stem = OwnPrefix.Replace(Path.GetFileNameWithoutExtension(f.Path), "");
+        foreach (Match m in FrameNo.Matches(stem))
+        {
+            var p = m.Groups["p"].Value;
+            if (p.Any(c => char.IsLetter(c) || c == '_')) return (p, m.Groups["n"].Value);
+        }
+        return null;
+    }
 }

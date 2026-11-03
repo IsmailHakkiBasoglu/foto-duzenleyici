@@ -47,6 +47,16 @@ public class SimilarFinderTests
         Assert.Equal(2, g.Members.Count);
     }
 
+    // Gerçek veride bulundu: Fuji X-H2 saniye kesri yazmıyor; aynı saniyedeki ardışık iki kare neredeyse aynı
+    // izi taşıdığı için ★'lı "küçültülmüş kopya" sanılıyordu. Ayrı karelerdir: ★'sız seri çekim olmalı.
+    [Fact]
+    public void SameSecond_ConsecutiveFrameNumbers_IsBurst_NotCopy()
+    {
+        var g = Assert.Single(Find(new() { [Photo("DSCF8746.JPG")] = Base, [Photo("DSCF8747.JPG")] = Flip(1) }));
+        Assert.Equal(SimilarKind.Burst, g.Kind);
+        Assert.Null(g.Suggested);
+    }
+
     [Fact]
     public void FiveBitsApart_WithoutExif_IsNotGrouped() =>
         Assert.Empty(Find(new() { [Photo("a.jpg")] = Base, [Photo("b.jpg", exif: false)] = Flip(5) }));
