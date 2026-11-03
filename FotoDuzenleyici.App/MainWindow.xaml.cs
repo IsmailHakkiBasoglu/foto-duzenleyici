@@ -278,7 +278,20 @@ public partial class MainWindow : Window
         if (e.Key == Key.Enter && SimilarList.SelectedItem is SimilarGroupState g) { OpenCompare(g); e.Handled = true; }
     }
 
-    void OpenCompare(SimilarGroupState g) => StatusText.Text = $"Karşılaştırma: Grup {g.Number}";
+    /// <summary>Süzgeçten geçen (görünen) gruplar arasında gezinen karşılaştırma penceresi.</summary>
+    void OpenCompare(SimilarGroupState g)
+    {
+        var visible = CollectionViewSource.GetDefaultView(SimilarList.ItemsSource).Cast<SimilarGroupState>().ToList();
+        int start = visible.IndexOf(g);
+        if (start < 0) { visible = _groups; start = _groups.IndexOf(g); }
+        var w = new CompareWindow(visible, start, _reviews, ReviewsChanged) { Owner = this };
+        w.ShowDialog();
+        // Süzgeç açıksa incelenen gruplar listeden düşsün.
+        ApplyReviewFilter();
+        SimilarList.SelectedItem = w.Current;
+        SimilarList.ScrollIntoView(w.Current);
+        if (w.FinishedAll) StatusText.Text = "Bütün gruplar gözden geçirildi.";
+    }
 
     /// <summary>İşaretler değişince eski plan geçersiz: yeniden oluşturulmadan uygulanamaz.</summary>
     void SimilarChanged()
