@@ -4,6 +4,9 @@ using System.IO;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Windows;
+using System.Windows.Data;
+using System.Windows.Input;
+using System.Windows.Threading;
 using FotoDuzenleyici.Core;
 using Microsoft.Win32;
 
@@ -55,9 +58,28 @@ public partial class MainWindow : Window
     Plan? _plan;
     FolderNode? _rootNode;
     CancellationTokenSource? _cts;
-    int _previewVersion;
+    readonly ReviewStore _reviews = new(ReviewStore.DefaultPath);
+    readonly ThumbnailLoader _thumbs;
+    // Art arda tıklamalar tek yazma: son değişiklikten 1 sn sonra kaydedilir.
+    readonly DispatcherTimer _saveTimer = new() { Interval = TimeSpan.FromSeconds(1) };
 
-    public MainWindow() => InitializeComponent();
+    public MainWindow()
+    {
+        InitializeComponent();
+        _thumbs = new ThumbnailLoader(ThumbnailLoader.DefaultDecode); // arayüz iş parçacığında: sonuçlar buraya gelir
+        _saveTimer.Tick += (_, _) => SaveReviews();
+        Closing += (_, _) => { if (_saveTimer.IsEnabled) SaveReviews(); };
+        if (_reviews.LoadFailed) StatusText.Text = "Önceki benzer kararları okunamadı; boş başlandı.";
+    }
+
+    void SaveReviews()
+    {
+        _saveTimer.Stop();
+        try { _reviews.Save(); }
+        catch (Exception) { StatusText.Text = "Benzer kararları kaydedilemedi; işaretler bu oturumda geçerli."; }
+    }
+
+    void ReviewsChanged() { _saveTimer.Stop(); _saveTimer.Start(); UpdateReviewCounter(); }
 
     void SetBusy(bool busy)
     {
@@ -120,7 +142,7 @@ public partial class MainWindow : Window
         if (string.IsNullOrWhiteSpace(RootBox.Text) || !Directory.Exists(RootBox.Text))
         { MessageBox.Show("Önce geçerli bir ana klasör seç."); return; }
 
-        _plan = null; PlanGrid.ItemsSource = null; DupGrid.ItemsSource = null; SimilarGrid.ItemsSource = null;
+        _plan = null; PlanGrid.ItemsSource = null; DupGrid.ItemsSource = null; SimilarList.ItemsSource = null;
         _groups = new(); _simErrors = new(); _files = new(); _dups = new();
         _cts = new CancellationTokenSource();
         var ct = _cts.Token;
@@ -158,7 +180,7 @@ public partial class MainWindow : Window
                     note = "Benzerlik araması durduruldu; hesaplanan izler kaydedildi, bir sonraki taramada kaldığı yerden sürer.";
                 }
             }
-            ShowSimilar(hashes, ignore);
+            await ShowSimilar(hashes, ignore);
             SummaryBox.Text = BuildSummary(null);
             StatusText.Text = note ?? $"Tarama bitti: {_files.Count} dosya, {_dups.Count} yinelenen grup, " +
                 $"{_groups.Count} benzer grup. Şimdi plan oluşturabilirsin.";
@@ -174,11 +196,23 @@ public partial class MainWindow : Window
         DupGrid.ItemsSource = _dups.SelectMany(g => g.Copies.Select(c =>
             new DupRow(g.Keeper.Path, c.Path, (c.Size / 1048576.0).ToString("N1")))).ToList();
 
-    void ShowSimilar(Dictionary<MediaFile, ImagePrint> hashes, string? ignore)
+    async Task ShowSimilar(Dictionary<MediaFile, ImagePrint> hashes, string? ignore)
     {
         var groups = SimilarFinder.Find(_files, hashes, SameFrameFinder.Find(_files, _dups, ignore));
-        _groups = SimilarGroupState.FromGroups(groups);
-        foreach (var g in _groups)
+        var states = SimilarGroupState.FromGroups(groups);
+
+        // Önceki kararlar: dosya kimliği yoldan bağımsız; okunamayan dosyanın kararı saklanmaz.
+        StatusText.Text = "Önceki kararlar yükleniyor…";
+        var rows = states.SelectMany(g => g.Rows).ToList();
+        await Task.Run(() =>
+        {
+            foreach (var r in rows)
+                try { r.StoreKey = HashCache.Key(r.Path); } catch (Exception) { r.StoreKey = null; }
+        });
+        foreach (var g in states)
+        {
+            g.Restore(_reviews);
+            g.PropertyChanged += (_, e) => { if (e.PropertyName == nameof(SimilarGroupState.Reviewed)) ReviewsChanged(); };
             foreach (var r in g.Rows)
             {
                 r.CanRelease = row =>
@@ -187,10 +221,64 @@ public partial class MainWindow : Window
                     if (!ok) StatusText.Text = "Her grupta en az bir dosya kalmalı.";
                     return ok;
                 };
-                r.Changed = _ => SimilarChanged();
+                r.Changed = row =>
+                {
+                    if (row.StoreKey is { } k) _reviews.SetKeep(k, row.Keep);
+                    ReviewsChanged();
+                    SimilarChanged();
+                };
             }
-        SimilarGrid.ItemsSource = AllSimilarRows.ToList();
+        }
+        _groups = states;
+        SimilarList.ItemsSource = _groups;
+        ApplyReviewFilter();
     }
+
+    void UpdateReviewCounter() =>
+        ReviewCounter.Text = _groups.Count == 0 ? "" : $"İncelenen: {_groups.Count(g => g.Reviewed)} / {_groups.Count}";
+
+    void ApplyReviewFilter()
+    {
+        if (SimilarList.ItemsSource is null) return;
+        bool only = OnlyUnreviewed.IsChecked == true;
+        CollectionViewSource.GetDefaultView(SimilarList.ItemsSource).Filter =
+            only ? o => o is SimilarGroupState g && !g.Reviewed : null;
+        UpdateReviewCounter();
+    }
+
+    void OnlyUnreviewed_Click(object s, RoutedEventArgs e) => ApplyReviewFilter();
+
+    static SimilarRow? RowOf(object sender) => (sender as FrameworkElement)?.DataContext as SimilarRow;
+    SimilarGroupState? GroupOf(SimilarRow row) => _groups.FirstOrDefault(g => g.Rows.Contains(row));
+
+    void Card_Loaded(object s, RoutedEventArgs e) { if (RowOf(s) is { } r) _thumbs.Request(r); }
+    void Card_Unloaded(object s, RoutedEventArgs e) { if (RowOf(s) is { } r) _thumbs.Cancel(r); }
+
+    (SimilarRow Row, bool Before)? _lastToggle;
+
+    // Çift tıklama yalnız karşılaştırmayı açar: ilk tıklamanın değiştirdiği işaret geri alınır.
+    void Card_MouseDown(object s, MouseButtonEventArgs e)
+    {
+        if (e.ClickCount != 2 || RowOf(s) is not { } r || GroupOf(r) is not { } g) return;
+        if (_lastToggle is { } t && t.Row == r) r.Keep = t.Before;
+        _lastToggle = null;
+        e.Handled = true;
+        OpenCompare(g);
+    }
+
+    void Card_MouseUp(object s, MouseButtonEventArgs e)
+    {
+        if (e.ClickCount != 1 || RowOf(s) is not { } r) return;
+        _lastToggle = (r, r.Keep);
+        r.Keep = !r.Keep;
+    }
+
+    void SimilarList_KeyDown(object s, KeyEventArgs e)
+    {
+        if (e.Key == Key.Enter && SimilarList.SelectedItem is SimilarGroupState g) { OpenCompare(g); e.Handled = true; }
+    }
+
+    void OpenCompare(SimilarGroupState g) => StatusText.Text = $"Karşılaştırma: Grup {g.Number}";
 
     /// <summary>İşaretler değişince eski plan geçersiz: yeniden oluşturulmadan uygulanamaz.</summary>
     void SimilarChanged()
@@ -217,19 +305,6 @@ public partial class MainWindow : Window
         // Önerisi olmayan gruplara (seri çekim) dokunulmaz.
         foreach (var g in _groups)
             if (g.Rows.FirstOrDefault(r => r.Suggested) is { } star) g.KeepOnly(star);
-    }
-
-    /// <summary>Seçili dosyanın önizlemesi; hızlı gezinmede yalnızca son seçim gösterilir.</summary>
-    async void SimilarGrid_SelectionChanged(object s, System.Windows.Controls.SelectionChangedEventArgs e)
-    {
-        if (SimilarGrid.SelectedItem is not SimilarRow row) return;
-        var version = ++_previewVersion;
-        var f = row.File;
-        PreviewInfo.Text = $"{f.FileName}\n{row.Resolution} · {row.SizeMb} MB\n{row.Taken}\n{f.Make} {f.Model}".Trim();
-        var img = await Task.Run(() => ImageHasher.Decode(f.Path, f.Orientation, 1000));
-        if (version != _previewVersion) return;
-        PreviewImage.Source = img;
-        if (img is null) PreviewInfo.Text = "Önizleme yok (dosya bulunamadı ya da açılamadı).\n" + PreviewInfo.Text;
     }
 
     void KeepAllSimilar_Click(object s, RoutedEventArgs e)
