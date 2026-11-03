@@ -6,6 +6,8 @@ Biçim [Keep a Changelog](https://keepachangelog.com/tr-TR/1.1.0/), sürüm numa
 
 ## [Yayınlanmamış]
 
+## [0.1.4] - 2026-11-04
+
 ### Eklendi
 - "Muhtemelen aynı kare" sekmesi: adı ya da baytları farklı ama kamerası, modeli ve çekim anı
   aynı olan fotoğraflar (yeniden kaydedilmiş, dışa aktarılmış, başka yerden tekrar gelmiş)
@@ -34,6 +36,16 @@ Biçim [Keep a Changelog](https://keepachangelog.com/tr-TR/1.1.0/), sürüm numa
   çıkarılmıyor; özette sayılıyor.
 - Seri çekim kareleri hiçbir durumda ★ almıyor: aynı saniyede çekilmiş kareler (saniye kesri
   farklı) de, bir karenin kopyası üzerinden gruba bağlanan kareler de.
+
+- Komut satırında `--similar` ile `--csv` birlikte verilince tüm benzer grupları ayrı bir
+  `…-benzerler.csv` dosyasına yazılıyor (tür, grup, öneri, çözünürlük, çekim anı).
+
+### Düzeltildi
+- Saniye kesri yazmayan kameralarda (Fuji X-H2) aynı saniyede çekilmiş ardışık kareler
+  (`DSCF8746` / `DSCF8747`) "aynı kare" ya da "küçültülmüş kopya" sanılıp ★ alıyordu;
+  "Önerileri uygula" ayrı bir fotoğrafı `_Benzerler`'e taşıyacaktı. Kamera dosya numarası
+  (aynı ön ek, farklı numara) artık ayrı kare sayılıyor; bu kareler ★'sız seri çekim olarak
+  gösteriliyor. Gerçek arşivde 10 grup etkileniyordu.
 
 ### Değişti
 - Core, komut satırı ve test projeleri `net8.0-windows` oldu (görüntü çözme için Windows'un
@@ -96,7 +108,8 @@ Biçim [Keep a Changelog](https://keepachangelog.com/tr-TR/1.1.0/), sürüm numa
   SHA-256 ile birebir kopya tespiti, kopyala → doğrula → Geri Dönüşüm Kutusu ile güvenli
   taşıma, işlem günlüğü ve Geri Al, WPF arayüzü.
 
-[Yayınlanmamış]: https://github.com/IsmailHakkiBasoglu/foto-duzenleyici/compare/v0.1.3...HEAD
+[Yayınlanmamış]: https://github.com/IsmailHakkiBasoglu/foto-duzenleyici/compare/v0.1.4...HEAD
+[0.1.4]: https://github.com/IsmailHakkiBasoglu/foto-duzenleyici/compare/v0.1.3...v0.1.4
 [0.1.3]: https://github.com/IsmailHakkiBasoglu/foto-duzenleyici/compare/v0.1.2...v0.1.3
 [0.1.2]: https://github.com/IsmailHakkiBasoglu/foto-duzenleyici/compare/v0.1.1...v0.1.2
 [0.1.1]: https://github.com/IsmailHakkiBasoglu/foto-duzenleyici/compare/v0.1.0...v0.1.1

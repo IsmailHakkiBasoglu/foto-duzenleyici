@@ -20,8 +20,8 @@ Durum işaretleri: ✅ bitti · 🔄 sürüyor · ⬜ planlandı
 ## Aşama 2 — Akıllı ayıklama
 
 - ✅ **Aynı EXIF parmak izi:** adı farklı ama kamera ve çekim anı aynı olan dosyaları
-  "büyük olasılıkla aynı kare" olarak gruplamak (çözünürlük farklı olabilir: dışa aktarılmış kopyalar)
-- ✅ **Benzer fotoğraflar (algısal hash):** WhatsApp'ın küçülttüğü kopyalar ve seri çekimler
+  "büyük olasılıkla aynı kare" olarak gruplamak (çözünürlük farklı olabilir: dışa aktarılmış kopyalar) (0.1.4)
+- ✅ **Benzer fotoğraflar (algısal hash):** WhatsApp'ın küçülttüğü kopyalar ve seri çekimler (0.1.4)
 - 🔄 Bu gruplar otomatik taşınmaz; yan yana gösterilir, hangisinin kalacağını kullanıcı seçer
   (seçim ve `_Benzerler` klasörü hazır; küçük resimli karşılaştırma Aşama 3'te)
 - ⬜ RAW + JPG eşlerini her zaman birlikte taşımak
