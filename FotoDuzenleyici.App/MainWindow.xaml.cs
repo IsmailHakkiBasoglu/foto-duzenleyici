@@ -143,7 +143,7 @@ public partial class MainWindow : Window
         { MessageBox.Show("Önce geçerli bir ana klasör seç."); return; }
 
         _plan = null; PlanGrid.ItemsSource = null; DupGrid.ItemsSource = null; SimilarList.ItemsSource = null;
-        _groups = new(); _simErrors = new(); _files = new(); _dups = new();
+        _groups = new(); _simErrors = new(); _thumbs.Clear(); _files = new(); _dups = new();
         _cts = new CancellationTokenSource();
         var ct = _cts.Token;
         SetBusy(true);
@@ -251,8 +251,29 @@ public partial class MainWindow : Window
     static SimilarRow? RowOf(object sender) => (sender as FrameworkElement)?.DataContext as SimilarRow;
     SimilarGroupState? GroupOf(SimilarRow row) => _groups.FirstOrDefault(g => g.Rows.Contains(row));
 
-    void Card_Loaded(object s, RoutedEventArgs e) { if (RowOf(s) is { } r) _thumbs.Request(r); }
-    void Card_Unloaded(object s, RoutedEventArgs e) { if (RowOf(s) is { } r) _thumbs.Cancel(r); }
+    // Kartın satırı Tag'de tutulur: kart kaldırılırken DataContext çoktan "bağlantısız" olabilir, iptal yine
+    // doğru satıra gitsin. Geri dönüştürülen kartın satırı değişince eskisi iptal, yenisi istenir.
+    void Card_Loaded(object s, RoutedEventArgs e)
+    {
+        var card = (FrameworkElement)s;
+        if (card.Tag is null) card.DataContextChanged += Card_DataContextChanged;
+        Track(card, RowOf(s));
+    }
+
+    void Card_Unloaded(object s, RoutedEventArgs e) => Track((FrameworkElement)s, null);
+
+    void Card_DataContextChanged(object s, DependencyPropertyChangedEventArgs e)
+    {
+        var card = (FrameworkElement)s;
+        if (card.IsLoaded) Track(card, e.NewValue as SimilarRow);
+    }
+
+    void Track(FrameworkElement card, SimilarRow? row)
+    {
+        if (card.Tag is SimilarRow old && old != row) _thumbs.Cancel(old);
+        card.Tag = row ?? (object)false; // false: olay bağlandı ama satır yok
+        if (row is not null) _thumbs.Request(row);
+    }
 
     (SimilarRow Row, bool Before)? _lastToggle;
 

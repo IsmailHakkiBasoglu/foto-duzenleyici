@@ -60,6 +60,12 @@ public sealed class ThumbnailLoader
         }
     }
 
+    /// <summary>Bekleyen bütün istekleri düşürür (yeniden taramada). Çözülmekte olanın sonucu kimseye gitmez.</summary>
+    public void Clear()
+    {
+        lock (_sync) { _queue.Clear(); _waiting.Clear(); }
+    }
+
     void Work()
     {
         while (true)

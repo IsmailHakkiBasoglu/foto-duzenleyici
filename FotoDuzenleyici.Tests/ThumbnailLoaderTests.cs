@@ -111,6 +111,43 @@ public class ThumbnailLoaderTests
         Assert.Null(second.Thumb);
     }
 
+    // Gözden geçirmeden: yeniden taramada eski kuyruk boşaltılmalı; aksi hâlde eski dosyalar çözülmeye devam eder.
+    [Fact]
+    public void Clear_DropsQueuedRequests()
+    {
+        using var gate = new SemaphoreSlim(0);
+        var d = new FakeDecoder(gate);
+        var loader = new ThumbnailLoader(d.Decode, parallelism: 1);
+        var first = Row("first.jpg");
+        loader.Request(first);
+        WaitFor(() => d.CountOf("first.jpg") == 1);
+        var queued = Enumerable.Range(0, 5).Select(i => Row($"q{i}.jpg")).ToList();
+        foreach (var r in queued) loader.Request(r);
+
+        loader.Clear();
+        gate.Release(10);
+        Thread.Sleep(200);
+        Assert.All(queued, r => Assert.Equal(0, d.CountOf(System.IO.Path.GetFileName(r.Path))));
+        Assert.All(queued, r => Assert.Null(r.Thumb));
+    }
+
+    [Fact]
+    public void Cancel_WhileDecoding_ThenRequestAgain_StillDelivers()
+    {
+        using var gate = new SemaphoreSlim(0);
+        var d = new FakeDecoder(gate);
+        var loader = new ThumbnailLoader(d.Decode, parallelism: 1);
+        var a = Row("a.jpg");
+        loader.Request(a);
+        WaitFor(() => d.CountOf("a.jpg") == 1);
+        loader.Cancel(a);
+        var again = new SimilarRow { Group = 1, Kind = SimilarKind.Burst, File = a.File };
+        loader.Request(again);
+        gate.Release(5);
+        WaitFor(() => again.Thumb is not null);
+        Assert.Equal(1, d.CountOf("a.jpg"));
+    }
+
     [Fact]
     public void DecodeReturnsNull_SetsThumbFailed_NoThrow()
     {

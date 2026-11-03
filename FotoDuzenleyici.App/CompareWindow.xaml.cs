@@ -9,21 +9,6 @@ using FotoDuzenleyici.Core;
 
 namespace FotoDuzenleyici.App;
 
-/// <summary>Karşılaştırma penceresinde bir kare: önce ekran boyutunda, yakınlaşınca tam çözünürlükte.</summary>
-public sealed class CompareTile : INotifyPropertyChanged
-{
-    ImageSource? _image;
-    bool _failed;
-    public required SimilarRow Row { get; init; }
-    public required int Number { get; init; }
-    public bool FullLoaded { get; set; }
-    public string Caption => $"{Number}  {Row.Name}  ·  {Row.Resolution}  ·  {Row.SizeMb} MB  ·  {Row.Taken}";
-    public ImageSource? Image { get => _image; set { _image = value; Raise(nameof(Image)); } }
-    public bool Failed { get => _failed; set { _failed = value; Raise(nameof(Failed)); } }
-    public event PropertyChangedEventHandler? PropertyChanged;
-    void Raise(string n) => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(n));
-}
-
 /// <summary>
 /// Bir benzer grubunun karelerini tam ekran yan yana gösterir. Yakınlaştırma eşzamanlıdır: bütün kareler aynı göreli
 /// noktaya aynı oranda büyür (netlik kıyası). Kararlar doğrudan grubun satırlarına yazılır; ana pencere aynı nesneleri
@@ -44,6 +29,9 @@ public partial class CompareWindow : Window
     readonly TranslateTransform _pan = new();
     readonly TransformGroup _transform = new();
     readonly List<Image> _images = new();
+    // Tam çözünürlük: aynı anda en fazla 2; gruptan çıkılınca bekleyenler iptal edilir.
+    readonly DecodeLimiter _fullDecodes = new(2);
+    CancellationTokenSource _groupCts = new();
 
     UniformGrid? _grid;
     List<CompareTile> _tiles = new();
@@ -64,6 +52,7 @@ public partial class CompareWindow : Window
         _transform.Children.Add(_scale);
         _transform.Children.Add(_pan);
         _warningTimer.Tick += (_, _) => { Warning.Text = ""; _warningTimer.Stop(); };
+        Closed += (_, _) => _groupCts.Cancel();
         Show(Math.Clamp(startIndex, 0, groups.Count - 1));
     }
 
@@ -71,6 +60,8 @@ public partial class CompareWindow : Window
     {
         _index = index;
         var version = ++_version;
+        _groupCts.Cancel();
+        _groupCts = new CancellationTokenSource();
         ResetZoom();
         _images.Clear();
         _hover = _lastClicked = null;
@@ -78,16 +69,22 @@ public partial class CompareWindow : Window
         if (_grid is not null) _grid.Columns = Math.Min(4, _tiles.Count);
         Tiles.ItemsSource = _tiles;
         UpdateHeader();
-        foreach (var t in _tiles) _ = LoadAsync(t, ScreenDecodeWidth, version);
+        foreach (var t in _tiles) _ = LoadScreenAsync(t, version);
     }
 
-    async Task LoadAsync(CompareTile t, int width, int version)
+    async Task LoadScreenAsync(CompareTile t, int version)
     {
         var f = t.Row.File;
-        var img = await Task.Run(() => ImageHasher.Decode(f.Path, f.Orientation, width));
-        if (version != _version) return; // başka gruba geçildi
-        if (img is not null) t.Image = img;
-        else if (t.Image is null) t.Failed = true;
+        var img = await Task.Run(() => ImageHasher.Decode(f.Path, f.Orientation, ScreenDecodeWidth));
+        if (version == _version) t.Offer(img, ScreenDecodeWidth); // başka gruba geçildiyse yok say
+    }
+
+    async Task LoadFullAsync(CompareTile t, int version, CancellationToken ct)
+    {
+        var f = t.Row.File;
+        int width = CompareTile.FullDecodeWidth(_tiles.Count, f.Width);
+        var img = await _fullDecodes.RunAsync(() => ImageHasher.Decode(f.Path, f.Orientation, width), ct);
+        if (version == _version && img is not null) t.Offer(img, width == 0 ? CompareTile.FullWidth : width);
     }
 
     void UpdateHeader() =>
@@ -178,10 +175,10 @@ public partial class CompareWindow : Window
         if (scale <= 1) { _pan.X = _pan.Y = 0; return; }
 
         var version = _version;
-        foreach (var t in _tiles.Where(t => !t.FullLoaded))
+        foreach (var t in _tiles.Where(t => !t.FullRequested))
         {
-            t.FullLoaded = true;
-            _ = LoadAsync(t, 0, version);
+            t.FullRequested = true;
+            _ = LoadFullAsync(t, version, _groupCts.Token);
         }
     }
 
