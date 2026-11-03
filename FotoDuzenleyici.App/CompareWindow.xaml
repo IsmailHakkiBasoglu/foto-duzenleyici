@@ -1,0 +1,84 @@
+<Window x:Class="FotoDuzenleyici.App.CompareWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Karşılaştır" Icon="/app.ico" WindowState="Maximized" WindowStartupLocation="CenterOwner"
+        Background="#202020" FontFamily="Segoe UI" FontSize="13" ShowInTaskbar="False"
+        PreviewKeyDown="Window_PreviewKeyDown">
+    <DockPanel Margin="12">
+        <DockPanel DockPanel.Dock="Top" Margin="0,0,0,8">
+            <TextBlock x:Name="Warning" DockPanel.Dock="Right" Foreground="#FF8A80" FontWeight="SemiBold"/>
+            <TextBlock x:Name="Header" Foreground="White" FontSize="16" FontWeight="SemiBold"/>
+        </DockPanel>
+        <TextBlock DockPanel.Dock="Bottom" Margin="0,8,0,0" Foreground="#AAA" TextWrapping="Wrap"
+                   Text="1–9 / tıklama: Kalsın ↔ Ayıkla · Boşluk: yalnız bu kalsın · Enter: incelendi, sonraki · ← →: grup · Tekerlek / Z: yakınlaştır · 0: sıfırla · Esc: kapat"/>
+        <ItemsControl x:Name="Tiles">
+            <ItemsControl.ItemsPanel>
+                <ItemsPanelTemplate>
+                    <UniformGrid x:Name="TileGrid" Loaded="TileGrid_Loaded"/>
+                </ItemsPanelTemplate>
+            </ItemsControl.ItemsPanel>
+            <ItemsControl.ItemTemplate>
+                <DataTemplate>
+                    <Border Margin="6" BorderThickness="4" Background="Transparent"
+                            MouseLeftButtonDown="Tile_MouseDown" MouseLeftButtonUp="Tile_MouseUp"
+                            MouseMove="Tile_MouseMove" MouseWheel="Tile_MouseWheel" MouseEnter="Tile_MouseEnter">
+                        <Border.Style>
+                            <Style TargetType="Border">
+                                <Setter Property="BorderBrush" Value="#2E7D32"/>
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding Row.Keep}" Value="False">
+                                        <Setter Property="BorderBrush" Value="#444"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Border.Style>
+                        <DockPanel>
+                            <TextBlock DockPanel.Dock="Bottom" Text="{Binding Caption}" Foreground="#DDD" Margin="4,4,4,2"
+                                       TextTrimming="CharacterEllipsis"/>
+                            <Grid ClipToBounds="True" Background="#111">
+                                <Image Source="{Binding Image}" Stretch="Uniform" Loaded="TileImage_Loaded">
+                                    <Image.Style>
+                                        <Style TargetType="Image">
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding Row.Keep}" Value="False">
+                                                    <Setter Property="Opacity" Value="0.35"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Image.Style>
+                                </Image>
+                                <TextBlock Text="önizleme yok" Foreground="#888" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="Visibility" Value="Collapsed"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding Failed}" Value="True">
+                                                    <Setter Property="Visibility" Value="Visible"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
+                                <TextBlock Text="{Binding Row.Star}" Foreground="#FFD54F" FontSize="26"
+                                           HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,2,8,0"/>
+                                <TextBlock Text="✗" Foreground="#FF5252" FontSize="34" FontWeight="Bold"
+                                           HorizontalAlignment="Left" VerticalAlignment="Top" Margin="8,0,0,0">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="Visibility" Value="Collapsed"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding Row.Keep}" Value="False">
+                                                    <Setter Property="Visibility" Value="Visible"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
+                            </Grid>
+                        </DockPanel>
+                    </Border>
+                </DataTemplate>
+            </ItemsControl.ItemTemplate>
+        </ItemsControl>
+    </DockPanel>
+</Window>

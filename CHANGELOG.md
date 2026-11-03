@@ -6,6 +6,26 @@ Biçim [Keep a Changelog](https://keepachangelog.com/tr-TR/1.1.0/), sürüm numa
 
 ## [Yayınlanmamış]
 
+### Eklendi
+- Benzerler sekmesi artık **küçük resimli şerit**: her grup bir sıra kart. Karta tıklamak
+  Kalsın ↔ Ayıkla arasında geçiş yapar; kalan kare yeşil çerçeveli, ayıklanan soluk ve ✗ işaretli.
+  Grubun son karesi ayıklanamaz.
+- **Karşılaştırma penceresi:** bir karta çift tıklayınca (ya da grup seçiliyken Enter) grup
+  tam ekran açılır, kareler yan yana büyük gösterilir. Tuşlar: 1–9 ya da tıklama Kalsın ↔ Ayıkla,
+  Boşluk yalnız bu kalsın, Enter grubu incelendi yapıp sonrakine geçer, ← → gruplar arasında,
+  Esc kapatır. Fare tekerleği ya da Z ile bütün kareler aynı noktaya birlikte yakınlaşır
+  (netlik kıyası), 0 sıfırlar; yakınlaşınca tam çözünürlük yüklenir, sürükleyerek birlikte
+  kaydırılır.
+- Kararlar (kalsın / ayıkla, incelendi) uygulama kapanınca da hatırlanıyor:
+  `%LOCALAPPDATA%\FotoDuzenleyici\benzer-kararlar.json`. Dosya kimliği yoldan bağımsız; dosya
+  taşınıp yeniden adlandırılsa da karar bulunur. Gruba yeni kare eklenirse grup yeniden
+  "incelenmedi" görünür, eski işaretler korunur.
+- "Yalnız incelenmemişler" süzgeci ve "İncelenen: n / toplam" sayacı.
+
+### Değişti
+- Benzerler sekmesindeki satır listesi ve sağdaki tek önizleme paneli kaldırıldı; yerini şerit
+  ve karşılaştırma penceresi aldı.
+
 ## [0.1.4] - 2026-11-04
 
 ### Eklendi

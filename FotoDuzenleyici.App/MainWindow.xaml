@@ -105,44 +105,115 @@
                                 <StackPanel Orientation="Horizontal">
                                     <Button Content="Önerileri uygula (yalnız ★ kalsın)" Click="SuggestSimilar_Click"/>
                                     <Button Content="Hepsini koru" Click="KeepAllSimilar_Click"/>
+                                    <CheckBox x:Name="OnlyUnreviewed" Content="Yalnız incelenmemişler" VerticalAlignment="Center"
+                                              Margin="8,0,16,0" Click="OnlyUnreviewed_Click"/>
+                                    <TextBlock x:Name="ReviewCounter" VerticalAlignment="Center" Foreground="#555"/>
                                 </StackPanel>
                                 <TextBlock Margin="0,6,0,0" Foreground="#555" TextWrapping="Wrap"
-                                           Text="İşareti kaldırılan dosya Uygula'da _Benzerler klasörüne gider (silinmez). Seri çekimlerde öneri yoktur; önizlemeye bakıp sen seç. Değiştirince planı yeniden oluştur."/>
+                                           Text="Karta tıkla: Kalsın ↔ Ayıkla. Çift tıkla ya da Enter: karşılaştırma. Ayıklanan dosya Uygula'da _Benzerler klasörüne gider (silinmez). Değiştirince planı yeniden oluştur."/>
                             </StackPanel>
-                            <Border DockPanel.Dock="Right" Width="260" Margin="8,0,0,0" BorderBrush="#DDD" BorderThickness="1" Padding="6">
-                                <DockPanel>
-                                    <TextBlock x:Name="PreviewInfo" DockPanel.Dock="Bottom" Margin="0,6,0,0" TextWrapping="Wrap"
-                                               Text="Önizleme için bir satır seç."/>
-                                    <Image x:Name="PreviewImage" Stretch="Uniform"/>
-                                </DockPanel>
-                            </Border>
-                            <DataGrid x:Name="SimilarGrid" AutoGenerateColumns="False" CanUserAddRows="False" SelectionMode="Single"
-                                      EnableRowVirtualization="True" GridLinesVisibility="Horizontal"
-                                      SelectionChanged="SimilarGrid_SelectionChanged">
-                                <DataGrid.Columns>
-                                    <DataGridTextColumn Header="Grup" Binding="{Binding Group}" Width="40" IsReadOnly="True"/>
-                                    <DataGridTextColumn Header="Tür" Binding="{Binding KindText}" Width="105" IsReadOnly="True"/>
-                                    <DataGridTemplateColumn Header="Kalsın" Width="50">
-                                        <DataGridTemplateColumn.CellTemplate>
-                                            <DataTemplate>
-                                                <CheckBox IsChecked="{Binding Keep, UpdateSourceTrigger=PropertyChanged}" HorizontalAlignment="Center"/>
-                                            </DataTemplate>
-                                        </DataGridTemplateColumn.CellTemplate>
-                                    </DataGridTemplateColumn>
-                                    <DataGridTextColumn Header="Öneri" Binding="{Binding Star}" Width="42" IsReadOnly="True"/>
-                                    <DataGridTextColumn Header="Dosya (tam yol için üzerine gel)" Binding="{Binding Name}" Width="*" MinWidth="140" IsReadOnly="True">
-                                        <DataGridTextColumn.ElementStyle>
-                                            <Style TargetType="TextBlock">
-                                                <Setter Property="ToolTip" Value="{Binding Path}"/>
-                                                <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
-                                            </Style>
-                                        </DataGridTextColumn.ElementStyle>
-                                    </DataGridTextColumn>
-                                    <DataGridTextColumn Header="Çözünürlük" Binding="{Binding Resolution}" Width="80" IsReadOnly="True"/>
-                                    <DataGridTextColumn Header="MB" Binding="{Binding SizeMb}" Width="45" IsReadOnly="True"/>
-                                    <DataGridTextColumn Header="Çekim anı" Binding="{Binding Taken}" Width="125" IsReadOnly="True"/>
-                                </DataGrid.Columns>
-                            </DataGrid>
+                            <ListBox x:Name="SimilarList" HorizontalContentAlignment="Stretch"
+                                     VirtualizingPanel.IsVirtualizing="True" VirtualizingPanel.VirtualizationMode="Recycling"
+                                     VirtualizingPanel.ScrollUnit="Pixel" ScrollViewer.CanContentScroll="True"
+                                     ScrollViewer.HorizontalScrollBarVisibility="Disabled" KeyDown="SimilarList_KeyDown">
+                                <ListBox.ItemTemplate>
+                                    <DataTemplate>
+                                        <DockPanel Margin="0,4">
+                                            <StackPanel DockPanel.Dock="Left" Width="150" Margin="0,0,8,0">
+                                                <TextBlock FontWeight="SemiBold" Text="{Binding Number, StringFormat='Grup {0}'}"/>
+                                                <TextBlock Text="{Binding KindText}" Foreground="#555"/>
+                                                <TextBlock Text="{Binding Rows.Count, StringFormat='{}{0} kare'}" Foreground="#555"/>
+                                                <TextBlock Text="✓ incelendi" Foreground="#2E7D32">
+                                                    <TextBlock.Style>
+                                                        <Style TargetType="TextBlock">
+                                                            <Setter Property="Visibility" Value="Collapsed"/>
+                                                            <Style.Triggers>
+                                                                <DataTrigger Binding="{Binding Reviewed}" Value="True">
+                                                                    <Setter Property="Visibility" Value="Visible"/>
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </TextBlock.Style>
+                                                </TextBlock>
+                                            </StackPanel>
+                                            <ItemsControl ItemsSource="{Binding Rows}">
+                                                <ItemsControl.ItemsPanel>
+                                                    <ItemsPanelTemplate><WrapPanel/></ItemsPanelTemplate>
+                                                </ItemsControl.ItemsPanel>
+                                                <ItemsControl.ItemTemplate>
+                                                    <DataTemplate>
+                                                        <Border x:Name="Card" Width="140" Margin="0,0,6,6" Padding="2" BorderThickness="3"
+                                                                Background="Transparent" Cursor="Hand"
+                                                                Loaded="Card_Loaded" Unloaded="Card_Unloaded"
+                                                                MouseLeftButtonDown="Card_MouseDown" MouseLeftButtonUp="Card_MouseUp">
+                                                            <Border.ToolTip>
+                                                                <TextBlock>
+                                                                    <Run Text="{Binding Path, Mode=OneWay}"/><LineBreak/>
+                                                                    <Run Text="{Binding Resolution, Mode=OneWay}"/> · <Run Text="{Binding SizeMb, Mode=OneWay}"/> MB<LineBreak/>
+                                                                    <Run Text="{Binding Taken, Mode=OneWay}"/>
+                                                                </TextBlock>
+                                                            </Border.ToolTip>
+                                                            <Border.Style>
+                                                                <Style TargetType="Border">
+                                                                    <Setter Property="BorderBrush" Value="#2E7D32"/>
+                                                                    <Style.Triggers>
+                                                                        <DataTrigger Binding="{Binding Keep}" Value="False">
+                                                                            <Setter Property="BorderBrush" Value="Transparent"/>
+                                                                        </DataTrigger>
+                                                                    </Style.Triggers>
+                                                                </Style>
+                                                            </Border.Style>
+                                                            <StackPanel>
+                                                                <Grid Height="100">
+                                                                    <Image Source="{Binding Thumb}" Stretch="Uniform">
+                                                                        <Image.Style>
+                                                                            <Style TargetType="Image">
+                                                                                <Style.Triggers>
+                                                                                    <DataTrigger Binding="{Binding Keep}" Value="False">
+                                                                                        <Setter Property="Opacity" Value="0.45"/>
+                                                                                    </DataTrigger>
+                                                                                </Style.Triggers>
+                                                                            </Style>
+                                                                        </Image.Style>
+                                                                    </Image>
+                                                                    <TextBlock Text="önizleme yok" Foreground="#888" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                                                        <TextBlock.Style>
+                                                                            <Style TargetType="TextBlock">
+                                                                                <Setter Property="Visibility" Value="Collapsed"/>
+                                                                                <Style.Triggers>
+                                                                                    <DataTrigger Binding="{Binding ThumbFailed}" Value="True">
+                                                                                        <Setter Property="Visibility" Value="Visible"/>
+                                                                                    </DataTrigger>
+                                                                                </Style.Triggers>
+                                                                            </Style>
+                                                                        </TextBlock.Style>
+                                                                    </TextBlock>
+                                                                    <TextBlock Text="{Binding Star}" Foreground="#F9A825" FontSize="18"
+                                                                               HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,0,2,0"/>
+                                                                    <TextBlock Text="✗" Foreground="#C62828" FontSize="22" FontWeight="Bold"
+                                                                               HorizontalAlignment="Left" VerticalAlignment="Top" Margin="2,0,0,0">
+                                                                        <TextBlock.Style>
+                                                                            <Style TargetType="TextBlock">
+                                                                                <Setter Property="Visibility" Value="Collapsed"/>
+                                                                                <Style.Triggers>
+                                                                                    <DataTrigger Binding="{Binding Keep}" Value="False">
+                                                                                        <Setter Property="Visibility" Value="Visible"/>
+                                                                                    </DataTrigger>
+                                                                                </Style.Triggers>
+                                                                            </Style>
+                                                                        </TextBlock.Style>
+                                                                    </TextBlock>
+                                                                </Grid>
+                                                                <TextBlock Text="{Binding Name}" TextTrimming="CharacterEllipsis" FontSize="11" Margin="0,2,0,0" Foreground="#333"/>
+                                                            </StackPanel>
+                                                        </Border>
+                                                    </DataTemplate>
+                                                </ItemsControl.ItemTemplate>
+                                            </ItemsControl>
+                                        </DockPanel>
+                                    </DataTemplate>
+                                </ListBox.ItemTemplate>
+                            </ListBox>
                         </DockPanel>
                     </TabItem>
                 </TabControl>
