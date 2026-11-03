@@ -22,15 +22,16 @@ Durum işaretleri: ✅ bitti · 🔄 sürüyor · ⬜ planlandı
 - ✅ **Aynı EXIF parmak izi:** adı farklı ama kamera ve çekim anı aynı olan dosyaları
   "büyük olasılıkla aynı kare" olarak gruplamak (çözünürlük farklı olabilir: dışa aktarılmış kopyalar) (0.1.4)
 - ✅ **Benzer fotoğraflar (algısal hash):** WhatsApp'ın küçülttüğü kopyalar ve seri çekimler (0.1.4)
-- 🔄 Bu gruplar otomatik taşınmaz; yan yana gösterilir, hangisinin kalacağını kullanıcı seçer
-  (seçim ve `_Benzerler` klasörü hazır; küçük resimli karşılaştırma Aşama 3'te)
+- ✅ Bu gruplar otomatik taşınmaz; yan yana gösterilir, hangisinin kalacağını kullanıcı seçer
+  (küçük resimli şerit, tam ekran karşılaştırma, kararlar kalıcı)
 - ⬜ RAW + JPG eşlerini her zaman birlikte taşımak
 - ⬜ Bulanık veya çok karanlık kareleri işaretlemek (yerel hesaplama)
 
 ## Aşama 3 — Görsel arayüz
 
 - ⬜ Plan tablosunun yanında küçük resim önizleme
-- ⬜ Kopya ve benzer grupları yan yana karşılaştırma ekranı
+- 🔄 Kopya ve benzer grupları yan yana karşılaştırma ekranı (benzer gruplar için hazır;
+  Yinelenenler sekmesi henüz liste)
 - ⬜ Ay ay zaman çizelgesi; ay başına dosya sayısı ve boyut grafiği
 - ⬜ Koyu tema, modern görünüm (WPF-UI / Fluent)
 
