@@ -6,6 +6,8 @@ Biçim [Keep a Changelog](https://keepachangelog.com/tr-TR/1.1.0/), sürüm numa
 
 ## [Yayınlanmamış]
 
+## [0.1.5] - 2026-11-04
+
 ### Eklendi
 - Benzerler sekmesi artık **küçük resimli şerit**: her grup bir sıra kart. Karta tıklamak
   Kalsın ↔ Ayıkla arasında geçiş yapar; kalan kare yeşil çerçeveli, ayıklanan soluk ve ✗ işaretli.
@@ -128,7 +130,8 @@ Biçim [Keep a Changelog](https://keepachangelog.com/tr-TR/1.1.0/), sürüm numa
   SHA-256 ile birebir kopya tespiti, kopyala → doğrula → Geri Dönüşüm Kutusu ile güvenli
   taşıma, işlem günlüğü ve Geri Al, WPF arayüzü.
 
-[Yayınlanmamış]: https://github.com/IsmailHakkiBasoglu/foto-duzenleyici/compare/v0.1.4...HEAD
+[Yayınlanmamış]: https://github.com/IsmailHakkiBasoglu/foto-duzenleyici/compare/v0.1.5...HEAD
+[0.1.5]: https://github.com/IsmailHakkiBasoglu/foto-duzenleyici/compare/v0.1.4...v0.1.5
 [0.1.4]: https://github.com/IsmailHakkiBasoglu/foto-duzenleyici/compare/v0.1.3...v0.1.4
 [0.1.3]: https://github.com/IsmailHakkiBasoglu/foto-duzenleyici/compare/v0.1.2...v0.1.3
 [0.1.2]: https://github.com/IsmailHakkiBasoglu/foto-duzenleyici/compare/v0.1.1...v0.1.2

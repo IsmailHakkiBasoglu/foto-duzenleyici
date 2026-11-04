@@ -23,7 +23,7 @@ Durum işaretleri: ✅ bitti · 🔄 sürüyor · ⬜ planlandı
   "büyük olasılıkla aynı kare" olarak gruplamak (çözünürlük farklı olabilir: dışa aktarılmış kopyalar) (0.1.4)
 - ✅ **Benzer fotoğraflar (algısal hash):** WhatsApp'ın küçülttüğü kopyalar ve seri çekimler (0.1.4)
 - ✅ Bu gruplar otomatik taşınmaz; yan yana gösterilir, hangisinin kalacağını kullanıcı seçer
-  (küçük resimli şerit, tam ekran karşılaştırma, kararlar kalıcı)
+  (küçük resimli şerit, tam ekran karşılaştırma, kararlar kalıcı) (0.1.5)
 - ⬜ RAW + JPG eşlerini her zaman birlikte taşımak
 - ⬜ Bulanık veya çok karanlık kareleri işaretlemek (yerel hesaplama)
 
