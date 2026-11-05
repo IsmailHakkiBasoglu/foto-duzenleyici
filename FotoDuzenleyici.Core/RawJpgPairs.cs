@@ -37,20 +37,20 @@ public static class RawJpgPairs
     }
 
     /// <summary>
-    /// Ayıklanan fotoğrafların henüz ayıklanmamış RAW eşleri, ayıklanan eşin grupta kalan karesiyle birlikte.
-    /// Kullanıcı "birlikte" derse bunlar ayıklama haritasına eklenir.
+    /// Ayıklanan fotoğrafların (Benzerler ya da Kusurlu) henüz ayıklanmamış RAW eşleri, ayıklanan fotoğrafla birlikte.
+    /// Kullanıcı "birlikte" derse çağıran RAW'ı fotoğrafının gittiği yere ekler.
     /// </summary>
-    public static List<(MediaFile Raw, MediaFile Keeper)> UnreleasedRaws(IEnumerable<MediaFile> files,
-        IReadOnlyDictionary<MediaFile, MediaFile> similarOf)
+    public static List<(MediaFile Raw, MediaFile Photo)> UnreleasedRaws(IEnumerable<MediaFile> files,
+        IReadOnlySet<MediaFile> released)
     {
         var result = new List<(MediaFile, MediaFile)>();
         var seen = new HashSet<MediaFile>();
         foreach (var g in Groups(files))
         {
-            var released = g.FirstOrDefault(f => f.Kind == FileKind.Photo && similarOf.ContainsKey(f));
-            if (released is null) continue;
-            foreach (var raw in g.Where(f => f.Kind == FileKind.Raw && !similarOf.ContainsKey(f) && seen.Add(f)))
-                result.Add((raw, similarOf[released]));
+            var photo = g.FirstOrDefault(f => f.Kind == FileKind.Photo && released.Contains(f));
+            if (photo is null) continue;
+            foreach (var raw in g.Where(f => f.Kind == FileKind.Raw && !released.Contains(f) && seen.Add(f)))
+                result.Add((raw, photo));
         }
         return result;
     }

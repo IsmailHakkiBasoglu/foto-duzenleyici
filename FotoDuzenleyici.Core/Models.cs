@@ -48,6 +48,8 @@ public enum PlanAction
     AlreadyInPlace,
     /// <summary>Kullanıcının ayıkladığı "muhtemelen aynı kare"; _Benzerler klasörüne alınır.</summary>
     Similar,
+    /// <summary>Kullanıcının ayıkladığı bulanık / karanlık kare; _Kusurlu klasörüne alınır.</summary>
+    Flawed,
 }
 
 public sealed class PlanItem
@@ -91,6 +93,7 @@ public sealed class PlanOptions
     public bool AppendSourceToName { get; set; }
     public string DuplicatesFolderName { get; set; } = "_Tekrarlar";
     public string SimilarFolderName { get; set; } = "_Benzerler";
+    public string FlawedFolderName { get; set; } = "_Kusurlu";
     public string UndatedFolderName { get; set; } = "Tarihsiz";
     /// <summary>true ise CR3/RAF gibi RAW'lar -Raw klasörüne, false ise -Foto içine gider.</summary>
     public bool SeparateRawFolder { get; set; } = true;

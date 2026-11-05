@@ -16,8 +16,9 @@ public static class Planner
     static readonly Regex DatePrefix = new(@"^\d{4}-\d{2}-\d{2} (\d{6} )?", RegexOptions.Compiled);
 
     /// <param name="similarOf">Kullanıcının ayıkladığı "muhtemelen aynı kare" dosyaları → grupta kalan eşi.</param>
+    /// <param name="flawed">Kullanıcının Kusurlu sekmesinde ayıkladığı bulanık / karanlık kareler.</param>
     public static Plan Build(IReadOnlyList<MediaFile> files, IReadOnlyList<DuplicateGroup> dupGroups, PlanOptions opt,
-        IReadOnlyDictionary<MediaFile, MediaFile>? similarOf = null)
+        IReadOnlyDictionary<MediaFile, MediaFile>? similarOf = null, IReadOnlySet<MediaFile>? flawed = null)
     {
         PropagateRawJpgPairs(files);
 
@@ -25,6 +26,7 @@ public static class Planner
         var dest = Path.GetFullPath(opt.DestinationRoot).TrimEnd('\\');
         var dupDir = Path.Combine(dest, opt.DuplicatesFolderName) + "\\";
         var simDir = Path.Combine(dest, opt.SimilarFolderName) + "\\";
+        var flawDir = Path.Combine(dest, opt.FlawedFolderName) + "\\";
         bool InDest(MediaFile f) => Path.GetFullPath(f.Path).StartsWith(dest + "\\", StringComparison.OrdinalIgnoreCase);
         bool Organized(MediaFile f) => InDest(f) && !Path.GetFullPath(f.Path).StartsWith(dupDir, StringComparison.OrdinalIgnoreCase);
 
@@ -47,8 +49,11 @@ public static class Planner
         {
             if (dupOf.ContainsKey(f)) return PlanAction.Duplicate;
             if (similarOf?.ContainsKey(f) == true) return PlanAction.Similar;
-            // Kullanıcı önceki turda _Benzerler'e ayırdıysa orada kalır.
-            if (Path.GetFullPath(f.Path).StartsWith(simDir, StringComparison.OrdinalIgnoreCase)) return PlanAction.AlreadyInPlace;
+            if (flawed?.Contains(f) == true) return PlanAction.Flawed;
+            // Kullanıcı önceki turda _Benzerler'e ya da _Kusurlu'ya ayırdıysa orada kalır.
+            var full = Path.GetFullPath(f.Path);
+            if (full.StartsWith(simDir, StringComparison.OrdinalIgnoreCase) || full.StartsWith(flawDir, StringComparison.OrdinalIgnoreCase))
+                return PlanAction.AlreadyInPlace;
             return PlanAction.Move;
         }
 
@@ -76,7 +81,7 @@ public static class Planner
                 continue;
             }
 
-            var members = route is PlanAction.Move or PlanAction.Similar
+            var members = route is PlanAction.Move or PlanAction.Similar or PlanAction.Flawed
                           && pairOf.TryGetValue(f, out var pair) && pair.All(m => !planned.Contains(m) && Route(m) == route)
                 ? pair : new List<MediaFile> { f };
 
@@ -90,6 +95,7 @@ public static class Planner
                 {
                     PlanAction.Duplicate => Path.Combine(dest, opt.DuplicatesFolderName, month),
                     PlanAction.Similar => Path.Combine(dest, opt.SimilarFolderName, month),
+                    PlanAction.Flawed => Path.Combine(dest, opt.FlawedFolderName, month),
                     _ => Path.Combine(dest, month, KindFolder(m, month, opt)),
                 },
                 InPlace: route == PlanAction.Move && InDest(m))).ToList();
@@ -117,6 +123,7 @@ public static class Planner
                     item.Action = PlanAction.AlreadyInPlace;
                 if (collided) item.Note = "İsim çakışması: tarih eklendi";
                 if (similar is not null) item.Note = "Muhtemelen aynı kare: " + similar.FileName;
+                if (route == PlanAction.Flawed) item.Note = collided ? "Kusurlu kare; isim çakışması: tarih eklendi" : "Kusurlu kare";
                 if (members.Count > 1 && collided) item.Note += " (RAW+JPG eşiyle birlikte)";
                 plan.Items.Add(item);
             }

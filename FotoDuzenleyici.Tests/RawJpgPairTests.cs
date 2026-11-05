@@ -143,19 +143,67 @@ public class RawJpgPairTests
     }
 
     [Fact]
-    public void UnreleasedRaws_ListsRawOfReleasedPhotos_WithTheirKeeper()
+    public void UnreleasedRaws_ReturnsRawWithItsPhoto()
     {
         var keep = F(@"C:\b\DSCF0002.JPG");
         var jpg = F(@"C:\b\DSCF0001.JPG"); var raf = F(@"C:\b\DSCF0001.RAF");
         var lone = F(@"C:\b\DSCF0003.JPG");
         var files = new[] { keep, jpg, raf, lone };
 
-        var extra = RawJpgPairs.UnreleasedRaws(files, new Dictionary<MediaFile, MediaFile> { [jpg] = keep, [lone] = keep });
-        var (raw, keeper) = Assert.Single(extra);
+        var extra = RawJpgPairs.UnreleasedRaws(files, new HashSet<MediaFile> { jpg, lone });
+        var (raw, photo) = Assert.Single(extra);
         Assert.Same(raf, raw);
-        Assert.Same(keep, keeper);
+        Assert.Same(jpg, photo);
 
-        Assert.Empty(RawJpgPairs.UnreleasedRaws(files, new Dictionary<MediaFile, MediaFile> { [jpg] = keep, [raf] = keep }));
-        Assert.Empty(RawJpgPairs.UnreleasedRaws(files, new Dictionary<MediaFile, MediaFile>()));
+        Assert.Empty(RawJpgPairs.UnreleasedRaws(files, new HashSet<MediaFile> { jpg, raf }));
+        Assert.Empty(RawJpgPairs.UnreleasedRaws(files, new HashSet<MediaFile>()));
+    }
+
+    // --- _Kusurlu ---
+
+    [Fact]
+    public void Flawed_GoesToKusurluMonthFolder()
+    {
+        var jpg = F(@"C:\b\DSCF0001.JPG");
+        var p = Planner.Build(new[] { jpg }, new List<DuplicateGroup>(), new PlanOptions { DestinationRoot = @"Z:\out" },
+            flawed: new HashSet<MediaFile> { jpg });
+        Assert.Equal(PlanAction.Flawed, Of(p, jpg).Action);
+        Assert.Equal(@"Z:\out\_Kusurlu\2026-01", Of(p, jpg).TargetDir);
+        Assert.Equal("Kusurlu kare", Of(p, jpg).Note);
+    }
+
+    [Fact]
+    public void FileAlreadyInKusurlu_StaysInPlace()
+    {
+        var f = F(@"Z:\out\_Kusurlu\2026-01\DSCF0001.JPG");
+        var p = Build(new[] { f });
+        Assert.Equal(PlanAction.AlreadyInPlace, Of(p, f).Action);
+        Assert.Equal(f.Path, Of(p, f).TargetPath);
+    }
+
+    [Fact]
+    public void Priority_DuplicateBeatsSimilarBeatsFlawed()
+    {
+        var orig = F(@"C:\a\X.JPG"); var copy = F(@"C:\b\X.JPG");
+        var keep = F(@"C:\b\K.JPG"); var both = F(@"C:\b\Y.JPG");
+        var dups = new List<DuplicateGroup> { new() { Keeper = orig, Copies = new() { copy } } };
+        var p = Planner.Build(new[] { orig, copy, keep, both }, dups, new PlanOptions { DestinationRoot = @"Z:\out" },
+            new Dictionary<MediaFile, MediaFile> { [copy] = keep, [both] = keep }, new HashSet<MediaFile> { copy, both });
+        Assert.Equal(PlanAction.Duplicate, Of(p, copy).Action);
+        Assert.Equal(PlanAction.Similar, Of(p, both).Action);
+    }
+
+    [Fact]
+    public void FlawedPair_RawAndJpgGoTogether_SameName()
+    {
+        var first = F(@"C:\a\DSCF0001.JPG");
+        var jpg = F(@"C:\b\DSCF0001.JPG"); var raf = F(@"C:\b\DSCF0001.RAF");
+        var other = F(@"Z:\out\_Kusurlu\2026-01\DSCF0001.RAF"); // _Kusurlu'da aynı adlı RAW var: eş birlikte yeni ad alır
+        var p = Planner.Build(new[] { first, jpg, raf, other }, new List<DuplicateGroup>(), new PlanOptions { DestinationRoot = @"Z:\out" },
+            flawed: new HashSet<MediaFile> { jpg, raf });
+        Assert.Equal(PlanAction.Flawed, Of(p, raf).Action);
+        Assert.Equal(@"Z:\out\_Kusurlu\2026-01", Of(p, raf).TargetDir);
+        Assert.Equal("2026-01-03 DSCF0001.JPG", Of(p, jpg).TargetName);
+        Assert.Equal("2026-01-03 DSCF0001.RAF", Of(p, raf).TargetName);
     }
 }

@@ -364,7 +364,7 @@ public partial class MainWindow : Window
         if (await OfferResumeAsync(dest)) { StatusText.Text += "  Dosyalar değişti; plan için yeniden Tara."; return; }
         var similarOf = BuildSimilarMap();
         // Ayıklanan karelerin RAW eşleri: her Plan'da sorulur (kullanıcı kararı).
-        var raws = RawJpgPairs.UnreleasedRaws(_files, similarOf);
+        var raws = RawJpgPairs.UnreleasedRaws(_files, similarOf.Keys.ToHashSet());
         if (raws.Count > 0)
         {
             var ans = MessageBox.Show(
@@ -375,7 +375,7 @@ public partial class MainWindow : Window
                 "RAW eşleri", MessageBoxButton.YesNoCancel, MessageBoxImage.Question);
             if (ans == MessageBoxResult.Cancel) return;
             if (ans == MessageBoxResult.Yes)
-                foreach (var (raw, keeper) in raws) similarOf[raw] = keeper;
+                foreach (var (raw, photo) in raws) similarOf[raw] = similarOf[photo];
         }
         _plan = Planner.Build(_files, _dups, BuildPlanOptions(), similarOf);
         PlanGrid.ItemsSource = _plan.Items.Select(i => new PlanRow(
