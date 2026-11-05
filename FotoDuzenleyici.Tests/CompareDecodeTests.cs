@@ -86,4 +86,13 @@ public class CompareDecodeTests
         empty.Offer(null, 1200);
         Assert.True(empty.Failed);
     }
+
+    [Fact]
+    public void Caption_ShowsSharpPercent_WhenMeasured()
+    {
+        var row = new SimilarRow { Group = 1, Kind = SimilarKind.Burst, File = Photo("a.jpg"), SharpPercent = 42 };
+        Assert.StartsWith("3 · Netlik %42  a.jpg", new CompareTile { Row = row, Number = 3 }.Caption);
+        var plain = new SimilarRow { Group = 1, Kind = SimilarKind.Burst, File = Photo("b.jpg") };
+        Assert.StartsWith("3  b.jpg", new CompareTile { Row = plain, Number = 3 }.Caption);
+    }
 }

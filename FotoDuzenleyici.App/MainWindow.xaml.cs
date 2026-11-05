@@ -55,6 +55,9 @@ public partial class MainWindow : Window
     List<SimilarGroupState> _groups = new();
     IEnumerable<SimilarRow> AllSimilarRows => _groups.SelectMany(g => g.Rows);
     List<string> _simErrors = new();
+    /// <summary>Netlik / karanlık ölçümleri; ölçüm durdurulduysa boş ve <see cref="_qualityDone"/> false.</summary>
+    Dictionary<MediaFile, QualityScore> _scores = new();
+    bool _qualityDone;
     Plan? _plan;
     FolderNode? _rootNode;
     CancellationTokenSource? _cts;
@@ -144,6 +147,7 @@ public partial class MainWindow : Window
 
         _plan = null; PlanGrid.ItemsSource = null; DupGrid.ItemsSource = null; SimilarList.ItemsSource = null;
         _groups = new(); _simErrors = new(); _thumbs.Clear(); _files = new(); _dups = new();
+        _scores = new(); _qualityDone = false;
         _cts = new CancellationTokenSource();
         var ct = _cts.Token;
         SetBusy(true);
@@ -180,6 +184,27 @@ public partial class MainWindow : Window
                     note = "Benzerlik araması durduruldu; hesaplanan izler kaydedildi, bir sonraki taramada kaldığı yerden sürer.";
                 }
             }
+            // Netlik / karanlık: durdurulursa yarım sonuçla liste gösterilmez, ölçülenler önbellekte kalır.
+            if (OptQuality.IsChecked == true && !ct.IsCancellationRequested)
+            {
+                var qprog = new Progress<(int d, int t, int c)>(p =>
+                {
+                    Progress.Maximum = p.t; Progress.Value = p.d;
+                    StatusText.Text = $"Netlik ölçülüyor… {p.d}/{p.t} ({p.c}'i önbellekten)";
+                });
+                var ignoreDirs = dest.Length == 0 ? Array.Empty<string>()
+                    : new[] { ignore!, Path.Combine(Path.GetFullPath(dest), "_Kusurlu") };
+                try
+                {
+                    _scores = await Task.Run(() => QualityScan.Compute(_files, _dups, ignoreDirs,
+                        new QualityCache(QualityCache.DefaultPath), _simErrors, qprog, ct));
+                    _qualityDone = true;
+                }
+                catch (OperationCanceledException)
+                {
+                    note = "Netlik ölçümü durduruldu; ölçülenler kaydedildi, bir sonraki taramada kaldığı yerden sürer.";
+                }
+            }
             await ShowSimilar(hashes, ignore);
             SummaryBox.Text = BuildSummary(null);
             StatusText.Text = note ?? $"Tarama bitti: {_files.Count} dosya, {_dups.Count} yinelenen grup, " +
@@ -213,6 +238,7 @@ public partial class MainWindow : Window
         });
         foreach (var g in states)
         {
+            g.ApplyBurstRanks(_scores);
             g.Restore(_reviews);
             g.PropertyChanged += (_, e) => { if (e.PropertyName == nameof(SimilarGroupState.Reviewed)) ReviewsChanged(); };
             foreach (var r in g.Rows)
@@ -341,6 +367,12 @@ public partial class MainWindow : Window
         // Önerisi olmayan gruplara (seri çekim) dokunulmaz.
         foreach (var g in _groups)
             if (g.Rows.FirstOrDefault(r => r.Suggested) is { } star) g.KeepOnly(star);
+    }
+
+    void ReleaseSoft_Click(object s, RoutedEventArgs e)
+    {
+        int n = _groups.Sum(g => g.ReleaseSoft());
+        StatusText.Text = n == 0 ? "Ayıklanacak bulanık kare yok." : $"{n} bulanık kare ayıklandı.";
     }
 
     void KeepAllSimilar_Click(object s, RoutedEventArgs e)

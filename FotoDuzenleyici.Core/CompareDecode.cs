@@ -50,7 +50,9 @@ public sealed class CompareTile : INotifyPropertyChanged
     public required SimilarRow Row { get; init; }
     public required int Number { get; init; }
     public bool FullRequested { get; set; }
-    public string Caption => $"{Number}  {Row.Name}  ·  {Row.Resolution}  ·  {Row.SizeMb} MB  ·  {Row.Taken}";
+    public string Caption =>
+        (Row.SharpPercent is { } p ? $"{Number} · Netlik %{p}" : $"{Number}") +
+        $"  {Row.Name}  ·  {Row.Resolution}  ·  {Row.SizeMb} MB  ·  {Row.Taken}";
     public ImageSource? Image => _image;
     public bool Failed => _failed;
 
