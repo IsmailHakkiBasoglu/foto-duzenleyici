@@ -5,11 +5,12 @@ using FotoDuzenleyici.Core;
 // Kullanım: Cli --root <klasör> [--exclude <klasör>]... [--dest <klasör>] [--source-folder] [--rename-date]
 //              [--append-source] [--no-hash] [--similar] [--csv <dosya>] [--apply [--keep-source]]
 //           --similar: benzer fotoğrafları da arar (görüntü çözer, yavaş; izler önbelleğe yazılır)
+//           --quality: netlik ve karanlık ölçer (ölçümler önbelleğe yazılır); --csv ile …-kalite.csv
 //           Cli --undo <günlük.jsonl>
 //           Cli --resume <günlük.jsonl>   (yarıda kalan --apply işlemini kaldığı yerden sürdürür)
 var roots = new List<string>(); var excl = new List<string>();
 string? dest = null, csv = null, undo = null, resume = null;
-bool srcFolder = false, renameDate = false, appendSrc = false, noHash = false, apply = false, keepSource = false, similar = false;
+bool srcFolder = false, renameDate = false, appendSrc = false, noHash = false, apply = false, keepSource = false, similar = false, quality = false;
 for (int i = 0; i < args.Length; i++)
     switch (args[i])
     {
@@ -24,6 +25,7 @@ for (int i = 0; i < args.Length; i++)
         case "--apply": apply = true; break;
         case "--keep-source": keepSource = true; break;
         case "--similar": similar = true; break;
+        case "--quality": quality = true; break;
         case "--undo": undo = args[++i]; break;
         case "--resume": resume = args[++i]; break;
     }
@@ -133,6 +135,38 @@ else
         }
         File.WriteAllText(simCsv, sb.ToString(), new UTF8Encoding(true));
         Console.WriteLine($"Benzer grupları CSV: {simCsv}");
+    }
+}
+
+if (quality)
+{
+    sw.Restart(); lastPct = -1;
+    var qErrors = new List<string>();
+    int qCached = 0;
+    var ignoreDirs = new[] { similarDir, Path.Combine(Path.GetFullPath(dest), "_Kusurlu") };
+    var scores = QualityScan.Compute(files, groups, ignoreDirs, new QualityCache(QualityCache.DefaultPath), qErrors,
+        new Progress<(int d, int t, int c)>(p =>
+        {
+            qCached = Math.Max(qCached, p.c);
+            int pct = p.t == 0 ? 100 : p.d * 100 / p.t;
+            if (pct != lastPct && pct % 10 == 0) { lastPct = pct; Console.Error.WriteLine($"  netlik %{pct}"); }
+        }));
+    Console.WriteLine($"\n== Netlik / karanlık ==\nÖlçüm süresi: {sw.Elapsed:mm\\:ss}  Ölçülen: {scores.Count}  " +
+                      $"Önbellekten yaklaşık: {qCached}  Ölçülemeyen: {qErrors.Count}");
+    foreach (var e in qErrors.Take(5)) Console.WriteLine($"  {e}");
+    Console.WriteLine("En düşük netlik:");
+    foreach (var (f, s) in scores.OrderBy(kv => kv.Value.Sharpness).Take(10).Select(kv => (kv.Key, kv.Value)))
+        Console.WriteLine($"  {s.Sharpness,8:N1}  parlaklık {s.MeanLuma,5:N0}{(s.Flat ? "  düz" : "")}  {f.Path}");
+
+    if (csv != null)
+    {
+        var qCsv = Path.ChangeExtension(csv, null) + "-kalite.csv";
+        var sb = new StringBuilder("Dosya;Netlik;Parlaklik;KaranlikOrani;Duz;Cekim;Kamera;Genislik\n");
+        foreach (var (f, s) in scores.OrderBy(kv => kv.Key.Path, StringComparer.OrdinalIgnoreCase).Select(kv => (kv.Key, kv.Value)))
+            sb.AppendLine($"{f.Path};{s.Sharpness:0.##};{s.MeanLuma:0.#};{s.DarkFraction:0.###};{(s.Flat ? 1 : 0)};" +
+                          $"{f.Taken:yyyy-MM-dd HH:mm:ss};{f.Model};{f.Width}");
+        File.WriteAllText(qCsv, sb.ToString(), new UTF8Encoding(true));
+        Console.WriteLine($"Kalite CSV: {qCsv}");
     }
 }
 
