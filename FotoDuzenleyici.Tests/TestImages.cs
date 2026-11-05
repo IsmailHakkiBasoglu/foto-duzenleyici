@@ -81,6 +81,66 @@ static class TestImages
         return ms.ToArray();
     }
 
+    /// <summary>Desenin <paramref name="radius"/> yarıçaplı kutu bulanıklığıyla (iki geçiş) yumuşatılmışı.</summary>
+    public static byte[] BlurredPatternJpeg(int w, int h, int seed, int radius) =>
+        EncodeJpeg(Blur(Pattern(w, h, seed), w, h, radius, 0, w), w, h);
+
+    /// <summary>Sol yarısı keskin, sağ yarısı bulanık desen: arkası flu portre gibi.</summary>
+    public static byte[] HalfBlurredPatternJpeg(int w, int h, int seed, int radius) =>
+        EncodeJpeg(Blur(Pattern(w, h, seed), w, h, radius, w / 2, w), w, h);
+
+    /// <summary>Desenin parlaklığı <paramref name="scale"/> ile çarpılmış (gece çekimi gibi karanlık).</summary>
+    public static byte[] DarkPatternJpeg(int w, int h, int seed, double scale)
+    {
+        var px = Pattern(w, h, seed);
+        for (int i = 0; i < px.Length; i++) px[i] = (byte)(px[i] * scale);
+        return EncodeJpeg(px, w, h);
+    }
+
+    static byte[] EncodeJpeg(byte[] px, int w, int h)
+    {
+        var enc = new JpegBitmapEncoder { QualityLevel = 90 };
+        enc.Frames.Add(BitmapFrame.Create(BitmapSource.Create(w, h, 96, 96, PixelFormats.Bgr24, null, px, w * 3)));
+        using var ms = new MemoryStream();
+        enc.Save(ms);
+        return ms.ToArray();
+    }
+
+    /// <summary>[x0, x1) sütunlarında yatay + dikey kutu bulanıklığı, iki kez.</summary>
+    static byte[] Blur(byte[] px, int w, int h, int r, int x0, int x1)
+    {
+        for (int pass = 0; pass < 2; pass++)
+        {
+            var src = (byte[])px.Clone();
+            for (int y = 0; y < h; y++)
+            for (int x = x0; x < x1; x++)
+            for (int c = 0; c < 3; c++)
+            {
+                int sum = 0, n = 0;
+                for (int k = -r; k <= r; k++)
+                {
+                    int xx = Math.Clamp(x + k, 0, w - 1);
+                    sum += src[(y * w + xx) * 3 + c]; n++;
+                }
+                px[(y * w + x) * 3 + c] = (byte)(sum / n);
+            }
+            src = (byte[])px.Clone();
+            for (int y = 0; y < h; y++)
+            for (int x = x0; x < x1; x++)
+            for (int c = 0; c < 3; c++)
+            {
+                int sum = 0, n = 0;
+                for (int k = -r; k <= r; k++)
+                {
+                    int yy = Math.Clamp(y + k, 0, h - 1);
+                    sum += src[(yy * w + x) * 3 + c]; n++;
+                }
+                px[(y * w + x) * 3 + c] = (byte)(sum / n);
+            }
+        }
+        return px;
+    }
+
     static byte[] Pattern(int w, int h, int seed)
     {
         var rnd = new Random(seed);

@@ -91,7 +91,7 @@ public static class ImageHasher
 
     public static int Distance(ulong a, ulong b) => BitOperations.PopCount(a ^ b);
 
-    static BitmapSource? TryDecode(string path, int orientation, int decodePixelWidth, out string? error)
+    internal static BitmapSource? TryDecode(string path, int orientation, int decodePixelWidth, out string? error)
     {
         error = null;
         try
