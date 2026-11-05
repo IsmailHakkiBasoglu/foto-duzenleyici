@@ -108,15 +108,12 @@ else
         }));
     var sims = SimilarFinder.Find(files, hashes, same);
     Console.WriteLine($"Benzerlik izi süresi: {sw.Elapsed:mm\\:ss}  (iz: {hashes.Count}, önbellekten yaklaşık: {cached})");
-    string Name(SimilarKind k) => k switch
-    {
-        SimilarKind.SameFrame => "Aynı kare", SimilarKind.ResizedCopy => "Küçültülmüş kopya", _ => "Seri çekim",
-    };
+    string Name(SimilarKind k) => SimilarGroupState.KindName(k);
     Console.WriteLine("\n== Benzerler (yalnızca rapor; arayüzden ayıklanır) ==\n" +
-                      string.Join("  ", Enum.GetValues<SimilarKind>().Select(k => $"{Name(k)}: {sims.Count(g => g.Kind == k)} grup")));
+                      string.Join("  ", Enum.GetValues<SimilarKind>().Where(k => k != SimilarKind.Flawed).Select(k => $"{Name(k)}: {sims.Count(g => g.Kind == k)} grup")));
     Console.WriteLine($"İz çıkarılamayan: {simErrors.Count}");
     foreach (var e in simErrors.Take(5)) Console.WriteLine($"  {e}");
-    foreach (var k in Enum.GetValues<SimilarKind>())
+    foreach (var k in Enum.GetValues<SimilarKind>().Where(k => k != SimilarKind.Flawed))
         foreach (var g in sims.Where(g => g.Kind == k).Take(5))
             Console.WriteLine($"  [{Name(k)}] " + string.Join("  |  ", g.Members.Select(m => (m == g.Suggested ? "★ " : "") + m.FileName)));
 

@@ -130,4 +130,48 @@ public class SimilarGroupStateTests : IDisposable
         Assert.True(g.Reviewed);
         Assert.True(store.IsReviewed(ReviewStore.Signature(new[] { "a", "b" })));
     }
+
+    // --- Netlik: seri çekimde göreli sıralama ---
+
+    static Dictionary<MediaFile, QualityScore> Scores(SimilarGroupState g, params double[] sharp) =>
+        g.Rows.Select((r, i) => (r.File, s: new QualityScore(sharp[i], 120, 0, false))).ToDictionary(x => x.File, x => x.s);
+
+    [Fact]
+    public void ApplyBurstRanks_SetsPercentStarAndSoft_OnlyForBurst()
+    {
+        var burst = Group(3);
+        burst.ApplyBurstRanks(Scores(burst, 100, 40, 90));
+        Assert.Equal(new int?[] { 100, 40, 90 }, burst.Rows.Select(r => r.SharpPercent));
+        Assert.Equal(new[] { "◎", "", "" }, burst.Rows.Select(r => r.Star));
+        Assert.Equal(new string?[] { null, "BULANIK", null }, burst.Rows.Select(r => r.Flaw));
+
+        var same = Group(2, suggested: 0, kind: SimilarKind.SameFrame);
+        same.ApplyBurstRanks(Scores(same, 100, 10));
+        Assert.All(same.Rows, r => { Assert.Null(r.SharpPercent); Assert.Null(r.Flaw); Assert.False(r.Sharpest); });
+        Assert.Equal("★", same.Rows[0].Star);
+    }
+
+    [Fact]
+    public void ReleaseSoft_ReleasesOnlySoftFrames_NeverSharpest()
+    {
+        var g = Group(3);
+        g.ApplyBurstRanks(Scores(g, 100, 40, 90));
+        var changed = new List<SimilarRow>();
+        foreach (var r in g.Rows) r.Changed = changed.Add;
+        Assert.Equal(1, g.ReleaseSoft());
+        Assert.Equal(new[] { true, false, true }, g.Rows.Select(r => r.Keep));
+        Assert.Same(g.Rows[1], Assert.Single(changed));
+        Assert.Equal(0, g.ReleaseSoft()); // ikinci kez: zaten ayıklanmış
+    }
+
+    [Fact]
+    public void ReleaseSoft_KeepsLastFrame_WhenSharpestWasReleasedByHand()
+    {
+        var g = Group(2);
+        g.ApplyBurstRanks(Scores(g, 100, 30));
+        g.Rows[1].Keep = true;
+        g.Rows[0].Keep = false; // kullanıcı en neti ayıkladı
+        Assert.Equal(0, g.ReleaseSoft());
+        Assert.True(g.Rows[1].Keep);
+    }
 }

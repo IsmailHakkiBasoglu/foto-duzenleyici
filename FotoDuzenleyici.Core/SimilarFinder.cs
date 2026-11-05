@@ -8,6 +8,8 @@ public enum SimilarKind
     ResizedCopy,
     /// <summary>Saniyeler içinde çekilmiş çok benzer kareler.</summary>
     Burst,
+    /// <summary>Benzer değil: tek başına bulanık ya da karanlık kare (Kusurlu sekmesi, tek kareli grup).</summary>
+    Flawed,
 }
 
 public sealed class SimilarGroup

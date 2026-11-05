@@ -15,7 +15,32 @@ public sealed class SimilarRow : INotifyPropertyChanged
     public required SimilarKind Kind { get; init; }
     public string KindText => SimilarGroupState.KindName(Kind);
     public bool Suggested { get; init; }
-    public string Star => Suggested ? "★" : "";
+    /// <summary>★ önerilen kopya; seri çekimde ◎ en net kare.</summary>
+    public string Star => Suggested ? "★" : Sharpest ? "◎" : "";
+
+    int? _sharpPercent;
+    bool _sharpest;
+    string? _flaw;
+
+    /// <summary>Seri çekimde grubun en netine göre netlik yüzdesi; ölçülmediyse null.</summary>
+    public int? SharpPercent
+    {
+        get => _sharpPercent;
+        set { _sharpPercent = value; Raise(nameof(SharpPercent)); }
+    }
+
+    public bool Sharpest
+    {
+        get => _sharpest;
+        set { _sharpest = value; Raise(nameof(Sharpest)); Raise(nameof(Star)); }
+    }
+
+    /// <summary>Kart rozeti: "BULANIK", "KARANLIK" ya da ikisi; yoksa null.</summary>
+    public string? Flaw
+    {
+        get => _flaw;
+        set { _flaw = value; Raise(nameof(Flaw)); }
+    }
     public string Path => File.Path;
     public string Name => File.FileName;
     public string Resolution => File.Width is { } w && File.Height is { } h ? $"{w}×{h}" : "-";
@@ -80,9 +105,12 @@ public sealed class SimilarGroupState : INotifyPropertyChanged
 {
     bool _reviewed;
 
-    public SimilarGroupState(int number, SimilarKind kind, IReadOnlyList<SimilarRow> rows)
+    readonly bool _allowEmpty;
+
+    /// <param name="allowEmpty">Kusurlu liste: tek kare ayıklanabilir, "en az bir kare kalsın" kuralı yok.</param>
+    public SimilarGroupState(int number, SimilarKind kind, IReadOnlyList<SimilarRow> rows, bool allowEmpty = false)
     {
-        Number = number; Kind = kind; Rows = rows;
+        Number = number; Kind = kind; Rows = rows; _allowEmpty = allowEmpty;
         foreach (var r in rows) r.CanRelease = CanRelease;
     }
 
@@ -103,7 +131,8 @@ public sealed class SimilarGroupState : INotifyPropertyChanged
 
     public static string KindName(SimilarKind k) => k switch
     {
-        SimilarKind.SameFrame => "Aynı kare", SimilarKind.ResizedCopy => "Küçültülmüş kopya", _ => "Seri çekim",
+        SimilarKind.SameFrame => "Aynı kare", SimilarKind.ResizedCopy => "Küçültülmüş kopya",
+        SimilarKind.Flawed => "Kusurlu", _ => "Seri çekim",
     };
 
     public static List<SimilarGroupState> FromGroups(IReadOnlyList<SimilarGroup> groups) =>
@@ -112,7 +141,33 @@ public sealed class SimilarGroupState : INotifyPropertyChanged
             Group = i + 1, File = m, Kind = g.Kind, Suggested = m == g.Suggested,
         }).ToList())).ToList();
 
-    public bool CanRelease(SimilarRow row) => Rows.Any(o => o != row && o.Keep);
+    public bool CanRelease(SimilarRow row) => _allowEmpty || Rows.Any(o => o != row && o.Keep);
+
+    /// <summary>Seri çekim grubunda netlik sıralamasını satırlara yazar; diğer türlere dokunmaz.</summary>
+    public void ApplyBurstRanks(IReadOnlyDictionary<MediaFile, QualityScore> scores)
+    {
+        if (Kind != SimilarKind.Burst) return;
+        var ranks = QualityRules.RankBurst(Rows.Select(r => scores.TryGetValue(r.File, out var s) ? s : (QualityScore?)null).ToList());
+        for (int i = 0; i < Rows.Count; i++)
+        {
+            Rows[i].SharpPercent = ranks[i].Percent;
+            Rows[i].Sharpest = ranks[i].Sharpest;
+            Rows[i].Flaw = ranks[i].Soft ? "BULANIK" : null;
+        }
+    }
+
+    /// <summary>"Bulanıkları ayıkla": BULANIK rozetli kareleri ayıklar; en nete dokunmaz, son kare kuralına uyar.</summary>
+    public int ReleaseSoft()
+    {
+        if (Kind != SimilarKind.Burst) return 0;
+        int n = 0;
+        foreach (var r in Rows.Where(r => r.Flaw == "BULANIK" && !r.Sharpest && r.Keep))
+        {
+            r.Keep = false;
+            if (!r.Keep) n++;
+        }
+        return n;
+    }
 
     /// <summary>Yalnız bu kare kalsın; önce o işaretlenir ki grup hiçbir an boş kalmasın.</summary>
     public void KeepOnly(SimilarRow row)
@@ -129,7 +184,7 @@ public sealed class SimilarGroupState : INotifyPropertyChanged
     {
         foreach (var r in Rows)
             if (r.StoreKey is { } k && store.GetKeep(k) is { } keep) r.LoadKeep(keep);
-        if (KeptCount == 0) (Rows.FirstOrDefault(r => r.Suggested) ?? Rows[0]).LoadKeep(true);
+        if (KeptCount == 0 && !_allowEmpty) (Rows.FirstOrDefault(r => r.Suggested) ?? Rows[0]).LoadKeep(true);
 
         Signature = Rows.All(r => r.StoreKey is not null) ? ReviewStore.Signature(Rows.Select(r => r.StoreKey!)) : null;
         Reviewed = Signature is not null && store.IsReviewed(Signature);
