@@ -87,6 +87,7 @@ Console.WriteLine($"\n== Yinelenen ==\nGrup: {groups.Count}  Fazla kopya: {group
 
 var similarDir = Path.Combine(Path.GetFullPath(dest), "_Benzerler");
 var same = SameFrameFinder.Find(files, groups, similarDir);
+var sims = new List<SimilarGroup>();
 if (!similar)
 {
     Console.WriteLine($"\n== Muhtemelen aynı kare (yalnızca rapor; arayüzden ayıklanır) ==\nGrup: {same.Count}  Dosya: {same.Sum(g => g.Members.Count)}");
@@ -106,7 +107,7 @@ else
             int pct = p.t == 0 ? 100 : p.d * 100 / p.t;
             if (pct != lastPct && pct % 10 == 0) { lastPct = pct; Console.Error.WriteLine($"  benzerlik izi %{pct}"); }
         }));
-    var sims = SimilarFinder.Find(files, hashes, same);
+    sims = SimilarFinder.Find(files, hashes, same);
     Console.WriteLine($"Benzerlik izi süresi: {sw.Elapsed:mm\\:ss}  (iz: {hashes.Count}, önbellekten yaklaşık: {cached})");
     string Name(SimilarKind k) => SimilarGroupState.KindName(k);
     Console.WriteLine("\n== Benzerler (yalnızca rapor; arayüzden ayıklanır) ==\n" +
@@ -164,6 +165,28 @@ if (quality)
                           $"{f.Taken:yyyy-MM-dd HH:mm:ss};{f.Model};{f.Width}");
         File.WriteAllText(qCsv, sb.ToString(), new UTF8Encoding(true));
         Console.WriteLine($"Kalite CSV: {qCsv}");
+    }
+
+    // Arayüzle aynı kurallar: seri çekimde göreli sıralama, Benzerler dışında kalan kusurlu kareler.
+    var states = SimilarGroupState.FromGroups(sims);
+    foreach (var g in states) g.ApplyBurstRanks(scores);
+    var flawed = FlawedList.Build(scores, states, states.Count + 1).Select(g => g.Rows[0]).ToList();
+    Console.WriteLine($"Kusurlu (Benzerler dışında{(similar ? "" : "; --similar verilmedi, tüm fotoğraflar")}): " +
+                      $"bulanık {flawed.Count(r => r.Flaw!.Contains("BULANIK"))}, karanlık {flawed.Count(r => r.Flaw!.Contains("KARANLIK"))}");
+    if (similar)
+        Console.WriteLine($"Seri çekimde en net önerisi: {states.Count(g => g.Rows.Any(r => r.Sharpest))} grup, " +
+                          $"BULANIK kare: {states.Sum(g => g.Rows.Count(r => r.Flaw == "BULANIK"))}");
+    if (csv != null)
+    {
+        var fCsv = Path.ChangeExtension(csv, null) + "-kusurlu.csv";
+        var sb = new StringBuilder("Dosya;Neden;Netlik;Parlaklik;KaranlikOrani;Cekim\n");
+        foreach (var r in flawed)
+        {
+            var s = scores[r.File];
+            sb.AppendLine($"{r.Path};{r.Flaw};{s.Sharpness:0.##};{s.MeanLuma:0.#};{s.DarkFraction:0.###};{r.File.Taken:yyyy-MM-dd HH:mm:ss}");
+        }
+        File.WriteAllText(fCsv, sb.ToString(), new UTF8Encoding(true));
+        Console.WriteLine($"Kusurlu CSV: {fCsv}");
     }
 }
 

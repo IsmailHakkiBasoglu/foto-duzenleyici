@@ -14,6 +14,26 @@ Biçim [Keep a Changelog](https://keepachangelog.com/tr-TR/1.1.0/), sürüm numa
   gitsin mi (Evet), normal klasörüne mi (Hayır), yoksa plan hiç oluşturulmasın mı (İptal).
 - Benzerler şeridinde RAW eşi olan karelerin köşesinde **RAW** rozeti.
 - Özette ve komut satırında "RAW+JPG eşi" sayısı; komut satırı adı eşinden ayrılan eş varsa sayıyor.
+- **Bulanık ve karanlık kareler:** tarama her fotoğrafın netliğini (en net bölgelerine bakarak; arkası flu
+  portre bulanık sayılmaz) ve karanlığını yerelde ölçüyor. Yeni seçenek "Bulanık / karanlık kareleri
+  işaretle" (varsayılan açık). Ölçümler `%LOCALAPPDATA%\FotoDuzenleyici\kalite-onbellek.json`
+  dosyasında saklanıyor; dosya taşınıp yeniden adlandırılsa da bulunuyor. Gerçek arşivde ilk ölçüm
+  ~2 dakika, sonrakiler anında.
+- Seri çekim gruplarında kareler netliğe göre kıyaslanıyor: en net kare **◎**, en netin yarısının
+  altında kalan kareler **BULANIK** rozeti alıyor; kareler birbirine çok yakınsa işaret konmuyor.
+  Karşılaştırma penceresinde her karenin başlığında netlik yüzdesi ("3 · Netlik %42").
+- **Bulanıkları ayıkla** düğmesi: seri çekimlerde yalnız BULANIK rozetli kareleri ayıklar; en net
+  kareye dokunmaz. "Önerileri uygula" seri çekimlere eskisi gibi dokunmuyor.
+- **Kusurlu** sekmesi: Benzerler dışında kalan, tek başına bulanık ya da çok karanlık kareler
+  ("Bulanıklar" / "Karanlıklar" süzgeci). Varsayılan olarak hepsi kalır; ayıklananlar Uygula'da
+  `_Kusurlu\yyyy-MM` klasörüne gider (silinmez, Geri Al çalışır) ve sonraki taramalarda yerinde kalır.
+  Çift tıklama kareyi tam ekran açar (yakınlaştırma, ← → sonraki). Eşikler gerçek arşivde
+  örneklere bakılarak seçildi: netlik 25'in altı, parlaklık 30'un altında ve piksellerin %60'tan
+  fazlası karanlık.
+- Plan'daki RAW sorusu artık Benzerler'de ve Kusurlu'da ayıklanan kareleri birlikte soruyor; RAW,
+  JPG'sinin gittiği klasöre gidiyor.
+- Komut satırına `--quality`: ölçüm, en düşük netlikli kareler, bulanık / karanlık sayıları;
+  `--csv` ile `…-kalite.csv` (tüm ölçümler) ve `…-kusurlu.csv`.
 
 ### Düzeltildi
 - Eşin bir dosyası isim çakışması yüzünden tarih ya da `(2)` alınca diğeri eski adında kalıyordu;

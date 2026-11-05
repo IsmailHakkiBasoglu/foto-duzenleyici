@@ -26,7 +26,8 @@ Durum işaretleri: ✅ bitti · 🔄 sürüyor · ⬜ planlandı
   (küçük resimli şerit, tam ekran karşılaştırma, kararlar kalıcı) (0.1.5)
 - ✅ RAW + JPG eşlerini birlikte taşımak: adlar hep eş; Benzerler'de ayıklanan karenin RAW'ı
   Plan'da sorulur; kopyalar bağımsız (yayınlanmamış)
-- ⬜ Bulanık veya çok karanlık kareleri işaretlemek (yerel hesaplama)
+- ✅ Bulanık veya çok karanlık kareleri işaretlemek (yerel hesaplama): seri çekimde en net / bulanık,
+  arşiv genelinde Kusurlu sekmesi ve `_Kusurlu` klasörü (yayınlanmamış)
 
 ## Aşama 3 — Görsel arayüz
 
