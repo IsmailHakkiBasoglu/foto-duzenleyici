@@ -70,7 +70,7 @@ public class IntegrationTests : IDisposable
         var t = new DateTime(2024, 3, 10);
         for (int i = 0; i < 300; i++) Put($"IMG_{i:0000}.JPG", TestImages.PatternJpeg(400, 300, 5000 + i, 85), t, t);
         var (files, dups) = Scan(_src);
-        var prints = SimilarityScan.Compute(files, dups, null, new HashCache(Path.Combine(_tmp, "c.json")), new List<string>());
+        var prints = SimilarityScan.Compute(files, dups, Array.Empty<string>(), new HashCache(Path.Combine(_tmp, "c.json")), new List<string>());
         Assert.Empty(SimilarFinder.Find(files, prints, SameFrameFinder.Find(files, dups)));
     }
 
@@ -83,7 +83,7 @@ public class IntegrationTests : IDisposable
         var cachePath = Path.Combine(_tmp, "onbellek.json");
 
         var (files, dups) = Scan(_src);
-        var hashes = SimilarityScan.Compute(files, dups, null, new HashCache(cachePath), new List<string>());
+        var hashes = SimilarityScan.Compute(files, dups, Array.Empty<string>(), new HashCache(cachePath), new List<string>());
         var g = Assert.Single(SimilarFinder.Find(files, hashes, SameFrameFinder.Find(files, dups)));
         Assert.Equal(SimilarKind.ResizedCopy, g.Kind);
         Assert.Equal(big.Path, g.Suggested!.Path);
@@ -97,7 +97,7 @@ public class IntegrationTests : IDisposable
         // Tekrar çalıştırma: grup bir daha önerilmez, hiçbir şey taşınmaz.
         var (again, dups2) = Scan(_dest);
         var ignore = Path.Combine(_dest, "_Benzerler");
-        var hashes2 = SimilarityScan.Compute(again, dups2, ignore, new HashCache(cachePath), new List<string>());
+        var hashes2 = SimilarityScan.Compute(again, dups2, new[] { ignore }, new HashCache(cachePath), new List<string>());
         Assert.Empty(SimilarFinder.Find(again, hashes2, SameFrameFinder.Find(again, dups2, ignore)));
         Assert.All(Planner.Build(again, dups2, Options(_dest)).Items, i => Assert.Equal(PlanAction.AlreadyInPlace, i.Action));
 

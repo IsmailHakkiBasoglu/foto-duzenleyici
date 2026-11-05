@@ -109,6 +109,16 @@ public class SameFrameTests : IDisposable
         Assert.Empty(SameFrameFinder.Find(new[] { kept, set }, new List<DuplicateGroup>(), @"Z:\out\_Benzerler"));
     }
 
+    // Gözden geçirmeden: _Kusurlu'ya ayrılmış kare tekrar bir gruba girip oradan _Benzerler'e taşınmamalı.
+    [Fact]
+    public void FilesAlreadyInFlawedFolder_AreIgnored()
+    {
+        var kept = Photo(@"Z:\out\2024-03\2024-03-Foto\1.jpg");
+        var set = Photo(@"Z:\out\_Kusurlu\2024-03\1.jpg");
+        Assert.Empty(SameFrameFinder.Find(new[] { kept, set }, new List<DuplicateGroup>(),
+            new[] { @"Z:\out\_Benzerler", @"Z:\out\_Kusurlu" }));
+    }
+
     [Fact]
     public void Scanner_ReadsSubSecondSizeAndSerial()
     {

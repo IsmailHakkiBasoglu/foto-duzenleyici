@@ -18,17 +18,22 @@ public static class SameFrameFinder
 {
     /// <param name="ignoreFolder">Bu klasördeki dosyalar (ör. önceki turda ayıklanan _Benzerler) hesaba katılmaz.</param>
     public static List<SameFrameGroup> Find(IReadOnlyList<MediaFile> files, IReadOnlyList<DuplicateGroup> dupGroups,
-        string? ignoreFolder = null)
+        string? ignoreFolder = null) =>
+        Find(files, dupGroups, ignoreFolder is null ? Array.Empty<string>() : new[] { ignoreFolder });
+
+    /// <param name="ignoreFolders">Bu klasörlerdeki dosyalar (önceki turlarda ayrılan _Benzerler, _Kusurlu) hesaba katılmaz.</param>
+    public static List<SameFrameGroup> Find(IReadOnlyList<MediaFile> files, IReadOnlyList<DuplicateGroup> dupGroups,
+        IReadOnlyList<string> ignoreFolders)
     {
         // Birebir kopyalar zaten _Tekrarlar'a gider; onları ayrıca önermeye gerek yok.
         var copies = dupGroups.SelectMany(g => g.Copies).ToHashSet();
-        var ignore = ignoreFolder is null ? null : Path.GetFullPath(ignoreFolder).TrimEnd('\\') + "\\";
+        var ignore = ignoreFolders.Select(f => Path.GetFullPath(f).TrimEnd('\\') + "\\").ToList();
 
         // Yalnızca fotoğraflar: RAW + JPG eşi aynı anı taşır ama iki ayrı dosyadır, videolar da kare değildir.
         var candidates = files.Where(f => f.Kind == FileKind.Photo && f.DateSource == DateSource.Exif
                                           && f.Taken is not null && !string.IsNullOrEmpty(f.Make)
                                           && !copies.Contains(f)
-                                          && (ignore is null || !Path.GetFullPath(f.Path).StartsWith(ignore, StringComparison.OrdinalIgnoreCase)));
+                                          && !ignore.Any(i => Path.GetFullPath(f.Path).StartsWith(i, StringComparison.OrdinalIgnoreCase)));
 
         var groups = new List<SameFrameGroup>();
         foreach (var bucket in candidates.GroupBy(f => (

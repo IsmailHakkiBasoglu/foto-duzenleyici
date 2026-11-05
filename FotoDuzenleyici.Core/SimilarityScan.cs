@@ -5,17 +5,17 @@ namespace FotoDuzenleyici.Core;
 /// <summary>Taranan fotoğrafların benzerlik izlerini önbellekten ya da hesaplayarak toplar. Dosyalara dokunmaz.</summary>
 public static class SimilarityScan
 {
-    /// <param name="ignoreFolder">Bu klasördekiler (önceki turda ayıklanan _Benzerler) hesaba katılmaz.</param>
     /// <param name="errors">İzi çıkarılamayan dosyalar ("yol: sebep") ve önbellek kayıt hatası buraya eklenir.</param>
+    /// <param name="ignoreFolders">Bu klasörlerdekiler (önceki turlarda ayrılan _Benzerler, _Kusurlu) hesaba katılmaz.</param>
     public static Dictionary<MediaFile, ImagePrint> Compute(IReadOnlyList<MediaFile> files, IReadOnlyList<DuplicateGroup> dupGroups,
-        string? ignoreFolder, HashCache cache, List<string> errors,
+        IReadOnlyList<string> ignoreFolders, HashCache cache, List<string> errors,
         IProgress<(int done, int total, int fromCache)>? progress = null, CancellationToken ct = default)
     {
         // Yalnızca fotoğraflar: RAW yavaş çözülür ve eşi olan JPG zaten taranır; birebir kopyalar _Tekrarlar'a gider.
         var copies = dupGroups.SelectMany(g => g.Copies).ToHashSet();
-        var ignore = ignoreFolder is null ? null : Path.GetFullPath(ignoreFolder).TrimEnd('\\') + "\\";
+        var ignore = ignoreFolders.Select(f => Path.GetFullPath(f).TrimEnd('\\') + "\\").ToList();
         var todo = files.Where(f => f.Kind == FileKind.Photo && !copies.Contains(f)
-                                    && (ignore is null || !Path.GetFullPath(f.Path).StartsWith(ignore, StringComparison.OrdinalIgnoreCase)))
+                                    && !ignore.Any(i => Path.GetFullPath(f.Path).StartsWith(i, StringComparison.OrdinalIgnoreCase)))
             .ToList();
 
         var result = new ConcurrentDictionary<MediaFile, ImagePrint>();

@@ -40,7 +40,7 @@ public class HashCacheTests : IDisposable
     {
         rec ??= new Recorder();
         var errors = new List<string>();
-        var r = SimilarityScan.Compute(Scan(root), new List<DuplicateGroup>(), null, new HashCache(cachePath ?? _cachePath),
+        var r = SimilarityScan.Compute(Scan(root), new List<DuplicateGroup>(), Array.Empty<string>(), new HashCache(cachePath ?? _cachePath),
             errors, rec, ct);
         return (r, rec, errors);
     }
@@ -138,7 +138,7 @@ public class HashCacheTests : IDisposable
         var dups = new List<DuplicateGroup> { new() { Keeper = keeper, Copies = new() { copy } } };
 
         var r = SimilarityScan.Compute(new[] { photo, raw, video, keeper, copy, parked }, dups,
-            Path.Combine(_tmp, "out", "_Benzerler"), new HashCache(_cachePath), new List<string>());
+            new[] { Path.Combine(_tmp, "out", "_Benzerler") }, new HashCache(_cachePath), new List<string>());
         Assert.Equal(new[] { "IMG_0000.JPG", "a.jpg" }, r.Keys.Select(k => k.FileName).OrderBy(n => n, StringComparer.Ordinal));
     }
 
@@ -151,5 +151,20 @@ public class HashCacheTests : IDisposable
         var (hashes, _, errors) = Run(_src, cachePath: dirAsCache);
         Assert.Equal(3, hashes.Count);
         Assert.Contains(errors, e => e.StartsWith("Önbellek kaydedilemedi"));
+    }
+
+    // Gözden geçirmeden: _Kusurlu'ya ayrılmış kareler benzerlik aramasına girmemeli.
+    [Fact]
+    public void ExcludesFlawedFolderToo()
+    {
+        MakePhotos(1);
+        var parked = Path.Combine(_tmp, "out", "_Kusurlu", "2024-03", "k.jpg");
+        Directory.CreateDirectory(Path.GetDirectoryName(parked)!);
+        File.WriteAllBytes(parked, TestImages.PatternJpeg(300, 200, seed: 9));
+        var files = Scan(_src).Append(new MediaFile { Path = parked, Kind = FileKind.Photo }).ToList();
+        var r = SimilarityScan.Compute(files, new List<DuplicateGroup>(),
+            new[] { Path.Combine(_tmp, "out", "_Benzerler"), Path.Combine(_tmp, "out", "_Kusurlu") },
+            new HashCache(_cachePath), new List<string>());
+        Assert.Equal(new[] { "IMG_0000.JPG" }, r.Keys.Select(k => k.FileName));
     }
 }

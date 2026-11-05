@@ -155,7 +155,9 @@ public partial class MainWindow : Window
         SetBusy(true);
         var opts = BuildScanOptions();
         var dest = DestBox.Text.Trim();
-        var ignore = dest.Length == 0 ? null : Path.Combine(Path.GetFullPath(dest), "_Benzerler");
+        // Önceki turlarda ayrılanlar (_Benzerler, _Kusurlu) ne benzerlik aramasına ne ölçüme girer.
+        var ignoreDirs = dest.Length == 0 ? Array.Empty<string>()
+            : new[] { Path.Combine(Path.GetFullPath(dest), "_Benzerler"), Path.Combine(Path.GetFullPath(dest), "_Kusurlu") };
         var prog = new Progress<(int d, int t)>(p => { Progress.Maximum = p.t; Progress.Value = p.d; StatusText.Text = $"Metadata okunuyor… {p.d}/{p.t}"; });
         try
         {
@@ -177,7 +179,7 @@ public partial class MainWindow : Window
                 });
                 try
                 {
-                    hashes = await Task.Run(() => SimilarityScan.Compute(_files, _dups, ignore,
+                    hashes = await Task.Run(() => SimilarityScan.Compute(_files, _dups, ignoreDirs,
                         new HashCache(HashCache.DefaultPath), _simErrors, sprog, ct));
                 }
                 catch (OperationCanceledException)
@@ -194,8 +196,6 @@ public partial class MainWindow : Window
                     Progress.Maximum = p.t; Progress.Value = p.d;
                     StatusText.Text = $"Netlik ölçülüyor… {p.d}/{p.t} ({p.c}'i önbellekten)";
                 });
-                var ignoreDirs = dest.Length == 0 ? Array.Empty<string>()
-                    : new[] { ignore!, Path.Combine(Path.GetFullPath(dest), "_Kusurlu") };
                 try
                 {
                     _scores = await Task.Run(() => QualityScan.Compute(_files, _dups, ignoreDirs,
@@ -207,7 +207,7 @@ public partial class MainWindow : Window
                     note = "Netlik ölçümü durduruldu; ölçülenler kaydedildi, bir sonraki taramada kaldığı yerden sürer.";
                 }
             }
-            await ShowSimilar(hashes, ignore);
+            await ShowSimilar(hashes, ignoreDirs);
             await ShowFlawed();
             SummaryBox.Text = BuildSummary(null);
             StatusText.Text = note ?? $"Tarama bitti: {_files.Count} dosya, {_dups.Count} yinelenen grup, " +
@@ -224,9 +224,9 @@ public partial class MainWindow : Window
         DupGrid.ItemsSource = _dups.SelectMany(g => g.Copies.Select(c =>
             new DupRow(g.Keeper.Path, c.Path, (c.Size / 1048576.0).ToString("N1")))).ToList();
 
-    async Task ShowSimilar(Dictionary<MediaFile, ImagePrint> hashes, string? ignore)
+    async Task ShowSimilar(Dictionary<MediaFile, ImagePrint> hashes, IReadOnlyList<string> ignoreDirs)
     {
-        var groups = SimilarFinder.Find(_files, hashes, SameFrameFinder.Find(_files, _dups, ignore));
+        var groups = SimilarFinder.Find(_files, hashes, SameFrameFinder.Find(_files, _dups, ignoreDirs));
         var states = SimilarGroupState.FromGroups(groups);
 
         // Önceki kararlar: dosya kimliği yoldan bağımsız; okunamayan dosyanın kararı saklanmaz.

@@ -86,7 +86,8 @@ long reclaim = groups.Sum(g => g.Copies.Sum(c => c.Size));
 Console.WriteLine($"\n== Yinelenen ==\nGrup: {groups.Count}  Fazla kopya: {groups.Sum(g => g.Copies.Count)}  Kazanılacak: {reclaim / 1e9:N2} GB");
 
 var similarDir = Path.Combine(Path.GetFullPath(dest), "_Benzerler");
-var same = SameFrameFinder.Find(files, groups, similarDir);
+var ignoreDirs = new[] { similarDir, Path.Combine(Path.GetFullPath(dest), "_Kusurlu") };
+var same = SameFrameFinder.Find(files, groups, ignoreDirs);
 var sims = new List<SimilarGroup>();
 if (!similar)
 {
@@ -100,7 +101,7 @@ else
     sw.Restart(); lastPct = -1;
     var simErrors = new List<string>();
     int cached = 0;
-    var hashes = SimilarityScan.Compute(files, groups, similarDir, new HashCache(HashCache.DefaultPath), simErrors,
+    var hashes = SimilarityScan.Compute(files, groups, ignoreDirs, new HashCache(HashCache.DefaultPath), simErrors,
         new Progress<(int d, int t, int c)>(p =>
         {
             cached = Math.Max(cached, p.c);
@@ -141,7 +142,6 @@ if (quality)
     sw.Restart(); lastPct = -1;
     var qErrors = new List<string>();
     int qCached = 0;
-    var ignoreDirs = new[] { similarDir, Path.Combine(Path.GetFullPath(dest), "_Kusurlu") };
     var scores = QualityScan.Compute(files, groups, ignoreDirs, new QualityCache(QualityCache.DefaultPath), qErrors,
         new Progress<(int d, int t, int c)>(p =>
         {
