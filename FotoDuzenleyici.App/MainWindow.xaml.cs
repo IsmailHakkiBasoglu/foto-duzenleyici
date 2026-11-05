@@ -204,6 +204,8 @@ public partial class MainWindow : Window
         // Önceki kararlar: dosya kimliği yoldan bağımsız; okunamayan dosyanın kararı saklanmaz.
         StatusText.Text = "Önceki kararlar yükleniyor…";
         var rows = states.SelectMany(g => g.Rows).ToList();
+        var pairs = RawJpgPairs.Index(_files);
+        foreach (var r in rows) r.HasRaw = r.File.Kind == FileKind.Photo && pairs.ContainsKey(r.File);
         await Task.Run(() =>
         {
             foreach (var r in rows)
@@ -360,7 +362,22 @@ public partial class MainWindow : Window
         if (string.IsNullOrWhiteSpace(DestBox.Text)) { MessageBox.Show("Hedef klasörü seç."); return; }
         var dest = Path.GetFullPath(DestBox.Text.Trim());
         if (await OfferResumeAsync(dest)) { StatusText.Text += "  Dosyalar değişti; plan için yeniden Tara."; return; }
-        _plan = Planner.Build(_files, _dups, BuildPlanOptions(), BuildSimilarMap());
+        var similarOf = BuildSimilarMap();
+        // Ayıklanan karelerin RAW eşleri: her Plan'da sorulur (kullanıcı kararı).
+        var raws = RawJpgPairs.UnreleasedRaws(_files, similarOf);
+        if (raws.Count > 0)
+        {
+            var ans = MessageBox.Show(
+                $"Benzerler'de ayıkladığın {raws.Count} karenin RAW eşi var.\n\n" +
+                "Evet: RAW'lar da JPG'leriyle birlikte _Benzerler'e taşınsın.\n" +
+                "Hayır: RAW'lar normal klasörlerine gitsin, yalnız JPG'ler ayıklansın.\n" +
+                "İptal: plan oluşturulmasın.",
+                "RAW eşleri", MessageBoxButton.YesNoCancel, MessageBoxImage.Question);
+            if (ans == MessageBoxResult.Cancel) return;
+            if (ans == MessageBoxResult.Yes)
+                foreach (var (raw, keeper) in raws) similarOf[raw] = keeper;
+        }
+        _plan = Planner.Build(_files, _dups, BuildPlanOptions(), similarOf);
         PlanGrid.ItemsSource = _plan.Items.Select(i => new PlanRow(
             i.Action.ToString(), i.File.Path, i.TargetPath,
             i.File.Taken?.ToString("yyyy-MM-dd HH:mm") ?? "-", i.File.DateSource.ToString(), i.File.Source ?? "")).ToList();
@@ -374,6 +391,8 @@ public partial class MainWindow : Window
         var sb = new StringBuilder();
         sb.AppendLine($"Toplam dosya: {_files.Count}   ({_files.Sum(f => f.Size) / 1e9:N2} GB)");
         foreach (var g in _files.GroupBy(f => f.Kind)) sb.AppendLine($"  {g.Key,-10} {g.Count(),6}   {g.Sum(f => f.Size) / 1e9,8:N2} GB");
+        var pairCount = RawJpgPairs.Groups(_files).Count;
+        if (pairCount > 0) sb.AppendLine($"RAW+JPG eşi: {pairCount} (adları ve klasör ayları eş tutulur)");
         sb.AppendLine("\nTarih kaynağı:");
         foreach (var g in _files.GroupBy(f => f.DateSource)) sb.AppendLine($"  {g.Key,-14} {g.Count(),6}");
         sb.AppendLine("\nKaynak (kamera):");

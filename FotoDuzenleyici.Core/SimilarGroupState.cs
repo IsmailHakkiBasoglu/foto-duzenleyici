@@ -22,6 +22,10 @@ public sealed class SimilarRow : INotifyPropertyChanged
     public string SizeMb => (File.Size / 1048576.0).ToString("N1");
     public string Taken => File.Taken?.ToString("yyyy-MM-dd HH:mm:ss") + (File.SubSec is { Length: > 0 } s ? "." + s : "");
 
+    /// <summary>Karenin RAW eşi var: kartta "RAW" rozeti; ayıklanırsa Plan'da RAW'ın ne olacağı sorulur.</summary>
+    public bool HasRaw { get; set; }
+    public string RawBadge => HasRaw ? "RAW" : "";
+
     /// <summary>Kararların saklandığı dosya kimliği (<see cref="HashCache.Key"/>); hesaplanamadıysa null.</summary>
     public string? StoreKey { get; set; }
 

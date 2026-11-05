@@ -6,6 +6,24 @@ Biçim [Keep a Changelog](https://keepachangelog.com/tr-TR/1.1.0/), sürüm numa
 
 ## [Yayınlanmamış]
 
+### Eklendi
+- **RAW + JPG eşleri birlikte:** aynı klasörde aynı adı taşıyan RAW ve JPG (ya da HEIC) aynı kare
+  sayılıyor. Düzenli arşivde `2026-01-Raw` klasörü kardeş `2026-01-Foto` klasörüyle eşleniyor; tekrar
+  çalıştırmada da eşler tanınıyor.
+- Benzerler'de ayıklanan karenin RAW eşi varsa Plan'a basınca soruluyor: RAW'lar da `_Benzerler`'e
+  gitsin mi (Evet), normal klasörüne mi (Hayır), yoksa plan hiç oluşturulmasın mı (İptal).
+- Benzerler şeridinde RAW eşi olan karelerin köşesinde **RAW** rozeti.
+- Özette ve komut satırında "RAW+JPG eşi" sayısı; komut satırı adı eşinden ayrılan eş varsa sayıyor.
+
+### Düzeltildi
+- Eşin bir dosyası isim çakışması yüzünden tarih ya da `(2)` alınca diğeri eski adında kalıyordu;
+  artık ikisi aynı adı alıyor ("RAW ayrı klasör" açıkken de). Saniye farkıyla ay sınırına düşen
+  eşler de ayrı aylara bölünmüyor.
+
+### Değişti
+- Birebir kopyalar eşten bağımsız: `_Tekrarlar`'a giden bir JPG'nin RAW'ı kendi yerine gidiyor
+  (RAW'ın kendisi kopya değilse).
+
 ## [0.1.5] - 2026-11-04
 
 ### Eklendi

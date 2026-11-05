@@ -144,6 +144,11 @@ var plan = Planner.Build(files, groups, new PlanOptions
 Console.WriteLine($"\n== Plan ==  (hedef: {dest})");
 foreach (var g in plan.Items.GroupBy(i => i.Action)) Console.WriteLine($"{g.Key,-15} {g.Count(),6}");
 Console.WriteLine($"İsim çakışması (tarih eklenen): {plan.Collisions}   Yeniden adlanan: {plan.Renamed}");
+var pairs = RawJpgPairs.Groups(files);
+var targetOf = plan.Items.ToDictionary(i => i.File);
+var split = pairs.Count(g => g.Select(f => Path.GetFileNameWithoutExtension(targetOf[f].TargetName))
+    .Distinct(StringComparer.OrdinalIgnoreCase).Count() > 1);
+Console.WriteLine($"RAW+JPG eşi: {pairs.Count}   Adı eşinden ayrılan: {split}");
 Console.WriteLine("\n== Aylara göre (taşınacak) ==");
 foreach (var g in plan.Items.Where(i => i.Action == PlanAction.Move)
              .GroupBy(i => Path.GetRelativePath(dest, i.TargetDir).Split('\\')[0]).OrderBy(g => g.Key))

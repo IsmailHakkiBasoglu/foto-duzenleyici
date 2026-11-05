@@ -43,20 +43,31 @@ public static class Planner
             foreach (var f in Directory.EnumerateFiles(dest, "*", SearchOption.AllDirectories))
                 if (!scanned.Contains(f)) taken.Add(f);
 
+        PlanAction Route(MediaFile f)
+        {
+            if (dupOf.ContainsKey(f)) return PlanAction.Duplicate;
+            if (similarOf?.ContainsKey(f) == true) return PlanAction.Similar;
+            // Kullanıcı önceki turda _Benzerler'e ayırdıysa orada kalır.
+            if (Path.GetFullPath(f.Path).StartsWith(simDir, StringComparison.OrdinalIgnoreCase)) return PlanAction.AlreadyInPlace;
+            return PlanAction.Move;
+        }
+
+        // RAW + JPG eşi aynı yere gidiyorsa (ikisi de düzenli klasöre ya da ikisi de _Benzerler'e)
+        // adı birlikte belirlenir: biri çakışırsa ikisi de aynı yeni adı alır. Kopyalar bağımsızdır.
+        var pairOf = RawJpgPairs.Index(files);
+        var planned = new HashSet<MediaFile>();
+
         // Hedefte zaten duran dosyalar önce: yerlerini korusunlar.
         foreach (var f in files.OrderByDescending(InDest).ThenBy(f => f.Path, StringComparer.OrdinalIgnoreCase))
         {
-            var date = f.Taken ?? DateTime.MinValue;
-            var month = f.Taken is null ? opt.UndatedFolderName : date.ToString("yyyy-MM");
-            dupOf.TryGetValue(f, out var keeper);
-            MediaFile? similar = null;
-            if (keeper is null) similarOf?.TryGetValue(f, out similar);
+            if (planned.Contains(f)) continue;
+            var route = Route(f);
 
-            // Kullanıcı önceki turda _Benzerler'e ayırdıysa orada kalır.
-            if (keeper is null && similar is null && Path.GetFullPath(f.Path).StartsWith(simDir, StringComparison.OrdinalIgnoreCase))
+            if (route == PlanAction.AlreadyInPlace)
             {
                 var full = Path.GetFullPath(f.Path);
                 taken.Add(full);
+                planned.Add(f);
                 plan.Items.Add(new PlanItem
                 {
                     File = f, TargetDir = Path.GetDirectoryName(full)!, TargetName = Path.GetFileName(full),
@@ -65,31 +76,50 @@ public static class Planner
                 continue;
             }
 
-            string dir;
-            if (keeper is not null)
-                dir = Path.Combine(dest, opt.DuplicatesFolderName, month);
-            else if (similar is not null)
-                dir = Path.Combine(dest, opt.SimilarFolderName, month);
-            else
-                dir = Path.Combine(dest, month, KindFolder(f, month, opt));
+            var members = route is PlanAction.Move or PlanAction.Similar
+                          && pairOf.TryGetValue(f, out var pair) && pair.All(m => !planned.Contains(m) && Route(m) == route)
+                ? pair : new List<MediaFile> { f };
 
-            var (name, renamed, collided) = ResolveName(f, date, dir, opt, taken, keeper is null && similar is null && InDest(f));
-            if (collided) plan.Collisions++;
+            // Eşin tarihi ilk üyeden (fotoğraf): saniye farkıyla ay sınırında bile aynı klasöre düşer.
+            var lead = members[0];
+            var date = lead.Taken ?? DateTime.MinValue;
+            var month = lead.Taken is null ? opt.UndatedFolderName : date.ToString("yyyy-MM");
+            var targets = members.Select(m => (
+                File: m,
+                Dir: route switch
+                {
+                    PlanAction.Duplicate => Path.Combine(dest, opt.DuplicatesFolderName, month),
+                    PlanAction.Similar => Path.Combine(dest, opt.SimilarFolderName, month),
+                    _ => Path.Combine(dest, month, KindFolder(m, month, opt)),
+                },
+                InPlace: route == PlanAction.Move && InDest(m))).ToList();
 
-            var item = new PlanItem
+            var (names, collided) = ResolveNames(targets, date, opt, taken);
+            if (collided) plan.Collisions += members.Count;
+
+            for (int k = 0; k < targets.Count; k++)
             {
-                File = f,
-                TargetDir = dir,
-                TargetName = name,
-                DuplicateOf = keeper,
-                Renamed = renamed,
-                Action = keeper is not null ? PlanAction.Duplicate : similar is not null ? PlanAction.Similar : PlanAction.Move,
-            };
-            if (string.Equals(item.TargetPath, Path.GetFullPath(f.Path), StringComparison.OrdinalIgnoreCase))
-                item.Action = PlanAction.AlreadyInPlace;
-            if (collided) item.Note = "İsim çakışması: tarih eklendi";
-            if (similar is not null) item.Note = "Muhtemelen aynı kare: " + similar.FileName;
-            plan.Items.Add(item);
+                var m = targets[k].File;
+                planned.Add(m);
+                dupOf.TryGetValue(m, out var keeper);
+                MediaFile? similar = null;
+                if (route == PlanAction.Similar) similarOf!.TryGetValue(m, out similar);
+                var item = new PlanItem
+                {
+                    File = m,
+                    TargetDir = targets[k].Dir,
+                    TargetName = names[k],
+                    DuplicateOf = keeper,
+                    Renamed = !names[k].Equals(m.FileName, StringComparison.Ordinal),
+                    Action = route,
+                };
+                if (string.Equals(item.TargetPath, Path.GetFullPath(m.Path), StringComparison.OrdinalIgnoreCase))
+                    item.Action = PlanAction.AlreadyInPlace;
+                if (collided) item.Note = "İsim çakışması: tarih eklendi";
+                if (similar is not null) item.Note = "Muhtemelen aynı kare: " + similar.FileName;
+                if (members.Count > 1 && collided) item.Note += " (RAW+JPG eşiyle birlikte)";
+                plan.Items.Add(item);
+            }
         }
         return plan;
     }
@@ -104,12 +134,15 @@ public static class Planner
         return kf;
     }
 
-    static (string name, bool renamed, bool collided) ResolveName(MediaFile f, DateTime date, string dir,
-        PlanOptions opt, HashSet<string> taken, bool inPlaceCandidate)
+    /// <summary>
+    /// Tek dosyaya ya da RAW+JPG eşine ad verir. Eşin üyeleri aynı gövdeyi taşır; gövde ancak her üye
+    /// kendi klasöründe boşsa (ya da zaten oradaysa) kabul edilir.
+    /// </summary>
+    static (List<string> names, bool collided) ResolveNames(
+        IReadOnlyList<(MediaFile File, string Dir, bool InPlace)> members, DateTime date, PlanOptions opt, HashSet<string> taken)
     {
-        var ext = Path.GetExtension(f.Path);
+        var f = members[0].File;
         var stem = Path.GetFileNameWithoutExtension(f.Path);
-        var self = Path.GetFullPath(f.Path);
         var day = date.ToString("yyyy-MM-dd");
         // Önceki turda eklenmiş kaynak ("... Fuji" ya da "... Fuji (2)") tekrar eklenmez.
         bool hasSrc = f.Source is not null &&
@@ -123,20 +156,29 @@ public static class Planner
             var body = dated && !stem.StartsWith(day) ? DatePrefix.Replace(stem, "") : stem;
             var prefix = dated && !stem.StartsWith(day) ? (withTime ? $"{day} {date:HHmmss} " : day + " ") : "";
             var suffix = n > 0 ? $" ({n})" : "";
-            return FileClassifier.SafeName($"{prefix}{body}{src}{suffix}") + ext;
+            return FileClassifier.SafeName($"{prefix}{body}{src}{suffix}");
         }
 
-        bool Free(string n)
+        string Full(int k, string body) => Path.Combine(members[k].Dir, body + Path.GetExtension(members[k].File.Path));
+        bool IsSelf(int k, string full) => full.Equals(Path.GetFullPath(members[k].File.Path), StringComparison.OrdinalIgnoreCase);
+
+        bool Free(string body) => Enumerable.Range(0, members.Count).All(k =>
         {
-            var full = Path.Combine(dir, n);
-            return !taken.Contains(full) && !(File.Exists(full) && !full.Equals(self, StringComparison.OrdinalIgnoreCase));
-        }
+            var full = Full(k, body);
+            return !taken.Contains(full) && !(File.Exists(full) && !IsSelf(k, full));
+        });
 
-        bool alreadyDated = opt.RenameWithDate;
-        var candidate = Compose(alreadyDated, false);
+        // İlk aday: her üye boşsa ya da zaten tam o adda duruyorsa kabul.
+        bool FirstOk(string body) => Enumerable.Range(0, members.Count).All(k =>
+        {
+            var full = Full(k, body);
+            return (!taken.Contains(full) && !(File.Exists(full) && !IsSelf(k, full))) || (members[k].InPlace && IsSelf(k, full));
+        });
+
+        var candidate = Compose(opt.RenameWithDate, false);
         bool collided = false;
 
-        if (!Free(candidate) && !(inPlaceCandidate && Path.Combine(dir, candidate).Equals(self, StringComparison.OrdinalIgnoreCase)))
+        if (!FirstOk(candidate))
         {
             collided = true;
             // Çakışmada tarih zorunlu; sonra saat; en son sayaç.
@@ -144,8 +186,13 @@ public static class Planner
             if (!Free(candidate)) candidate = Compose(true, true);
             for (int n = 2; !Free(candidate); n++) candidate = Compose(true, true, n);
         }
-        taken.Add(Path.Combine(dir, candidate));
-        return (candidate, !candidate.Equals(Path.GetFileName(f.Path), StringComparison.Ordinal), collided);
+        var names = new List<string>();
+        for (int k = 0; k < members.Count; k++)
+        {
+            taken.Add(Full(k, candidate));
+            names.Add(Path.GetFileName(Full(k, candidate)));
+        }
+        return (names, collided);
     }
 
     /// <summary>EXIF'i okunamayan RAW/JPG eşini, aynı klasör ve aynı adlı eşinden gelen tarih/kaynakla eşitler.</summary>
