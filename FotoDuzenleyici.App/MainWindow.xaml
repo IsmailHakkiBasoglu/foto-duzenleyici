@@ -204,7 +204,7 @@
                                 <StackPanel Orientation="Horizontal">
                                     <Button Content="Önerileri uygula (yalnız ★ kalsın)" Click="SuggestSimilar_Click"/>
                                     <Button Content="Bulanıkları ayıkla" Click="ReleaseSoft_Click"
-                                            ToolTip="Seri çekimlerde BULANIK rozetli kareleri ayıklar; en net kareye dokunmaz"/>
+                                            ToolTip="Seri çekimlerde BULANIK rozetli kareleri ayıklar; en net kareye ve incelenmiş gruplara dokunmaz"/>
                                     <Button Content="Hepsini koru" Click="KeepAllSimilar_Click"/>
                                     <CheckBox x:Name="OnlyUnreviewed" Content="Yalnız incelenmemişler" VerticalAlignment="Center"
                                               Margin="8,0,16,0" Click="OnlyUnreviewed_Click"/>

@@ -23,7 +23,8 @@ Biçim [Keep a Changelog](https://keepachangelog.com/tr-TR/1.1.0/), sürüm numa
   altında kalan kareler **BULANIK** rozeti alıyor; kareler birbirine çok yakınsa işaret konmuyor.
   Karşılaştırma penceresinde her karenin başlığında netlik yüzdesi ("3 · Netlik %42").
 - **Bulanıkları ayıkla** düğmesi: seri çekimlerde yalnız BULANIK rozetli kareleri ayıklar; en net
-  kareye dokunmaz. "Önerileri uygula" seri çekimlere eskisi gibi dokunmuyor.
+  kareye, incelenmiş gruplara ve en net karesini elle ayıkladığın gruplara dokunmaz. "Önerileri uygula"
+  seri çekimlere eskisi gibi dokunmuyor.
 - **Kusurlu** sekmesi: Benzerler dışında kalan, tek başına bulanık ya da çok karanlık kareler
   ("Bulanıklar" / "Karanlıklar" süzgeci). Varsayılan olarak hepsi kalır; ayıklananlar Uygula'da
   `_Kusurlu\yyyy-MM` klasörüne gider (silinmez, Geri Al çalışır) ve sonraki taramalarda yerinde kalır.

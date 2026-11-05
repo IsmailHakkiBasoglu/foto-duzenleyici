@@ -164,6 +164,29 @@ public class SimilarGroupStateTests : IDisposable
         Assert.Equal(0, g.ReleaseSoft()); // ikinci kez: zaten ayıklanmış
     }
 
+    // Gözden geçirmeden: toplu düğme kullanıcının elle verdiği kararı ezmemeli.
+    [Fact]
+    public void ReleaseSoft_SkipsGroupWhereUserReleasedSharpest()
+    {
+        var g = Group(3);
+        g.ApplyBurstRanks(Scores(g, 100, 30, 40));
+        g.Rows[0].Keep = false; // kullanıcı en neti ayıkladı, iki yumuşak kare kaldı
+        Assert.Equal(0, g.ReleaseSoft());
+        Assert.Equal(new[] { false, true, true }, g.Rows.Select(r => r.Keep));
+    }
+
+    [Fact]
+    public void ReleaseSoft_SkipsReviewedGroup()
+    {
+        var store = Store();
+        var g = Group(3);
+        g.ApplyBurstRanks(Scores(g, 100, 30, 90));
+        g.Restore(store);
+        g.SetReviewed(store, true);
+        Assert.Equal(0, g.ReleaseSoft());
+        Assert.All(g.Rows, r => Assert.True(r.Keep));
+    }
+
     [Fact]
     public void ReleaseSoft_KeepsLastFrame_WhenSharpestWasReleasedByHand()
     {

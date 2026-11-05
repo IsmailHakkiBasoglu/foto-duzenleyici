@@ -156,10 +156,14 @@ public sealed class SimilarGroupState : INotifyPropertyChanged
         }
     }
 
-    /// <summary>"Bulanıkları ayıkla": BULANIK rozetli kareleri ayıklar; en nete dokunmaz, son kare kuralına uyar.</summary>
+    /// <summary>
+    /// "Bulanıkları ayıkla": BULANIK rozetli kareleri ayıklar; en nete dokunmaz, son kare kuralına uyar.
+    /// Kullanıcının elle karar verdiği gruplar (incelendi ya da en net kare ayıklanmış) olduğu gibi kalır.
+    /// </summary>
     public int ReleaseSoft()
     {
-        if (Kind != SimilarKind.Burst) return 0;
+        if (Kind != SimilarKind.Burst || Reviewed) return 0;
+        if (Rows.FirstOrDefault(r => r.Sharpest) is not { Keep: true }) return 0;
         int n = 0;
         foreach (var r in Rows.Where(r => r.Flaw == "BULANIK" && !r.Sharpest && r.Keep))
         {
