@@ -58,6 +58,8 @@ public partial class MainWindow : Window
     /// <summary>Netlik / karanlık ölçümleri; ölçüm durdurulduysa boş ve <see cref="_qualityDone"/> false.</summary>
     Dictionary<MediaFile, QualityScore> _scores = new();
     bool _qualityDone;
+    /// <summary>Kusurlu sekmesi: tek kareli gruplar (bkz. <see cref="FlawedList"/>).</summary>
+    List<SimilarGroupState> _flawed = new();
     Plan? _plan;
     FolderNode? _rootNode;
     CancellationTokenSource? _cts;
@@ -147,7 +149,7 @@ public partial class MainWindow : Window
 
         _plan = null; PlanGrid.ItemsSource = null; DupGrid.ItemsSource = null; SimilarList.ItemsSource = null;
         _groups = new(); _simErrors = new(); _thumbs.Clear(); _files = new(); _dups = new();
-        _scores = new(); _qualityDone = false;
+        _scores = new(); _qualityDone = false; _flawed = new(); FlawedListBox.ItemsSource = null; FlawedCounter.Text = "";
         _cts = new CancellationTokenSource();
         var ct = _cts.Token;
         SetBusy(true);
@@ -206,6 +208,7 @@ public partial class MainWindow : Window
                 }
             }
             await ShowSimilar(hashes, ignore);
+            await ShowFlawed();
             SummaryBox.Text = BuildSummary(null);
             StatusText.Text = note ?? $"Tarama bitti: {_files.Count} dosya, {_dups.Count} yinelenen grup, " +
                 $"{_groups.Count} benzer grup. Şimdi plan oluşturabilirsin.";
@@ -262,6 +265,55 @@ public partial class MainWindow : Window
         ApplyReviewFilter();
     }
 
+    /// <summary>Kusurlu sekmesini doldurur; ölçüm yapılmadıysa ya da durdurulduysa boş kalır.</summary>
+    async Task ShowFlawed()
+    {
+        if (!_qualityDone) { FlawedCounter.Text = "Ölçüm yapılmadı."; return; }
+        var list = FlawedList.Build(_scores, _groups, _groups.Count + 1);
+        var rows = list.Select(g => g.Rows[0]).ToList();
+        var pairs = RawJpgPairs.Index(_files);
+        foreach (var r in rows) r.HasRaw = pairs.ContainsKey(r.File);
+        await Task.Run(() =>
+        {
+            foreach (var r in rows)
+                try { r.StoreKey = HashCache.Key(r.Path); } catch (Exception) { r.StoreKey = null; }
+        });
+        foreach (var g in list)
+        {
+            g.Restore(_reviews);
+            g.Rows[0].Changed = row =>
+            {
+                if (row.StoreKey is { } k) _reviews.SetKeep(k, row.Keep);
+                ReviewsChanged();
+                UpdateFlawedCounter();
+                SimilarChanged();
+            };
+        }
+        _flawed = list;
+        FlawedListBox.ItemsSource = _flawed;
+        ApplyFlawFilter();
+    }
+
+    void ApplyFlawFilter()
+    {
+        if (FlawedListBox.ItemsSource is null) return;
+        bool blurry = ShowBlurry.IsChecked == true, dark = ShowDark.IsChecked == true;
+        CollectionViewSource.GetDefaultView(FlawedListBox.ItemsSource).Filter = o =>
+            o is SimilarGroupState g && g.Rows[0].Flaw is { } f &&
+            (blurry && f.Contains("BULANIK") || dark && f.Contains("KARANLIK"));
+        UpdateFlawedCounter();
+    }
+
+    void FlawFilter_Click(object s, RoutedEventArgs e) => ApplyFlawFilter();
+
+    void UpdateFlawedCounter()
+    {
+        var rows = _flawed.Select(g => g.Rows[0]).ToList();
+        FlawedCounter.Text = rows.Count == 0 ? "Kusurlu kare yok."
+            : $"Bulanık: {rows.Count(r => r.Flaw!.Contains("BULANIK"))}  ·  Karanlık: {rows.Count(r => r.Flaw!.Contains("KARANLIK"))}" +
+              $"  ·  Ayıklanacak: {rows.Count(r => !r.Keep)} / {rows.Count}";
+    }
+
     void UpdateReviewCounter() =>
         ReviewCounter.Text = _groups.Count == 0 ? "" : $"İncelenen: {_groups.Count(g => g.Reviewed)} / {_groups.Count}";
 
@@ -277,7 +329,8 @@ public partial class MainWindow : Window
     void OnlyUnreviewed_Click(object s, RoutedEventArgs e) => ApplyReviewFilter();
 
     static SimilarRow? RowOf(object sender) => (sender as FrameworkElement)?.DataContext as SimilarRow;
-    SimilarGroupState? GroupOf(SimilarRow row) => _groups.FirstOrDefault(g => g.Rows.Contains(row));
+    SimilarGroupState? GroupOf(SimilarRow row) =>
+        _groups.FirstOrDefault(g => g.Rows.Contains(row)) ?? _flawed.FirstOrDefault(g => g.Rows.Contains(row));
 
     // Kartın satırı Tag'de tutulur: kart kaldırılırken DataContext çoktan "bağlantısız" olabilir, iptal yine
     // doğru satıra gitsin. Geri dönüştürülen kartın satırı değişince eskisi iptal, yenisi istenir.
@@ -330,16 +383,20 @@ public partial class MainWindow : Window
     /// <summary>Süzgeçten geçen (görünen) gruplar arasında gezinen karşılaştırma penceresi.</summary>
     void OpenCompare(SimilarGroupState g)
     {
-        var visible = CollectionViewSource.GetDefaultView(SimilarList.ItemsSource).Cast<SimilarGroupState>().ToList();
+        // Kusurlu kare: tek kare tam ekran; ← → süzgeçten geçen sonraki/önceki kusurlu kare.
+        bool flawed = g.Kind == SimilarKind.Flawed;
+        var box = flawed ? FlawedListBox : SimilarList;
+        var all = flawed ? _flawed : _groups;
+        var visible = CollectionViewSource.GetDefaultView(box.ItemsSource).Cast<SimilarGroupState>().ToList();
         int start = visible.IndexOf(g);
-        if (start < 0) { visible = _groups; start = _groups.IndexOf(g); }
+        if (start < 0) { visible = all; start = all.IndexOf(g); }
         var w = new CompareWindow(visible, start, _reviews, ReviewsChanged) { Owner = this };
         w.ShowDialog();
         // Süzgeç açıksa incelenen gruplar listeden düşsün.
-        ApplyReviewFilter();
-        SimilarList.SelectedItem = w.Current;
-        SimilarList.ScrollIntoView(w.Current);
-        if (w.FinishedAll) StatusText.Text = "Bütün gruplar gözden geçirildi.";
+        if (!flawed) ApplyReviewFilter();
+        box.SelectedItem = w.Current;
+        box.ScrollIntoView(w.Current);
+        if (w.FinishedAll) StatusText.Text = flawed ? "Bütün kusurlu kareler gözden geçirildi." : "Bütün gruplar gözden geçirildi.";
     }
 
     /// <summary>İşaretler değişince eski plan geçersiz: yeniden oluşturulmadan uygulanamaz.</summary>
@@ -395,21 +452,25 @@ public partial class MainWindow : Window
         var dest = Path.GetFullPath(DestBox.Text.Trim());
         if (await OfferResumeAsync(dest)) { StatusText.Text += "  Dosyalar değişti; plan için yeniden Tara."; return; }
         var similarOf = BuildSimilarMap();
-        // Ayıklanan karelerin RAW eşleri: her Plan'da sorulur (kullanıcı kararı).
-        var raws = RawJpgPairs.UnreleasedRaws(_files, similarOf.Keys.ToHashSet());
+        var flawedSet = _flawed.SelectMany(g => g.Rows).Where(r => !r.Keep).Select(r => r.File).ToHashSet();
+        // Ayıklanan karelerin (Benzerler + Kusurlu) RAW eşleri: her Plan'da tek soruda sorulur (kullanıcı kararı).
+        var released = similarOf.Keys.Concat(flawedSet).ToHashSet();
+        var raws = RawJpgPairs.UnreleasedRaws(_files, released);
         if (raws.Count > 0)
         {
             var ans = MessageBox.Show(
-                $"Benzerler'de ayıkladığın {raws.Count} karenin RAW eşi var.\n\n" +
-                "Evet: RAW'lar da JPG'leriyle birlikte _Benzerler'e taşınsın.\n" +
+                $"Benzerler'de ve Kusurlu'da ayıkladığın {raws.Count} karenin RAW eşi var.\n\n" +
+                "Evet: RAW'lar da JPG'leriyle birlikte taşınsın (_Benzerler / _Kusurlu).\n" +
                 "Hayır: RAW'lar normal klasörlerine gitsin, yalnız JPG'ler ayıklansın.\n" +
                 "İptal: plan oluşturulmasın.",
                 "RAW eşleri", MessageBoxButton.YesNoCancel, MessageBoxImage.Question);
             if (ans == MessageBoxResult.Cancel) return;
             if (ans == MessageBoxResult.Yes)
-                foreach (var (raw, photo) in raws) similarOf[raw] = similarOf[photo];
+                foreach (var (raw, photo) in raws)
+                    if (similarOf.TryGetValue(photo, out var keeper)) similarOf[raw] = keeper;
+                    else flawedSet.Add(raw);
         }
-        _plan = Planner.Build(_files, _dups, BuildPlanOptions(), similarOf);
+        _plan = Planner.Build(_files, _dups, BuildPlanOptions(), similarOf, flawedSet);
         PlanGrid.ItemsSource = _plan.Items.Select(i => new PlanRow(
             i.Action.ToString(), i.File.Path, i.TargetPath,
             i.File.Taken?.ToString("yyyy-MM-dd HH:mm") ?? "-", i.File.DateSource.ToString(), i.File.Source ?? "")).ToList();
@@ -433,6 +494,14 @@ public partial class MainWindow : Window
         var byKind = _groups.GroupBy(g => g.KindText).Select(g => $"{g.Key}: {g.Count()}");
         sb.AppendLine($"Benzerler: {string.Join(", ", byKind.DefaultIfEmpty("yok"))} grup; " +
                       $"_Benzerler'e ayrılacak: {AllSimilarRows.Count(r => !r.Keep)}");
+        if (_qualityDone)
+        {
+            var fr = _flawed.Select(g => g.Rows[0]).ToList();
+            sb.AppendLine($"Kusurlu (Benzerler dışında): bulanık {fr.Count(r => r.Flaw!.Contains("BULANIK"))}, " +
+                          $"karanlık {fr.Count(r => r.Flaw!.Contains("KARANLIK"))}; _Kusurlu'ya ayrılacak: {fr.Count(r => !r.Keep)}");
+            sb.AppendLine($"Seri çekimde en net önerisi: {_groups.Count(g => g.Rows.Any(r => r.Sharpest))} grup " +
+                          $"(BULANIK kare: {AllSimilarRows.Count(r => r.Flaw == "BULANIK")})");
+        }
         if (_simErrors.Count > 0)
         {
             sb.AppendLine($"Benzerlik izi çıkarılamayan: {_simErrors.Count}");
