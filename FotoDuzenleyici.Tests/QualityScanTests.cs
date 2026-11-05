@@ -126,4 +126,14 @@ public class QualityScanTests : IDisposable
         var e = Assert.Single(errors);
         Assert.StartsWith(Path.Combine(_src, "bozuk.jpg") + ": ", e);
     }
+
+    // Gözden geçirmeden: özet, çok küçük görüntüleri gerçek hatalardan ayrı saymalı.
+    [Fact]
+    public void CountErrors_SeparatesTooSmallFromFailures()
+    {
+        File.WriteAllBytes(Path.Combine(_src, "kucuk.jpg"), TestImages.PatternJpeg(200, 150, seed: 3));
+        File.WriteAllBytes(Path.Combine(_src, "bozuk.jpg"), new byte[] { 1, 2, 3 });
+        var (_, _, errors) = Run(_src);
+        Assert.Equal((1, 1), QualityScan.CountErrors(errors));
+    }
 }

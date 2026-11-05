@@ -55,6 +55,7 @@ public partial class MainWindow : Window
     List<SimilarGroupState> _groups = new();
     IEnumerable<SimilarRow> AllSimilarRows => _groups.SelectMany(g => g.Rows);
     List<string> _simErrors = new();
+    List<string> _qualityErrors = new();
     /// <summary>Netlik / karanlık ölçümleri; ölçüm durdurulduysa boş ve <see cref="_qualityDone"/> false.</summary>
     Dictionary<MediaFile, QualityScore> _scores = new();
     bool _qualityDone;
@@ -148,7 +149,7 @@ public partial class MainWindow : Window
         { MessageBox.Show("Önce geçerli bir ana klasör seç."); return; }
 
         _plan = null; PlanGrid.ItemsSource = null; DupGrid.ItemsSource = null; SimilarList.ItemsSource = null;
-        _groups = new(); _simErrors = new(); _thumbs.Clear(); _files = new(); _dups = new();
+        _groups = new(); _simErrors = new(); _qualityErrors = new(); _thumbs.Clear(); _files = new(); _dups = new();
         _scores = new(); _qualityDone = false; _flawed = new(); FlawedListBox.ItemsSource = null; FlawedCounter.Text = "";
         _cts = new CancellationTokenSource();
         var ct = _cts.Token;
@@ -199,7 +200,7 @@ public partial class MainWindow : Window
                 try
                 {
                     _scores = await Task.Run(() => QualityScan.Compute(_files, _dups, ignoreDirs,
-                        new QualityCache(QualityCache.DefaultPath), _simErrors, qprog, ct));
+                        new QualityCache(QualityCache.DefaultPath), _qualityErrors, qprog, ct));
                     _qualityDone = true;
                 }
                 catch (OperationCanceledException)
@@ -506,6 +507,13 @@ public partial class MainWindow : Window
         {
             sb.AppendLine($"Benzerlik izi çıkarılamayan: {_simErrors.Count}");
             foreach (var err in _simErrors.Take(3)) sb.AppendLine("  " + err);
+        }
+        if (_qualityErrors.Count > 0)
+        {
+            var (small, failed) = QualityScan.CountErrors(_qualityErrors);
+            sb.AppendLine($"Netliği ölçülemeyen: {failed}   (ölçülmeyecek kadar küçük: {small})");
+            foreach (var err in _qualityErrors.Where(e => !e.EndsWith(": çok küçük", StringComparison.Ordinal)).Take(3))
+                sb.AppendLine("  " + err);
         }
         if (_plan != null)
         {

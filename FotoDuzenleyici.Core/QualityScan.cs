@@ -5,6 +5,15 @@ namespace FotoDuzenleyici.Core;
 /// <summary>Taranan fotoğrafların netlik/karanlık ölçümlerini önbellekten ya da ölçerek toplar. Dosyalara dokunmaz.</summary>
 public static class QualityScan
 {
+    /// <summary>Özet için: ölçülmeyecek kadar küçük görüntüler (WhatsApp küçük resmi vb.) ve gerçek ölçüm hataları.</summary>
+    public static (int TooSmall, int Failed) CountErrors(IEnumerable<string> errors)
+    {
+        int small = 0, failed = 0;
+        foreach (var e in errors)
+            if (e.EndsWith(": çok küçük", StringComparison.Ordinal)) small++; else failed++;
+        return (small, failed);
+    }
+
     /// <param name="ignoreFolders">Bu klasördekiler (önceki turlarda ayrılan _Benzerler, _Kusurlu) ölçülmez.</param>
     /// <param name="errors">Ölçülemeyen dosyalar ("yol: sebep") ve önbellek kayıt hatası buraya eklenir.</param>
     public static Dictionary<MediaFile, QualityScore> Compute(IReadOnlyList<MediaFile> files, IReadOnlyList<DuplicateGroup> dupGroups,
