@@ -52,3 +52,5 @@ dotnet test
 - [CHANGELOG.md](CHANGELOG.md) – sürüm sürüm değişiklikler
 
 Metadata okuma: [MetadataExtractor](https://github.com/drewnoakes/metadata-extractor-dotnet) (Apache-2.0).
+
+Bu proje Claude (Anthropic) yardımıyla geliştirildi.
