@@ -176,17 +176,39 @@
                                  BorderThickness="0" Padding="8" TextWrapping="NoWrap" HorizontalScrollBarVisibility="Auto"/>
                     </TabItem>
                     <TabItem Header="Plan">
-                        <DataGrid x:Name="PlanGrid" IsReadOnly="True" AutoGenerateColumns="False" CanUserAddRows="False"
-                                  EnableRowVirtualization="True" GridLinesVisibility="Horizontal">
-                            <DataGrid.Columns>
-                                <DataGridTextColumn Header="Eylem" Binding="{Binding Action}" Width="90"/>
-                                <DataGridTextColumn Header="Kaynak dosya" Binding="{Binding Source}" Width="2*"/>
-                                <DataGridTextColumn Header="Hedef" Binding="{Binding Target}" Width="2*"/>
-                                <DataGridTextColumn Header="Tarih" Binding="{Binding Date}" Width="130"/>
-                                <DataGridTextColumn Header="Tarih kaynağı" Binding="{Binding DateSource}" Width="100"/>
-                                <DataGridTextColumn Header="Kamera" Binding="{Binding Camera}" Width="70"/>
-                            </DataGrid.Columns>
-                        </DataGrid>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" MinWidth="300"/>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="320" MinWidth="180"/>
+                            </Grid.ColumnDefinitions>
+                            <DataGrid x:Name="PlanGrid" IsReadOnly="True" AutoGenerateColumns="False" CanUserAddRows="False"
+                                      EnableRowVirtualization="True" GridLinesVisibility="Horizontal" SelectionMode="Single"
+                                      SelectionChanged="PlanGrid_SelectionChanged" MouseDoubleClick="PlanGrid_MouseDoubleClick"
+                                      ToolTip="Satıra tıkla: sağda önizleme. Çift tıkla: dosyayı Windows'ta aç (dosyaya dokunulmaz).">
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="Eylem" Binding="{Binding Action}" Width="70"/>
+                                    <DataGridTextColumn Header="Kaynak dosya" Binding="{Binding Source}" Width="2*"/>
+                                    <DataGridTextColumn Header="Hedef" Binding="{Binding Target}" Width="2*"/>
+                                    <DataGridTextColumn Header="Tarih" Binding="{Binding Date}" Width="130"/>
+                                    <DataGridTextColumn Header="Tarih kaynağı" Binding="{Binding DateSource}" Width="100"/>
+                                    <DataGridTextColumn Header="Kamera" Binding="{Binding Camera}" Width="70"/>
+                                </DataGrid.Columns>
+                            </DataGrid>
+                            <GridSplitter Grid.Column="1" Width="5" HorizontalAlignment="Center" VerticalAlignment="Stretch"
+                                          ResizeBehavior="PreviousAndNext" Background="#DDD"/>
+                            <DockPanel Grid.Column="2" Margin="8,4,4,4">
+                                <ScrollViewer DockPanel.Dock="Bottom" MaxHeight="260" VerticalScrollBarVisibility="Auto">
+                                    <TextBlock x:Name="PreviewInfo" TextWrapping="Wrap" Margin="0,8,0,0" FontSize="12"
+                                               Text="Önizleme için tablodan bir satır seç."/>
+                                </ScrollViewer>
+                                <Grid Background="#F2F2F2">
+                                    <Image x:Name="PreviewImage" Stretch="Uniform" RenderOptions.BitmapScalingMode="HighQuality"/>
+                                    <TextBlock x:Name="PreviewNote" HorizontalAlignment="Center" VerticalAlignment="Center"
+                                               TextWrapping="Wrap" TextAlignment="Center" Margin="12" Foreground="#666"/>
+                                </Grid>
+                            </DockPanel>
+                        </Grid>
                     </TabItem>
                     <TabItem Header="Yinelenenler">
                         <DataGrid x:Name="DupGrid" IsReadOnly="True" AutoGenerateColumns="False" CanUserAddRows="False"

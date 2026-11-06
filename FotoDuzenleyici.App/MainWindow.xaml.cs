@@ -43,7 +43,7 @@ public sealed class FolderNode : INotifyPropertyChanged
     void Raise(string n) => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(n));
 }
 
-public sealed record PlanRow(string Action, string Source, string Target, string Date, string DateSource, string Camera);
+public sealed record PlanRow(string Action, string Source, string Target, string Date, string DateSource, string Camera, PlanItem Item);
 public sealed record DupRow(string Keeper, string Copy, string SizeMb);
 
 public partial class MainWindow : Window
@@ -62,6 +62,10 @@ public partial class MainWindow : Window
     /// <summary>Kusurlu sekmesi: tek kareli gruplar (bkz. <see cref="FlawedList"/>).</summary>
     List<SimilarGroupState> _flawed = new();
     Plan? _plan;
+    /// <summary>Plan önizlemesi için RAW+JPG eşleri; plan kurulurken doldurulur.</summary>
+    Dictionary<MediaFile, List<MediaFile>> _planPairs = new();
+    // Hızlı gezinmede yalnızca son seçilen satırın görüntüsü gösterilir.
+    int _previewSeq;
     FolderNode? _rootNode;
     CancellationTokenSource? _cts;
     readonly ReviewStore _reviews = new(ReviewStore.DefaultPath);
@@ -472,12 +476,54 @@ public partial class MainWindow : Window
                     else flawedSet.Add(raw);
         }
         _plan = Planner.Build(_files, _dups, BuildPlanOptions(), similarOf, flawedSet);
+        _planPairs = RawJpgPairs.Index(_files);
         PlanGrid.ItemsSource = _plan.Items.Select(i => new PlanRow(
-            i.Action.ToString(), i.File.Path, i.TargetPath,
-            i.File.Taken?.ToString("yyyy-MM-dd HH:mm") ?? "-", i.File.DateSource.ToString(), i.File.Source ?? "")).ToList();
+            PlanPreview.ActionName(i.Action), i.File.Path, i.TargetPath,
+            i.File.Taken?.ToString("yyyy-MM-dd HH:mm") ?? "-", i.File.DateSource.ToString(), i.File.Source ?? "", i)).ToList();
         SummaryBox.Text = BuildSummary(dest);
         ApplyBtn.IsEnabled = true; CsvBtn.IsEnabled = true;
         StatusText.Text = "Plan hazır. Hiçbir dosya henüz değiştirilmedi. Özet ve Plan sekmelerine bak, sonra Uygula.";
+    }
+
+    const int PreviewDecodeWidth = 640;
+
+    async void PlanGrid_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
+    {
+        var seq = ++_previewSeq;
+        PreviewImage.Source = null;
+        if (PlanGrid.SelectedItem is not PlanRow row)
+        {
+            PreviewNote.Text = "";
+            PreviewInfo.Text = "Önizleme için tablodan bir satır seç.";
+            return;
+        }
+        var file = row.Item.File;
+        MediaFile? pair = _planPairs.TryGetValue(file, out var g)
+            ? g.FirstOrDefault(m => m != file && m.Kind != file.Kind) : null;
+        PreviewInfo.Text = PlanPreview.Describe(row.Item, _scores.TryGetValue(file, out var s) ? s : null, pair);
+        PreviewNote.Text = file.Kind is FileKind.Photo or FileKind.Raw ? "Yükleniyor…" : "";
+
+        try
+        {
+            var (img, note) = await Task.Run(() =>
+                PlanPreview.Load(file, pair, f => ImageHasher.Decode(f.Path, f.Orientation, PreviewDecodeWidth)));
+            if (seq != _previewSeq) return; // bu arada başka satır seçildi
+            PreviewImage.Source = img;
+            PreviewNote.Text = img is null ? note ?? "" : "";
+            if (img is not null && note is not null) PreviewInfo.Text += "\n" + note;
+        }
+        catch (Exception ex)
+        {
+            if (seq == _previewSeq) PreviewNote.Text = "Görüntü açılamadı: " + ex.Message;
+        }
+    }
+
+    /// <summary>Dosyayı Windows'un varsayılan uygulamasında açar; dosyaya dokunmaz.</summary>
+    void PlanGrid_MouseDoubleClick(object sender, MouseButtonEventArgs e)
+    {
+        if (PlanGrid.SelectedItem is not PlanRow row) return;
+        try { System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(row.Item.File.Path) { UseShellExecute = true }); }
+        catch (Exception ex) { MessageBox.Show("Dosya açılamadı: " + ex.Message); }
     }
 
     string BuildSummary(string? dest)

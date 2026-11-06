@@ -31,7 +31,7 @@ Durum işaretleri: ✅ bitti · 🔄 sürüyor · ⬜ planlandı
 
 ## Aşama 3 — Görsel arayüz
 
-- ⬜ Plan tablosunun yanında küçük resim önizleme
+- ✅ Plan tablosunun yanında küçük resim önizleme (yayınlanmamış)
 - 🔄 Kopya ve benzer grupları yan yana karşılaştırma ekranı (benzer gruplar için hazır;
   Yinelenenler sekmesi henüz liste)
 - ⬜ Ay ay zaman çizelgesi; ay başına dosya sayısı ve boyut grafiği

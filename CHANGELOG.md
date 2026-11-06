@@ -35,6 +35,12 @@ Biçim [Keep a Changelog](https://keepachangelog.com/tr-TR/1.1.0/), sürüm numa
   JPG'sinin gittiği klasöre gidiyor.
 - Komut satırına `--quality`: ölçüm, en düşük netlikli kareler, bulanık / karanlık sayıları;
   `--csv` ile `…-kalite.csv` (tüm ölçümler) ve `…-kusurlu.csv`.
+- **Plan önizlemesi:** Plan sekmesinin sağında önizleme paneli. Satıra tıklayınca (ya da ok tuşlarıyla
+  gezinince) küçük resim ve dosyanın bilgisi: boyut, çözünürlük, tarih, kamera, nereye gideceği, kopyanın
+  korunan dosyası, netlik / parlaklık, RAW+JPG eşi. Windows'un açamadığı RAW yerine JPG eşi gösteriliyor;
+  video ve PDF için resim yok. Çift tıklama dosyayı Windows'un varsayılan uygulamasında açıyor. Panel
+  genişliği sürüklenerek ayarlanıyor.
+- Plan tablosundaki "Eylem" sütunu Türkçe: Taşı / Kopya / Yerinde / Benzer / Kusurlu.
 
 ### Düzeltildi
 - Eşin bir dosyası isim çakışması yüzünden tarih ya da `(2)` alınca diğeri eski adında kalıyordu;
