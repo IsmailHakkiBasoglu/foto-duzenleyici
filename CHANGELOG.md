@@ -41,8 +41,17 @@ Biçim [Keep a Changelog](https://keepachangelog.com/tr-TR/1.1.0/), sürüm numa
   video ve PDF için resim yok. Çift tıklama dosyayı Windows'un varsayılan uygulamasında açıyor. Panel
   genişliği sürüklenerek ayarlanıyor.
 - Plan tablosundaki "Eylem" sütunu Türkçe: Taşı / Kopya / Yerinde / Benzer / Kusurlu.
+- **Yinelenenler ekranı:** düz tablo yerine grup kartları. Her grupta tek küçük resim (içerik bayt bayt
+  aynı), boyut, konum sayısı ve boşa giden alan; sağda her konum bir satır. Kalacak konum radyo
+  düğmesiyle seçiliyor, ötekiler Uygula'da `_Tekrarlar`'a gidiyor. Gruplar en çok yer kazandırandan
+  başlıyor; üstte "N grup · N kopya · X GB kazanılacak" özeti ve "Önerilere dön" düğmesi. Düzenli
+  klasördeki kopyalar "düzenli" etiketi taşıyor; satıra çift tıklama dosyayı açıyor. Elle seçimler
+  yalnız o tarama boyunca tutuluyor.
 
 ### Düzeltildi
+- Yinelenenler sekmesi "Korunan" diye en eski dosyayı gösteriyordu, oysa Plan düzenli klasördeki
+  kopyayı tutuyordu. Artık ikisi aynı kuralı kullanıyor; Plan'a basınca öneriler güncel hedef klasöre
+  göre yenileniyor.
 - Eşin bir dosyası isim çakışması yüzünden tarih ya da `(2)` alınca diğeri eski adında kalıyordu;
   artık ikisi aynı adı alıyor ("RAW ayrı klasör" açıkken de). Saniye farkıyla ay sınırına düşen
   eşler de ayrı aylara bölünmüyor.

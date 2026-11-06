@@ -32,8 +32,8 @@ Durum işaretleri: ✅ bitti · 🔄 sürüyor · ⬜ planlandı
 ## Aşama 3 — Görsel arayüz
 
 - ✅ Plan tablosunun yanında küçük resim önizleme (yayınlanmamış)
-- 🔄 Kopya ve benzer grupları yan yana karşılaştırma ekranı (benzer gruplar için hazır;
-  Yinelenenler sekmesi henüz liste)
+- ✅ Kopya ve benzer grupları yan yana karşılaştırma ekranı (benzerler 0.1.5; Yinelenenler
+  grup kartları ve korunacak konumu seçme, yayınlanmamış)
 - ⬜ Ay ay zaman çizelgesi; ay başına dosya sayısı ve boyut grafiği
 - ⬜ Koyu tema, modern görünüm (WPF-UI / Fluent)
 

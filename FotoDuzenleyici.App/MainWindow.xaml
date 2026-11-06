@@ -211,14 +211,102 @@
                         </Grid>
                     </TabItem>
                     <TabItem Header="Yinelenenler">
-                        <DataGrid x:Name="DupGrid" IsReadOnly="True" AutoGenerateColumns="False" CanUserAddRows="False"
-                                  EnableRowVirtualization="True">
-                            <DataGrid.Columns>
-                                <DataGridTextColumn Header="Korunan (orijinal)" Binding="{Binding Keeper}" Width="*"/>
-                                <DataGridTextColumn Header="Kopya (→ _Tekrarlar)" Binding="{Binding Copy}" Width="*"/>
-                                <DataGridTextColumn Header="MB" Binding="{Binding SizeMb}" Width="70"/>
-                            </DataGrid.Columns>
-                        </DataGrid>
+                        <DockPanel>
+                            <StackPanel DockPanel.Dock="Top" Margin="0,4,0,6">
+                                <StackPanel Orientation="Horizontal">
+                                    <Button Content="Önerilere dön" Click="ResetDuplicates_Click"
+                                            ToolTip="Elle seçimleri bırakır: düzenli klasördeki kopya, yoksa en eskisi kalır"/>
+                                    <TextBlock x:Name="DupCounter" VerticalAlignment="Center" Margin="8,0,0,0" Foreground="#555"/>
+                                </StackPanel>
+                                <TextBlock Margin="0,6,0,0" Foreground="#555" TextWrapping="Wrap"
+                                           Text="Gruptaki dosyalar bayt bayt aynı; yalnız konumları farklı. Kalacak konumu seç, ötekiler Uygula'da _Tekrarlar klasörüne gider (silinmez). Çift tıkla: dosyayı aç. Değiştirince planı yeniden oluştur."/>
+                            </StackPanel>
+                            <ListBox x:Name="DupList" HorizontalContentAlignment="Stretch"
+                                     VirtualizingPanel.IsVirtualizing="True" VirtualizingPanel.VirtualizationMode="Recycling"
+                                     VirtualizingPanel.ScrollUnit="Pixel" ScrollViewer.CanContentScroll="True"
+                                     ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                                <ListBox.ItemTemplate>
+                                    <DataTemplate>
+                                        <DockPanel Margin="0,4">
+                                            <Grid DockPanel.Dock="Left" Width="120" Height="90" Margin="0,0,8,0" Background="#F2F2F2"
+                                                  DataContext="{Binding Preview}" Loaded="Card_Loaded" Unloaded="Card_Unloaded">
+                                                <Image Source="{Binding Thumb}" Stretch="Uniform"/>
+                                                <TextBlock Text="önizleme yok" Foreground="#888" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                                    <TextBlock.Style>
+                                                        <Style TargetType="TextBlock">
+                                                            <Setter Property="Visibility" Value="Collapsed"/>
+                                                            <Style.Triggers>
+                                                                <DataTrigger Binding="{Binding ThumbFailed}" Value="True">
+                                                                    <Setter Property="Visibility" Value="Visible"/>
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </TextBlock.Style>
+                                                </TextBlock>
+                                            </Grid>
+                                            <StackPanel DockPanel.Dock="Left" Width="120" Margin="0,0,8,0">
+                                                <TextBlock FontWeight="SemiBold" Text="{Binding Number, StringFormat='Grup {0}'}"/>
+                                                <TextBlock Text="{Binding SizeText}" Foreground="#555"/>
+                                                <TextBlock Text="{Binding CountText}" Foreground="#555"/>
+                                                <TextBlock Text="{Binding WastedText}" Foreground="#555"/>
+                                                <TextBlock Text="✎ elle seçildi" Foreground="#1565C0">
+                                                    <TextBlock.Style>
+                                                        <Style TargetType="TextBlock">
+                                                            <Setter Property="Visibility" Value="Collapsed"/>
+                                                            <Style.Triggers>
+                                                                <DataTrigger Binding="{Binding UserChosen}" Value="True">
+                                                                    <Setter Property="Visibility" Value="Visible"/>
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </TextBlock.Style>
+                                                </TextBlock>
+                                            </StackPanel>
+                                            <ItemsControl ItemsSource="{Binding Rows}" VerticalAlignment="Center">
+                                                <ItemsControl.ItemTemplate>
+                                                    <DataTemplate>
+                                                        <DockPanel Margin="0,1" Background="Transparent" ToolTip="{Binding File.Path}"
+                                                                   MouseLeftButtonDown="DupRow_MouseDown">
+                                                            <RadioButton DockPanel.Dock="Left" IsChecked="{Binding IsKeeper, Mode=TwoWay}"
+                                                                         VerticalAlignment="Center" Margin="0,0,6,0"/>
+                                                            <TextBlock DockPanel.Dock="Right" Text="{Binding Created}" Foreground="#777" Margin="8,0,0,0"/>
+                                                            <TextBlock DockPanel.Dock="Right" Text="düzenli" Foreground="White" Background="#2E7D32"
+                                                                       FontSize="10" Padding="3,0" Margin="6,0,0,0" VerticalAlignment="Center"
+                                                                       ToolTip="Hedef klasörde, önceki turda yerleştirilmiş">
+                                                                <TextBlock.Style>
+                                                                    <Style TargetType="TextBlock">
+                                                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                                                        <Style.Triggers>
+                                                                            <DataTrigger Binding="{Binding Organized}" Value="True">
+                                                                                <Setter Property="Visibility" Value="Visible"/>
+                                                                            </DataTrigger>
+                                                                        </Style.Triggers>
+                                                                    </Style>
+                                                                </TextBlock.Style>
+                                                            </TextBlock>
+                                                            <TextBlock TextTrimming="CharacterEllipsis">
+                                                                <TextBlock.Style>
+                                                                    <Style TargetType="TextBlock">
+                                                                        <Setter Property="Foreground" Value="#888"/>
+                                                                        <Style.Triggers>
+                                                                            <DataTrigger Binding="{Binding IsKeeper}" Value="True">
+                                                                                <Setter Property="Foreground" Value="Black"/>
+                                                                                <Setter Property="FontWeight" Value="SemiBold"/>
+                                                                            </DataTrigger>
+                                                                        </Style.Triggers>
+                                                                    </Style>
+                                                                </TextBlock.Style>
+                                                                <Run Text="{Binding Folder, Mode=OneWay}"/><Run Text="\" Foreground="#AAA"/><Run Text="{Binding Name, Mode=OneWay}"/>
+                                                            </TextBlock>
+                                                        </DockPanel>
+                                                    </DataTemplate>
+                                                </ItemsControl.ItemTemplate>
+                                            </ItemsControl>
+                                        </DockPanel>
+                                    </DataTemplate>
+                                </ListBox.ItemTemplate>
+                            </ListBox>
+                        </DockPanel>
                     </TabItem>
                     <TabItem x:Name="SimilarTab" Header="Benzerler">
                         <DockPanel>

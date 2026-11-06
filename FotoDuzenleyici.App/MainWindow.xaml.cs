@@ -44,7 +44,6 @@ public sealed class FolderNode : INotifyPropertyChanged
 }
 
 public sealed record PlanRow(string Action, string Source, string Target, string Date, string DateSource, string Camera, PlanItem Item);
-public sealed record DupRow(string Keeper, string Copy, string SizeMb);
 
 public partial class MainWindow : Window
 {
@@ -52,6 +51,8 @@ public partial class MainWindow : Window
 
     List<MediaFile> _files = new();
     List<DuplicateGroup> _dups = new();
+    /// <summary>Yinelenenler sekmesi; elle seçilen korunanlar yalnız bu tarama boyunca tutulur.</summary>
+    List<DuplicateGroupState> _dupStates = new();
     List<SimilarGroupState> _groups = new();
     IEnumerable<SimilarRow> AllSimilarRows => _groups.SelectMany(g => g.Rows);
     List<string> _simErrors = new();
@@ -152,8 +153,8 @@ public partial class MainWindow : Window
         if (string.IsNullOrWhiteSpace(RootBox.Text) || !Directory.Exists(RootBox.Text))
         { MessageBox.Show("Önce geçerli bir ana klasör seç."); return; }
 
-        _plan = null; PlanGrid.ItemsSource = null; DupGrid.ItemsSource = null; SimilarList.ItemsSource = null;
-        _groups = new(); _simErrors = new(); _qualityErrors = new(); _thumbs.Clear(); _files = new(); _dups = new();
+        _plan = null; PlanGrid.ItemsSource = null; DupList.ItemsSource = null; DupCounter.Text = ""; SimilarList.ItemsSource = null;
+        _groups = new(); _simErrors = new(); _qualityErrors = new(); _thumbs.Clear(); _files = new(); _dups = new(); _dupStates = new();
         _scores = new(); _qualityDone = false; _flawed = new(); FlawedListBox.ItemsSource = null; FlawedCounter.Text = "";
         _cts = new CancellationTokenSource();
         var ct = _cts.Token;
@@ -225,9 +226,36 @@ public partial class MainWindow : Window
 
     void Stop_Click(object s, RoutedEventArgs e) => _cts?.Cancel();
 
-    void ShowDuplicates() =>
-        DupGrid.ItemsSource = _dups.SelectMany(g => g.Copies.Select(c =>
-            new DupRow(g.Keeper.Path, c.Path, (c.Size / 1048576.0).ToString("N1")))).ToList();
+    void ShowDuplicates()
+    {
+        _dupStates = DuplicateGroupState.Build(_dups, BuildPlanOptions());
+        foreach (var g in _dupStates) g.PropertyChanged += (_, _) => UpdateDupCounter();
+        DupList.ItemsSource = _dupStates;
+        UpdateDupCounter();
+    }
+
+    void UpdateDupCounter()
+    {
+        if (_dupStates.Count == 0) { DupCounter.Text = "Birebir kopya yok."; return; }
+        var gb = _dupStates.Sum(g => g.WastedBytes) / 1e9;
+        var manual = _dupStates.Count(g => g.UserChosen);
+        DupCounter.Text = $"{_dupStates.Count} grup · {_dupStates.Sum(g => g.Group.Copies.Count)} kopya · {gb:N2} GB kazanılacak" +
+                          (manual > 0 ? $" · {manual} grupta elle seçim" : "");
+    }
+
+    void ResetDuplicates_Click(object s, RoutedEventArgs e)
+    {
+        var opt = BuildPlanOptions();
+        foreach (var g in _dupStates) g.Reset(opt);
+    }
+
+    void DupRow_MouseDown(object s, MouseButtonEventArgs e)
+    {
+        if (e.ClickCount != 2 || (s as FrameworkElement)?.DataContext is not DuplicateRow row) return;
+        e.Handled = true;
+        try { System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(row.File.Path) { UseShellExecute = true }); }
+        catch (Exception ex) { MessageBox.Show("Dosya açılamadı: " + ex.Message); }
+    }
 
     async Task ShowSimilar(Dictionary<MediaFile, ImagePrint> hashes, IReadOnlyList<string> ignoreDirs)
     {
@@ -475,7 +503,10 @@ public partial class MainWindow : Window
                     if (similarOf.TryGetValue(photo, out var keeper)) similarOf[raw] = keeper;
                     else flawedSet.Add(raw);
         }
-        _plan = Planner.Build(_files, _dups, BuildPlanOptions(), similarOf, flawedSet);
+        // Hedef klasör taramadan sonra değişmiş olabilir: öneriler ve "düzenli" etiketleri tazelenir.
+        var planOpt = BuildPlanOptions();
+        foreach (var g in _dupStates) g.Refresh(planOpt);
+        _plan = Planner.Build(_files, _dups, planOpt, similarOf, flawedSet, DuplicateGroupState.UserKeepers(_dupStates));
         _planPairs = RawJpgPairs.Index(_files);
         PlanGrid.ItemsSource = _plan.Items.Select(i => new PlanRow(
             PlanPreview.ActionName(i.Action), i.File.Path, i.TargetPath,

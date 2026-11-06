@@ -17,8 +17,10 @@ public static class Planner
 
     /// <param name="similarOf">Kullanıcının ayıkladığı "muhtemelen aynı kare" dosyaları → grupta kalan eşi.</param>
     /// <param name="flawed">Kullanıcının Kusurlu sekmesinde ayıkladığı bulanık / karanlık kareler.</param>
+    /// <param name="keepDuplicates">Kullanıcının Yinelenenler sekmesinde korunacak diye seçtiği kopyalar.</param>
     public static Plan Build(IReadOnlyList<MediaFile> files, IReadOnlyList<DuplicateGroup> dupGroups, PlanOptions opt,
-        IReadOnlyDictionary<MediaFile, MediaFile>? similarOf = null, IReadOnlySet<MediaFile>? flawed = null)
+        IReadOnlyDictionary<MediaFile, MediaFile>? similarOf = null, IReadOnlySet<MediaFile>? flawed = null,
+        IReadOnlySet<MediaFile>? keepDuplicates = null)
     {
         PropagateRawJpgPairs(files);
 
@@ -28,15 +30,14 @@ public static class Planner
         var simDir = Path.Combine(dest, opt.SimilarFolderName) + "\\";
         var flawDir = Path.Combine(dest, opt.FlawedFolderName) + "\\";
         bool InDest(MediaFile f) => Path.GetFullPath(f.Path).StartsWith(dest + "\\", StringComparison.OrdinalIgnoreCase);
-        bool Organized(MediaFile f) => InDest(f) && !Path.GetFullPath(f.Path).StartsWith(dupDir, StringComparison.OrdinalIgnoreCase);
 
         // Tekrar çalıştırmada düzenli klasördeki kopya kalır; dışarıdan gelen eşi _Tekrarlar'a gider.
-        // OrderByDescending kararlıdır: düzenli kopya yoksa DuplicateFinder'ın seçimi (en eski) korunur.
+        // Düzenli kopya yoksa DuplicateFinder'ın seçimi (en eski); kullanıcı seçtiyse onunki (bkz. DuplicateKeeper).
         var dupOf = new Dictionary<MediaFile, MediaFile>();
         foreach (var g in dupGroups)
         {
-            var members = g.Copies.Prepend(g.Keeper).OrderByDescending(Organized).ToList();
-            foreach (var c in members.Skip(1)) dupOf[c] = members[0];
+            var keeper = DuplicateKeeper.Choose(g, opt, keepDuplicates);
+            foreach (var c in DuplicateKeeper.Members(g).Where(m => m != keeper)) dupOf[c] = keeper;
         }
 
         var scanned = new HashSet<string>(files.Select(f => Path.GetFullPath(f.Path)), StringComparer.OrdinalIgnoreCase);
