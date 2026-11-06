@@ -25,15 +25,15 @@ Durum işaretleri: ✅ bitti · 🔄 sürüyor · ⬜ planlandı
 - ✅ Bu gruplar otomatik taşınmaz; yan yana gösterilir, hangisinin kalacağını kullanıcı seçer
   (küçük resimli şerit, tam ekran karşılaştırma, kararlar kalıcı) (0.1.5)
 - ✅ RAW + JPG eşlerini birlikte taşımak: adlar hep eş; Benzerler'de ayıklanan karenin RAW'ı
-  Plan'da sorulur; kopyalar bağımsız (yayınlanmamış)
+  Plan'da sorulur; kopyalar bağımsız (0.1.6)
 - ✅ Bulanık veya çok karanlık kareleri işaretlemek (yerel hesaplama): seri çekimde en net / bulanık,
-  arşiv genelinde Kusurlu sekmesi ve `_Kusurlu` klasörü (yayınlanmamış)
+  arşiv genelinde Kusurlu sekmesi ve `_Kusurlu` klasörü (0.1.6)
 
 ## Aşama 3 — Görsel arayüz
 
-- ✅ Plan tablosunun yanında küçük resim önizleme (yayınlanmamış)
+- ✅ Plan tablosunun yanında küçük resim önizleme (0.1.6)
 - ✅ Kopya ve benzer grupları yan yana karşılaştırma ekranı (benzerler 0.1.5; Yinelenenler
-  grup kartları ve korunacak konumu seçme, yayınlanmamış)
+  grup kartları ve korunacak konumu seçme, 0.1.6)
 - ⬜ Ay ay zaman çizelgesi; ay başına dosya sayısı ve boyut grafiği
 - ⬜ Koyu tema, modern görünüm (WPF-UI / Fluent)
 

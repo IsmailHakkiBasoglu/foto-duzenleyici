@@ -6,6 +6,8 @@ Biçim [Keep a Changelog](https://keepachangelog.com/tr-TR/1.1.0/), sürüm numa
 
 ## [Yayınlanmamış]
 
+## [0.1.6] - 2026-11-07
+
 ### Eklendi
 - **RAW + JPG eşleri birlikte:** aynı klasörde aynı adı taşıyan RAW ve JPG (ya da HEIC) aynı kare
   sayılıyor. Düzenli arşivde `2026-01-Raw` klasörü kardeş `2026-01-Foto` klasörüyle eşleniyor; tekrar
@@ -184,7 +186,8 @@ Biçim [Keep a Changelog](https://keepachangelog.com/tr-TR/1.1.0/), sürüm numa
   SHA-256 ile birebir kopya tespiti, kopyala → doğrula → Geri Dönüşüm Kutusu ile güvenli
   taşıma, işlem günlüğü ve Geri Al, WPF arayüzü.
 
-[Yayınlanmamış]: https://github.com/IsmailHakkiBasoglu/foto-duzenleyici/compare/v0.1.5...HEAD
+[Yayınlanmamış]: https://github.com/IsmailHakkiBasoglu/foto-duzenleyici/compare/v0.1.6...HEAD
+[0.1.6]: https://github.com/IsmailHakkiBasoglu/foto-duzenleyici/compare/v0.1.5...v0.1.6
 [0.1.5]: https://github.com/IsmailHakkiBasoglu/foto-duzenleyici/compare/v0.1.4...v0.1.5
 [0.1.4]: https://github.com/IsmailHakkiBasoglu/foto-duzenleyici/compare/v0.1.3...v0.1.4
 [0.1.3]: https://github.com/IsmailHakkiBasoglu/foto-duzenleyici/compare/v0.1.2...v0.1.3
