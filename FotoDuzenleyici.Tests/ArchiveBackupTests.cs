@@ -229,6 +229,69 @@ public class ArchiveBackupTests : IDisposable
     }
 
     [Fact]
+    public void Verify_FindsCorruptAndMissing()
+    {
+        Arc("a.jpg", "aaaa");
+        Arc(@"x\b.jpg", "bb");
+        Arc("c.jpg", "cc");
+        Arc("d.jpg", "v1");
+        Run();
+        Arc("d.jpg", "v2-uzun");
+        Run(); // _EskiSurumler'e bir dosya düşer; doğrulamada sayılmamalı
+        File.WriteAllText(Bak("a.jpg"), "aaXa");
+        File.Delete(Bak(@"x\b.jpg"));
+        File.WriteAllText(Bak("yabanci.txt"), "?");
+
+        var v = New().Verify(_bak);
+
+        Assert.Equal(2, v.Ok);
+        Assert.Equal(1, v.NotInManifest);
+        Assert.Contains(v.Problems, p => p.Entry.Path == "a.jpg" && p.Status == VerifyStatus.Corrupt);
+        Assert.Contains(v.Problems, p => p.Entry.Path == @"x\b.jpg" && p.Status == VerifyStatus.Missing);
+        Assert.Equal(2, v.Problems.Count);
+    }
+
+    [Fact]
+    public void Repair_MovesCorruptToBozuk_RecopiesMissing_ThenVerifyClean()
+    {
+        Arc("a.jpg", "aaaa");
+        Arc(@"x\b.jpg", "bb");
+        Run();
+        File.WriteAllText(Bak("a.jpg"), "aaXa");
+        File.Delete(Bak(@"x\b.jpg"));
+        var b = New();
+        var v = b.Verify(_bak);
+
+        var r = b.Repair(_arc, _bak, v);
+
+        Assert.Equal(2, r.Repaired);
+        Assert.Empty(r.NotRepaired);
+        Assert.Equal("aaaa", File.ReadAllText(Bak("a.jpg")));
+        Assert.Equal("bb", File.ReadAllText(Bak(@"x\b.jpg")));
+        Assert.Equal("aaXa", File.ReadAllText(Bak(@"_Bozuk\2026-11-07\a.jpg")));
+        var again = b.Verify(_bak);
+        Assert.Empty(again.Problems);
+        Assert.Equal(2, again.Ok);
+    }
+
+    [Fact]
+    public void Repair_ArchiveChanged_NotRepaired_Untouched()
+    {
+        Arc("a.jpg", "aaaa");
+        Run();
+        File.WriteAllText(Bak("a.jpg"), "aaXa");
+        Arc("a.jpg", "yeni-icerik");
+        var b = New();
+
+        var r = b.Repair(_arc, _bak, b.Verify(_bak));
+
+        Assert.Equal(0, r.Repaired);
+        Assert.Single(r.NotRepaired);
+        Assert.Equal("aaXa", File.ReadAllText(Bak("a.jpg")));
+        Assert.False(Directory.Exists(Bak("_Bozuk")));
+    }
+
+    [Fact]
     public void CorruptManifest_Blocked()
     {
         Arc("a.jpg", "a");

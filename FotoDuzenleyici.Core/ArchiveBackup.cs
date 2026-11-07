@@ -28,6 +28,26 @@ public sealed class BackupResult
     public string? Blocked { get; set; }
 }
 
+public enum VerifyStatus { Ok, Missing, Corrupt }
+
+public sealed class VerifyResult
+{
+    public int Ok { get; set; }
+    public List<(BackupEntry Entry, VerifyStatus Status)> Problems { get; } = new();
+    /// <summary>Yedekte olup listede olmayan dosyalar (ayrılmış klasörler hariç); yalnızca sayılır.</summary>
+    public int NotInManifest { get; set; }
+    public List<string> Errors { get; } = new();
+    public bool Cancelled { get; set; }
+    public string? Blocked { get; set; }
+}
+
+public sealed class RepairResult
+{
+    public int Repaired { get; set; }
+    public List<string> NotRepaired { get; } = new();
+    public List<string> Errors { get; } = new();
+}
+
 /// <summary>
 /// Arşivi ikinci bir diske artımlı yedekler. Hiçbir şey silinmez: değişen dosyanın eski hali
 /// <c>_EskiSurumler</c>'e taşınır. Her kopya SHA-256 ile doğrulanmadan listeye girmez.
@@ -128,6 +148,106 @@ public sealed class ArchiveBackup
         }
         if (ct.IsCancellationRequested) res.Cancelled = true;
         TrySave(manifest, res);
+        return res;
+    }
+
+    /// <summary>Yedek listesindeki her dosyayı yedek diskinden okuyup hash'ini karşılaştırır. Arşive dokunmaz.</summary>
+    public VerifyResult Verify(string backupRoot, IProgress<BackupProgress>? progress = null, CancellationToken ct = default)
+    {
+        var res = new VerifyResult();
+        var bak = Path.GetFullPath(backupRoot).TrimEnd('\\');
+        if (!Directory.Exists(bak)) { res.Blocked = $"Yedek klasörü bulunamadı: {bak}"; return res; }
+        BackupManifest manifest;
+        try { manifest = BackupManifest.Load(bak); }
+        catch (InvalidDataException ex) { res.Blocked = ex.Message; return res; }
+
+        var entries = manifest.Entries.OrderBy(e => e.Path, StringComparer.OrdinalIgnoreCase).ToList();
+        long total = entries.Sum(e => e.Size), done = 0;
+        for (int i = 0; i < entries.Count; i++)
+        {
+            if (ct.IsCancellationRequested) { res.Cancelled = true; break; }
+            var e = entries[i];
+            var path = Path.Combine(bak, e.Path);
+            VerifyStatus status;
+            try
+            {
+                if (!File.Exists(path)) status = VerifyStatus.Missing;
+                else if (new FileInfo(path).Length != e.Size) status = VerifyStatus.Corrupt;
+                else status = HashFile(path) == e.Sha256 ? VerifyStatus.Ok : VerifyStatus.Corrupt;
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+            {
+                status = VerifyStatus.Corrupt;
+                res.Errors.Add($"{e.Path}: {ex.Message}");
+            }
+            if (status == VerifyStatus.Ok) res.Ok++; else res.Problems.Add((e, status));
+            done += e.Size;
+            progress?.Report(new BackupProgress(i + 1, entries.Count, done, total, e.Path));
+        }
+
+        var known = new HashSet<string>(entries.Select(e => e.Path), StringComparer.OrdinalIgnoreCase);
+        foreach (var f in Directory.EnumerateFiles(bak, "*", SearchOption.AllDirectories))
+        {
+            var rel = Path.GetRelativePath(bak, f);
+            var first = rel.Split('\\')[0];
+            if (first.Equals(OldVersionsFolder, StringComparison.OrdinalIgnoreCase) ||
+                first.Equals(CorruptFolder, StringComparison.OrdinalIgnoreCase) ||
+                rel.Equals(BackupManifest.FileName, StringComparison.OrdinalIgnoreCase) ||
+                rel.EndsWith(PartExt, StringComparison.OrdinalIgnoreCase)) continue;
+            if (!known.Contains(rel)) res.NotInManifest++;
+        }
+        return res;
+    }
+
+    /// <summary>
+    /// Doğrulamada eksik ya da bozuk çıkan dosyaları arşivden yeniden kopyalar; yalnız arşivdeki dosya
+    /// listedeki hash'le hâlâ aynıysa. Bozuk kopya silinmez, <c>_Bozuk\yyyy-MM-dd</c>'ye taşınır.
+    /// </summary>
+    public RepairResult Repair(string archiveRoot, string backupRoot, VerifyResult problems,
+        IProgress<BackupProgress>? progress = null, CancellationToken ct = default)
+    {
+        var res = new RepairResult();
+        var arc = Path.GetFullPath(archiveRoot).TrimEnd('\\');
+        var bak = Path.GetFullPath(backupRoot).TrimEnd('\\');
+        if (Nested(arc, bak)) { res.Errors.Add("Yedek klasörü arşiv klasörüyle iç içe olamaz."); return res; }
+        BackupManifest manifest;
+        try { manifest = BackupManifest.Load(bak); }
+        catch (Exception ex) when (ex is InvalidDataException or IOException or UnauthorizedAccessException)
+        { res.Errors.Add(ex.Message); return res; }
+
+        var list = problems.Problems;
+        long total = list.Sum(p => p.Entry.Size), done = 0;
+        for (int i = 0; i < list.Count; i++)
+        {
+            if (ct.IsCancellationRequested) break;
+            var (e, status) = list[i];
+            var src = Path.Combine(arc, e.Path);
+            var dst = Path.Combine(bak, e.Path);
+            try
+            {
+                if (!File.Exists(src)) res.NotRepaired.Add($"{e.Path}: arşivde artık yok");
+                else if (HashFile(src) != e.Sha256) res.NotRepaired.Add($"{e.Path}: arşivdeki dosya yedeklendikten sonra değişmiş");
+                else
+                {
+                    if (File.Exists(dst)) MoveAside(dst, Path.Combine(bak, CorruptFolder, Stamp(), e.Path));
+                    if (CopyVerified(src, dst, out var sha, out var err))
+                    {
+                        manifest.Set(e with { Sha256 = sha, Modified = File.GetLastWriteTimeUtc(src), BackedUp = DateTime.UtcNow });
+                        res.Repaired++;
+                    }
+                    else res.Errors.Add($"{e.Path}: {err}");
+                }
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+            {
+                res.Errors.Add($"{e.Path}: {ex.Message}");
+            }
+            done += e.Size;
+            progress?.Report(new BackupProgress(i + 1, list.Count, done, total, e.Path));
+        }
+        try { manifest.Save(); }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        { res.Errors.Add($"Yedek listesi kaydedilemedi: {ex.Message}"); }
         return res;
     }
 
