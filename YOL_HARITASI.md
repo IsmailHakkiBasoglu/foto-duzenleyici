@@ -43,6 +43,8 @@ Durum işaretleri: ✅ bitti · 🔄 sürüyor · ⬜ planlandı
 - ⬜ Gelen kutusu klasörünü izleyip yeni dosyaları otomatik yerleştirme
 - 🔄 Arşivi ikinci bir diske yedekleme ve yedeği hash ile doğrulama (çekirdek ve komut satırı hazır;
   ekranı yeni arayüzde)
+- 🔄 **Temizle:** bir klasördeki kopya, benzer ve kusurlu kareleri tarih klasörüne taşımadan, yerinde
+  `_Ayiklananlar`'a ayıklama (çekirdek ve komut satırı hazır; ekranı yeni arayüzde)
 
 ## Aşama 5 — Arşiv kütüphanesi (uzun vade)
 

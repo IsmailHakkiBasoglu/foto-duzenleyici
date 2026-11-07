@@ -24,12 +24,32 @@ public static class DuplicateKeeper
     public static List<MediaFile> Members(DuplicateGroup g) => g.Copies.Prepend(g.Keeper).ToList();
 
     /// <param name="chosen">Kullanıcının Yinelenenler sekmesinde seçtiği korunacak dosyalar.</param>
-    public static MediaFile Choose(DuplicateGroup g, PlanOptions opt, IReadOnlySet<MediaFile>? chosen = null)
+    public static MediaFile Choose(DuplicateGroup g, PlanOptions opt, IReadOnlySet<MediaFile>? chosen = null) =>
+        Choose(g, m => IsOrganized(m, opt), chosen);
+
+    /// <summary>
+    /// Genel kural: kullanıcının seçtiği, yoksa <paramref name="preferred"/> olan ilk üye, yoksa en eski.
+    /// Düzenle için "düzenli klasörde", Temizle için "öncelikli klasörde".
+    /// </summary>
+    public static MediaFile Choose(DuplicateGroup g, Func<MediaFile, bool> preferred, IReadOnlySet<MediaFile>? chosen = null)
     {
         var members = Members(g);
         return members.FirstOrDefault(m => chosen?.Contains(m) == true)
-               ?? members.FirstOrDefault(m => IsOrganized(m, opt))
+               ?? members.FirstOrDefault(preferred)
                ?? g.Keeper;
+    }
+
+    /// <summary>Dosya verilen klasörlerden birinin içinde mi? <c>D:\A2</c>, <c>D:\A</c> içinde sayılmaz.</summary>
+    public static bool InAny(MediaFile f, IEnumerable<string> folders)
+    {
+        var full = Path.GetFullPath(f.Path);
+        foreach (var folder in folders)
+        {
+            var root = Path.TrimEndingDirectorySeparator(Path.GetFullPath(folder));
+            var withSep = root.EndsWith('\\') ? root : root + "\\";
+            if (full.StartsWith(withSep, StringComparison.OrdinalIgnoreCase)) return true;
+        }
+        return false;
     }
 }
 
