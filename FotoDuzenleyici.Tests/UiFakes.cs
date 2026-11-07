@@ -55,5 +55,14 @@ sealed class Fakes
     public Action<string>? Recycle;
 
     public Func<string, long>? FreeFn;
-    public Services Services => new(Folders, Files, Dialogs, Shell, Settings, FreeFn ?? (_ => Free), Recycle);
+    /// <summary>Her Fakes kendi geçici klasöründe: testler kullanıcının karar ve önbellek dosyalarına dokunmaz.</summary>
+    public CachePaths Caches = Temp();
+    public Func<TimeSpan, Action, IDisposable>? Schedule;
+
+    static CachePaths Temp()
+    {
+        var d = Path.Combine(Path.GetTempPath(), "fd_caches_" + Guid.NewGuid().ToString("N"));
+        return new CachePaths(Path.Combine(d, "kararlar.json"), Path.Combine(d, "iz.bin"), Path.Combine(d, "netlik.bin"));
+    }
+    public Services Services => new(Folders, Files, Dialogs, Shell, Settings, FreeFn ?? (_ => Free), Recycle, Caches, Schedule);
 }

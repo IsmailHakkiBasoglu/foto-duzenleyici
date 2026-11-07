@@ -44,22 +44,96 @@ public sealed partial class OrganizeFlowViewModel : ObservableObject
         {
             Folders.RememberCurrent(DateTime.Now);
             var session = new OrganizeSession(Folders.ExistingSources, Folders.BuildPlanOptions());
-            var scanProg = new Progress<(int d, int t)>(p => { ProgressText = $"Taranıyor {p.d:N0} / {p.t:N0}"; Progress = p.t == 0 ? 0 : (double)p.d / p.t; });
-            var hashProg = new Progress<(int d, int t)>(p => { ProgressText = $"Kopyalar aranıyor {p.d:N0} / {p.t:N0}"; Progress = p.t == 0 ? 0 : (double)p.d / p.t; });
-            var plan = await Task.Run(() =>
+            var scanProg = new Progress<(int d, int t)>(p => Report($"Metadata okunuyor {p.d:N0} / {p.t:N0}", p.d, p.t));
+            var hashProg = new Progress<(int d, int t)>(p => Report($"Hash hesaplanıyor {p.d:N0} / {p.t:N0}", p.d, p.t));
+            var simProg = new Progress<(int d, int t, int c)>(p => Report($"Benzerlik izi… {p.d:N0} / {p.t:N0} ({p.c:N0}'i önbellekten)", p.d, p.t));
+            var qualProg = new Progress<(int d, int t, int c)>(p => Report($"Netlik ölçülüyor… {p.d:N0} / {p.t:N0} ({p.c:N0}'i önbellekten)", p.d, p.t));
+            bool findSimilar = _settings.FindSimilar, markFlawed = _settings.MarkFlawed;
+            var (plan, data, note) = await Task.Run(() =>
             {
                 ct.ThrowIfCancellationRequested();
+                OnPhaseForTest?.Invoke("metadata");
                 session.Scan(scanProg, hashProg, ct);
                 ct.ThrowIfCancellationRequested();
-                return session.BuildPlan();
+                var r = ScanReview(session, findSimilar, markFlawed, simProg, qualProg, ct);
+                return (session.BuildPlan(), r.Data, r.Note);
             }, ct);
-            Review = new ReviewStepViewModel(session, plan, _s);
+            Review = new ReviewStepViewModel(session, plan, _s, data);
             ProgressText = null;
+            ErrorMessage = note;
             Step = FlowStep.Review;
         }
         catch (OperationCanceledException) { ProgressText = "Durduruldu"; Step = FlowStep.Folders; }
         catch (Exception ex) { ErrorMessage = ex.Message; ProgressText = null; }
         finally { IsBusy = false; _cts = null; }
+    }
+
+    /// <summary>Test kancası: her aşamanın başında ("metadata", "similar", "quality"); arka plan iş parçacığında.</summary>
+    internal Action<string>? OnPhaseForTest { get; set; }
+
+    void Report(string text, int done, int total)
+    {
+        ProgressText = text;
+        Progress = total == 0 ? 0 : (double)done / total;
+    }
+
+    /// <summary>
+    /// Aşama 3 (benzerlik) ve 4 (netlik). Durdurulursa ya da hata olursa o aşamanın sonucu boş kalır, inceleme yine
+    /// açılır; hesaplananlar önbellekte kalır. Not: hata şeridine gidecek metin.
+    /// </summary>
+    (ReviewData Data, string? Note) ScanReview(OrganizeSession session, bool findSimilar, bool markFlawed,
+        IProgress<(int, int, int)> simProg, IProgress<(int, int, int)> qualProg, CancellationToken ct)
+    {
+        var caches = _s.CacheFiles;
+        var store = new ReviewStore(caches.Reviews);
+        var notes = new List<string>();
+        if (store.LoadFailed) notes.Add("Önceki benzer kararları okunamadı; boş başlandı.");
+        var errors = new List<string>(session.ScanErrors);
+        var ignore = ReviewBuilder.IgnoreDirs(session.PlanOptions);
+
+        var prints = new Dictionary<MediaFile, ImagePrint>();
+        bool similarDone = false, qualityDone = false;
+        if (findSimilar)
+        {
+            OnPhaseForTest?.Invoke("similar");
+            try
+            {
+                ct.ThrowIfCancellationRequested();
+                prints = SimilarityScan.Compute(session.Files, session.Duplicates, ignore, new HashCache(caches.Hashes), errors, simProg, ct);
+                similarDone = true;
+            }
+            catch (OperationCanceledException)
+            {
+                notes.Add("Benzerlik araması durduruldu; hesaplanan izler kaydedildi, bir sonraki taramada kaldığı yerden sürer.");
+            }
+            catch (Exception ex) { notes.Add("Benzerlik araması yapılamadı: " + ex.Message); }
+        }
+
+        var scores = new Dictionary<MediaFile, QualityScore>();
+        if (markFlawed && !ct.IsCancellationRequested)
+        {
+            OnPhaseForTest?.Invoke("quality");
+            try
+            {
+                ct.ThrowIfCancellationRequested();
+                scores = QualityScan.Compute(session.Files, session.Duplicates, ignore, new QualityCache(caches.Quality), errors, qualProg, ct);
+                qualityDone = true;
+            }
+            catch (OperationCanceledException)
+            {
+                notes.Add("Netlik ölçümü durduruldu; ölçülenler kaydedildi, bir sonraki taramada kaldığı yerden sürer.");
+            }
+            catch (Exception ex) { notes.Add("Netlik ölçülemedi: " + ex.Message); }
+        }
+
+        var similar = similarDone
+            ? ReviewBuilder.BuildSimilar(session.Files, session.Duplicates, prints, ignore, scores, store)
+            : new List<SimilarGroupState>();
+        var flawed = qualityDone
+            ? ReviewBuilder.BuildFlawed(session.Files, scores, similar, store)
+            : new List<SimilarGroupState>();
+        var data = new ReviewData(store, similar, flawed, scores, similarDone, qualityDone, errors);
+        return (data, notes.Count == 0 ? null : string.Join(" ", notes));
     }
 
     [ObservableProperty] private ConfirmStepViewModel? confirm;

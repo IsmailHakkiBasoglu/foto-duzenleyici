@@ -38,7 +38,21 @@ public interface ISettingsStore
 /// <paramref name="Recycle"/>: null → Windows Geri Dönüşüm Kutusu (Executor'a aynen geçer); testler başka eylem verir.
 /// </summary>
 public sealed record Services(IFolderPicker Folders, IFilePicker Files, IDialogs Dialogs, IShell Shell,
-    ISettingsStore Settings, Func<string, long> FreeSpace, Action<string>? Recycle = null);
+    ISettingsStore Settings, Func<string, long> FreeSpace, Action<string>? Recycle = null,
+    CachePaths? Caches = null, Func<TimeSpan, Action, IDisposable>? Schedule = null)
+{
+    public CachePaths CacheFiles => Caches ?? CachePaths.Default;
+
+    /// <summary>İşi geciktirerek çalıştırır (Schedule yoksa hemen). Dönen nesne bekleyeni iptal eder.</summary>
+    public IDisposable Later(TimeSpan delay, Action work)
+    {
+        if (Schedule is not null) return Schedule(delay, work);
+        work();
+        return Nothing.Instance;
+    }
+
+    sealed class Nothing : IDisposable { public static readonly Nothing Instance = new(); public void Dispose() { } }
+}
 
 public static class SettingsStoreExtensions
 {
@@ -53,3 +67,9 @@ public static class SettingsStoreExtensions
 /// <summary>Klasik pencerenin, yeni akışta seçilenlerle dolu açılması için.</summary>
 public sealed record ClassicStart(IReadOnlyList<string> Sources, string Archive, SourceFolderMode SourceFolder,
     bool RenameWithDate, bool AppendSourceToName, bool SeparateRawFolder, bool RecycleSource);
+
+/// <summary>Kararlar ve önbellekler; öntanımlı olarak klasik pencereyle ortak dosyalar.</summary>
+public sealed record CachePaths(string Reviews, string Hashes, string Quality)
+{
+    public static CachePaths Default { get; } = new(ReviewStore.DefaultPath, HashCache.DefaultPath, QualityCache.DefaultPath);
+}

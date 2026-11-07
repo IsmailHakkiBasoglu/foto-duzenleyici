@@ -68,6 +68,18 @@ sealed class WpfServices : IFolderPicker, IFilePicker, IDialogs, IShell
     public static Services Create()
     {
         var w = new WpfServices();
-        return new Services(w, w, w, w, new JsonSettingsStore(JsonSettingsStore.DefaultPath), FreeSpace);
+        return new Services(w, w, w, w, new JsonSettingsStore(JsonSettingsStore.DefaultPath), FreeSpace,
+            Schedule: Later);
     }
+
+    /// <summary>Arayüz iş parçacığında, gecikmeyle tek sefer. Dispose bekleyeni iptal eder.</summary>
+    static IDisposable Later(TimeSpan delay, Action work)
+    {
+        var t = new System.Windows.Threading.DispatcherTimer { Interval = delay };
+        t.Tick += (_, _) => { t.Stop(); work(); };
+        t.Start();
+        return new Stopper(t);
+    }
+
+    sealed class Stopper(System.Windows.Threading.DispatcherTimer t) : IDisposable { public void Dispose() => t.Stop(); }
 }
