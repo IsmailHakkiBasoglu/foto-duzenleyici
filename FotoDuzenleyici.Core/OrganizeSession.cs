@@ -59,6 +59,7 @@ public sealed class OrganizeSession
             Roots = Roots.Where(Directory.Exists).ToList(),
             ExcludedFolders = _scan.ExcludedFolders,
             ExcludedFiles = _scan.ExcludedFiles,
+            ExcludedFolderNames = _scan.ExcludedFolderNames,
             IncludedKinds = _scan.IncludedKinds,
             MaxParallelism = _scan.MaxParallelism,
         };

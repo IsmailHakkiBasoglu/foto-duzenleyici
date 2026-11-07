@@ -78,6 +78,8 @@ public sealed class ScanOptions
     /// <summary>Tamamen hariç tutulan klasörler (alt klasörleri dahil).</summary>
     public HashSet<string> ExcludedFolders { get; set; } = new(StringComparer.OrdinalIgnoreCase);
     public HashSet<string> ExcludedFiles { get; set; } = new(StringComparer.OrdinalIgnoreCase);
+    /// <summary>Bu adı taşıyan klasörlere (hangi derinlikte olursa olsun) girilmez: Temizle'nin ayıkladıkları.</summary>
+    public HashSet<string> ExcludedFolderNames { get; set; } = new(StringComparer.OrdinalIgnoreCase) { "_Ayiklananlar" };
     public HashSet<FileKind> IncludedKinds { get; set; } =
         new() { FileKind.Photo, FileKind.Raw, FileKind.Video, FileKind.Pdf };
     public int MaxParallelism { get; set; } = 4;

@@ -32,6 +32,7 @@ public sealed class Scanner
     {
         var norm = Normalize(dir);
         if (excluded.Any(e => norm.Equals(e, StringComparison.OrdinalIgnoreCase))) yield break;
+        if (_opt.ExcludedFolderNames.Contains(Path.GetFileName(norm))) yield break;
 
         string[] files = Array.Empty<string>(), subs = Array.Empty<string>();
         try { files = Directory.GetFiles(dir); subs = Directory.GetDirectories(dir); }
