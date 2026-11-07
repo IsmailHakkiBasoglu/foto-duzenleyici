@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <!-- Core net8.0-windows olduğu için; WPF tipi kullanılmaz (UseWPF yok). -->
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\FotoDuzenleyici.Core\FotoDuzenleyici.Core.csproj" />
+    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
+    <InternalsVisibleTo Include="FotoDuzenleyici.Tests" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="System.IO" />
+    <Using Include="FotoDuzenleyici.Core" />
+  </ItemGroup>
+
+</Project>

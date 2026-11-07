@@ -11,6 +11,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FotoDuzenleyici.App", "Foto
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FotoDuzenleyici.Tests", "FotoDuzenleyici.Tests\FotoDuzenleyici.Tests.csproj", "{9381E91A-FA1A-4FC2-8C94-58F0D2E989CB}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FotoDuzenleyici.ViewModels", "FotoDuzenleyici.ViewModels\FotoDuzenleyici.ViewModels.csproj", "{5E5CE2B9-8BAA-4375-A533-4FB2768ECDDD}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -36,5 +38,9 @@ Global
 		{9381E91A-FA1A-4FC2-8C94-58F0D2E989CB}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{9381E91A-FA1A-4FC2-8C94-58F0D2E989CB}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{9381E91A-FA1A-4FC2-8C94-58F0D2E989CB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5E5CE2B9-8BAA-4375-A533-4FB2768ECDDD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5E5CE2B9-8BAA-4375-A533-4FB2768ECDDD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5E5CE2B9-8BAA-4375-A533-4FB2768ECDDD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5E5CE2B9-8BAA-4375-A533-4FB2768ECDDD}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
