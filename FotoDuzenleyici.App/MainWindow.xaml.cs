@@ -691,9 +691,6 @@ public partial class MainWindow : Window
         if (_plan == null) return;
         var dlg = new SaveFileDialog { Filter = "CSV|*.csv", FileName = "plan.csv" };
         if (dlg.ShowDialog() != true) return;
-        var sb = new StringBuilder("Eylem;Kaynak;Hedef;Tarih;TarihKaynagi;Kamera;Not\n");
-        foreach (var i in _plan.Items)
-            sb.AppendLine($"{i.Action};{i.File.Path};{i.TargetPath};{i.File.Taken:yyyy-MM-dd HH:mm:ss};{i.File.DateSource};{i.File.Source};{i.Note}");
-        File.WriteAllText(dlg.FileName, sb.ToString(), new UTF8Encoding(true));
+        PlanCsv.Write(_plan, dlg.FileName);
     }
 }
