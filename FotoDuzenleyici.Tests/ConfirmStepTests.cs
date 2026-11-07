@@ -22,7 +22,8 @@ public class ConfirmStepTests : IDisposable
 
     ConfirmStepViewModel Vm(Plan? plan = null, IEnumerable<string>? sources = null, string? archive = null) =>
         new(plan ?? Plan(Item(PlanAction.Move, 100), Item(PlanAction.Duplicate, 20), Item(PlanAction.AlreadyInPlace, 5)),
-            new PlanOptions { DestinationRoot = archive ?? Archive }, sources ?? new[] { _tmp }, _f.Services, _f.Settings.Stored,
+            new OrganizeJob(new OrganizeSession(sources ?? new[] { _tmp }, new PlanOptions { DestinationRoot = archive ?? Archive })),
+            _f.Services, _f.Settings.Stored,
             new DateTime(2026, 11, 7, 14, 32, 5));
 
     void WriteUnfinishedJournal()

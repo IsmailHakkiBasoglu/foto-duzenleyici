@@ -46,8 +46,9 @@ public sealed partial class ApplyStepViewModel : ObservableObject
     /// <summary>Test kancası: işlem, iptal edilmiş bir belirteçle başlar.</summary>
     internal bool CancelBeforeStartForTest { get; set; }
 
-    public Task RunAsync(IReadOnlyList<PlanItem> items, string journal, bool recycle) =>
-        Execute(ApplyMode.Run, journal, (prog, ct) => new Executor(journal, _s.Recycle).Run(items, recycle, prog, ct));
+    /// <param name="move">true: Temizle; kopyalanmaz, aynı disk içinde yeri değişir.</param>
+    public Task RunAsync(IReadOnlyList<PlanItem> items, string journal, bool recycle, bool move = false) =>
+        Execute(ApplyMode.Run, journal, (prog, ct) => new Executor(journal, _s.Recycle).Run(items, recycle, prog, ct, move));
 
     public Task ResumeAsync(string journal) =>
         Execute(ApplyMode.Resume, journal, (prog, ct) => new Executor(journal, _s.Recycle).Resume(prog, ct));

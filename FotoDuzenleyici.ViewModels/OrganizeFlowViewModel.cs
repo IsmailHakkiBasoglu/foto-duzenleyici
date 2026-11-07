@@ -45,7 +45,7 @@ public sealed partial class OrganizeFlowViewModel : ObservableObject
         try
         {
             Folders.RememberCurrent(DateTime.Now);
-            var session = new OrganizeSession(Folders.ExistingSources, Folders.BuildPlanOptions());
+            var job = CreateJob();
             var scanProg = new Progress<(int d, int t)>(p => Report($"Metadata okunuyor {p.d:N0} / {p.t:N0}", p.d, p.t));
             var hashProg = new Progress<(int d, int t)>(p => Report($"Hash hesaplanıyor {p.d:N0} / {p.t:N0}", p.d, p.t));
             var simProg = new Progress<(int d, int t, int c)>(p => Report($"Benzerlik izi… {p.d:N0} / {p.t:N0} ({p.c:N0}'i önbellekten)", p.d, p.t));
@@ -55,12 +55,12 @@ public sealed partial class OrganizeFlowViewModel : ObservableObject
             {
                 ct.ThrowIfCancellationRequested();
                 OnPhaseForTest?.Invoke("metadata");
-                session.Scan(scanProg, hashProg, ct);
+                job.Scan(scanProg, hashProg, ct);
                 ct.ThrowIfCancellationRequested();
-                var r = ScanReview(session, findSimilar, markFlawed, simProg, qualProg, ct);
-                return (session.BuildPlan(), r.Data, r.Note);
+                var r = ScanReview(job, findSimilar, markFlawed, simProg, qualProg, ct);
+                return (job.BuildPlan(null, null, null), r.Data, r.Note);
             }, ct);
-            Review = new ReviewStepViewModel(session, plan, _s, data, m => ErrorMessage = m);
+            Review = new ReviewStepViewModel(job, plan, _s, data, m => ErrorMessage = m);
             ProgressText = null;
             ErrorMessage = note;
             Step = FlowStep.Review;
@@ -83,7 +83,10 @@ public sealed partial class OrganizeFlowViewModel : ObservableObject
     /// Aşama 3 (benzerlik) ve 4 (netlik). Durdurulursa ya da hata olursa o aşamanın sonucu boş kalır, inceleme yine
     /// açılır; hesaplananlar önbellekte kalır. Not: hata şeridine gidecek metin.
     /// </summary>
-    (ReviewData Data, string? Note) ScanReview(OrganizeSession session, bool findSimilar, bool markFlawed,
+    /// <summary>Taranacak iş: klasör adımındaki seçimlerden.</summary>
+    IScanJob CreateJob() => new OrganizeJob(new OrganizeSession(Folders.ExistingSources, Folders.BuildPlanOptions()));
+
+    (ReviewData Data, string? Note) ScanReview(IScanJob session, bool findSimilar, bool markFlawed,
         IProgress<(int, int, int)> simProg, IProgress<(int, int, int)> qualProg, CancellationToken ct)
     {
         var caches = _s.CacheFiles;
@@ -91,7 +94,7 @@ public sealed partial class OrganizeFlowViewModel : ObservableObject
         var notes = new List<string>();
         if (store.LoadFailed) notes.Add("Önceki benzer kararları okunamadı; boş başlandı.");
         var errors = new List<string>(session.ScanErrors);
-        var ignore = ReviewBuilder.IgnoreDirs(session.PlanOptions);
+        var ignore = session.IgnoreDirs;
 
         var prints = new Dictionary<MediaFile, ImagePrint>();
         bool similarDone = false, qualityDone = false;
@@ -145,7 +148,7 @@ public sealed partial class OrganizeFlowViewModel : ObservableObject
     {
         if (IsBusy || Review is null || Step != FlowStep.Review) return;
         if (!Review.PrepareForConfirm()) return;
-        Confirm = new ConfirmStepViewModel(Review.Plan, Review.Session.PlanOptions, Review.Session.Sources, _s, _settings, DateTime.Now);
+        Confirm = new ConfirmStepViewModel(Review.Plan, Review.Job, _s, _settings, DateTime.Now);
         Confirm.ApplyRequested += StartApply;
         Confirm.ResumeRequested += StartResume;
         Step = FlowStep.Confirm;
@@ -165,7 +168,8 @@ public sealed partial class OrganizeFlowViewModel : ObservableObject
     {
         var c = Confirm!;
         var items = c.Plan.Items.Where(i => i.Action != PlanAction.AlreadyInPlace).ToList();
-        ApplyTask = RunApply(c.Archive, a => a.RunAsync(items, c.JournalPath, c.RecycleSource));
+        // Temizle: kopyalanmaz, yeri değişir; Geri Dönüşüm adımı yok.
+        ApplyTask = RunApply(c.Archive, a => a.RunAsync(items, c.JournalPath, !c.MoveOnly && c.RecycleSource, c.MoveOnly));
     }
 
     void StartResume(string journal) => ApplyTask = RunApply(Confirm!.Archive, a => a.ResumeAsync(journal));

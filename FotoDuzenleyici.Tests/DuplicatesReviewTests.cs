@@ -23,7 +23,7 @@ public class DuplicatesReviewTests
     [Fact]
     public void Counter_NoGroups()
     {
-        var vm = new DuplicatesReviewViewModel(new List<DuplicateGroupState>(), Opt, _f.Services, () => { });
+        var vm = new DuplicatesReviewViewModel(new List<DuplicateGroupState>(), _f.Services, () => { });
         Assert.Equal("Birebir kopya yok.", vm.CounterText);
     }
 
@@ -31,7 +31,7 @@ public class DuplicatesReviewTests
     public void Duplicates_ChooseRow_CounterAndChanged()
     {
         int changed = 0;
-        var vm = new DuplicatesReviewViewModel(Groups(), Opt, _f.Services, () => changed++);
+        var vm = new DuplicatesReviewViewModel(Groups(), _f.Services, () => changed++);
         Assert.StartsWith("2 grup · 2 kopya · ", vm.CounterText);
         Assert.EndsWith(" GB kazanılacak", vm.CounterText);
 
@@ -46,7 +46,7 @@ public class DuplicatesReviewTests
     {
         var g = new DuplicateGroup { Keeper = F(@"E:aIMG_1.jpg", 10, 1), Copies = new() { F(@"E:IMG_1.jpg", 10, 2), F(@"E:cIMG_1.jpg", 10, 3) } };
         int changed = 0;
-        var vm = new DuplicatesReviewViewModel(DuplicateGroupState.Build(new[] { g }, Opt), Opt, _f.Services, () => changed++);
+        var vm = new DuplicatesReviewViewModel(DuplicateGroupState.Build(new[] { g }, Opt), _f.Services, () => changed++);
         vm.Groups[0].Rows[1].IsKeeper = true;
         var before = changed;
         vm.Groups[0].Rows[2].IsKeeper = true;
@@ -57,7 +57,7 @@ public class DuplicatesReviewTests
     public void Duplicates_Reset_ClearsManual()
     {
         int changed = 0;
-        var vm = new DuplicatesReviewViewModel(Groups(), Opt, _f.Services, () => changed++);
+        var vm = new DuplicatesReviewViewModel(Groups(), _f.Services, () => changed++);
         var other = vm.Groups[0].Rows.Single(r => !r.IsKeeper);
         other.IsKeeper = true;
 
@@ -72,7 +72,7 @@ public class DuplicatesReviewTests
     [Fact]
     public void Duplicates_OpenFile_UsesShell()
     {
-        var vm = new DuplicatesReviewViewModel(Groups(), Opt, _f.Services, () => { });
+        var vm = new DuplicatesReviewViewModel(Groups(), _f.Services, () => { });
         vm.OpenFileCommand.Execute(vm.Groups[1].Rows[1]);
         Assert.Equal(new[] { vm.Groups[1].Rows[1].File.Path }, _f.Shell.Files);
     }
