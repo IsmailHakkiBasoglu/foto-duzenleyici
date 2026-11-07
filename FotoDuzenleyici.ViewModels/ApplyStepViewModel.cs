@@ -29,7 +29,15 @@ public sealed partial class ApplyStepViewModel : ObservableObject
     [ObservableProperty] private int total;
     [ObservableProperty] private string? current;
     [ObservableProperty] private TimeSpan? remaining;
-    [ObservableProperty] private ExecuteResult? result;
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(DoneCount), nameof(FailedCount), nameof(SkippedCount), nameof(Errors))]
+    private ExecuteResult? result;
+
+    // ExecuteResult sayıları alan (field); WPF yalnız özelliklere bağlanır.
+    public int DoneCount => Result?.Done ?? 0;
+    public int FailedCount => Result?.Failed ?? 0;
+    public int SkippedCount => Result?.Skipped ?? 0;
+    public IReadOnlyList<string> Errors => Result?.Errors ?? (IReadOnlyList<string>)Array.Empty<string>();
     [ObservableProperty] private string journal = "";
     /// <summary>Durdurulduysa günlükte bekleyen dosya sayısı (Onayla ekranında devam ettirilebilir).</summary>
     [ObservableProperty] private int pendingAfterStop;
@@ -107,6 +115,9 @@ public sealed partial class ApplyStepViewModel : ObservableObject
 
     [RelayCommand]
     void Cancel() => _cts?.Cancel();
+
+    /// <summary>Durdur istendi, iş henüz bitmedi.</summary>
+    public bool IsCancellationRequested => _cts?.IsCancellationRequested == true;
 
     [RelayCommand]
     async Task Undo()

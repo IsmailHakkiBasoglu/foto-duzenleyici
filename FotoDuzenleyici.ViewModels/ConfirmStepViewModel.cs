@@ -36,9 +36,12 @@ public sealed partial class ConfirmStepViewModel : ObservableObject
     public string JournalPath { get; }
 
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(CanApply))]
+    [NotifyPropertyChangedFor(nameof(CanApply), nameof(UnfinishedRemaining))]
     [NotifyCanExecuteChangedFor(nameof(ApplyCommand))]
     private (string Journal, int Remaining)? unfinished;
+
+    /// <summary>Ekran için: tuple alanlarına bağlanılamaz.</summary>
+    public int UnfinishedRemaining => Unfinished?.Remaining ?? 0;
 
     [ObservableProperty] private bool recycleSource;
 

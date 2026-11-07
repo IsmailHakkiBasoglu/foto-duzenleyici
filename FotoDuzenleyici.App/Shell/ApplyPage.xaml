@@ -1,0 +1,132 @@
+<UserControl x:Class="FotoDuzenleyici.App.Shell.ApplyPage"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml">
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <Grid MaxWidth="760" Margin="20,4,20,24">
+            <!-- Uygulanıyor -->
+            <StackPanel Visibility="{Binding Apply.IsRunning, Converter={StaticResource BoolVis}}">
+                <TextBlock Style="{StaticResource H1}" Text="{Binding Apply.Mode, Converter={StaticResource ApplyTitle}}" />
+                <TextBlock Style="{StaticResource Muted}" Margin="0,0,0,18"
+                           Text="Pencereyi küçültebilirsin. Bilgisayar kapanırsa ya da durdurursan, kaldığı yerden devam edilebilir." />
+                <Border Style="{StaticResource Panel}" Padding="20">
+                    <StackPanel>
+                        <DockPanel Margin="0,0,0,10">
+                            <TextBlock DockPanel.Dock="Right" Style="{StaticResource Muted}" VerticalAlignment="Bottom"
+                                       Text="{Binding Apply.Remaining, Converter={StaticResource Eta}}" />
+                            <TextBlock FontSize="40" FontWeight="SemiBold" Foreground="{DynamicResource TextFillColorPrimaryBrush}" Margin="0,0,12,0">
+                                <TextBlock.Text>
+                                    <MultiBinding Converter="{StaticResource Percent}">
+                                        <Binding Path="Apply.Done" />
+                                        <Binding Path="Apply.Total" />
+                                    </MultiBinding>
+                                </TextBlock.Text>
+                            </TextBlock>
+                            <TextBlock Style="{StaticResource Muted}" VerticalAlignment="Bottom" Margin="0,0,0,6">
+                                <Run Text="{Binding Apply.Done, StringFormat=N0, Mode=OneWay}" /> / <Run Text="{Binding Apply.Total, StringFormat=N0, Mode=OneWay}" /> işlem
+                            </TextBlock>
+                        </DockPanel>
+                        <ProgressBar Height="8" Maximum="{Binding Apply.Total}" Value="{Binding Apply.Done}" />
+                        <TextBlock Style="{StaticResource Small}" Margin="0,10,0,0" Text="{Binding Apply.Current, StringFormat='Şu an: {0}'}" />
+                    </StackPanel>
+                </Border>
+                <StackPanel Orientation="Horizontal" Margin="0,18,0,0">
+                    <ui:Button Content="Durdur" Icon="{ui:SymbolIcon Stop24}" Command="{Binding Apply.CancelCommand}" />
+                    <TextBlock Style="{StaticResource Small}" VerticalAlignment="Center" Margin="14,0,0,0"
+                               Text="O anki dosya bitirilir, kalanlar günlükte bekler. Yapılanlar Geri Al ile geri alınabilir." />
+                </StackPanel>
+            </StackPanel>
+
+            <!-- Bitti / Durduruldu -->
+            <StackPanel Visibility="{Binding Apply.IsRunning, Converter={StaticResource HasVis}, ConverterParameter=!}">
+                <DockPanel Margin="0,0,0,16">
+                    <Border DockPanel.Dock="Left" Width="52" Height="52" CornerRadius="26" Margin="0,0,16,0"
+                            Background="{DynamicResource SystemFillColorSuccessBrush}">
+                        <ui:SymbolIcon Symbol="Checkmark24" FontSize="26" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                    </Border>
+                    <StackPanel VerticalAlignment="Center">
+                        <TextBlock Style="{StaticResource H1}" Margin="0">
+                            <TextBlock.Text>
+                                <MultiBinding Converter="{StaticResource DoneTitle}">
+                                    <Binding Path="Apply.Mode" />
+                                    <Binding Path="Apply.Stopped" />
+                                </MultiBinding>
+                            </TextBlock.Text>
+                        </TextBlock>
+                        <TextBlock Style="{StaticResource Muted}" Visibility="{Binding Apply.Stopped, Converter={StaticResource BoolVis}}"
+                                   Text="{Binding Apply.PendingAfterStop, StringFormat='Durduruldu: kalan {0:N0} dosya, yeniden tarayıp Onayla ekranında devam ettirilebilir.'}" />
+                        <TextBlock Style="{StaticResource Muted}" Text="{Binding Apply.Journal, StringFormat='Günlük: {0}'}" TextTrimming="CharacterEllipsis" />
+                    </StackPanel>
+                </DockPanel>
+
+                <Border Style="{StaticResource Bad}" Margin="0,0,0,12" Visibility="{Binding Apply.ErrorMessage, Converter={StaticResource HasVis}}">
+                    <TextBlock Text="{Binding Apply.ErrorMessage}" TextWrapping="Wrap" Foreground="{DynamicResource TextFillColorPrimaryBrush}" />
+                </Border>
+
+                <UniformGrid Columns="3" Margin="0,0,0,12">
+                    <Border Style="{StaticResource Panel}" Padding="14,10" Margin="0,0,5,0">
+                        <StackPanel>
+                            <TextBlock Text="Başarılı" Style="{StaticResource Small}" />
+                            <TextBlock Text="{Binding Apply.DoneCount, StringFormat=N0}" Style="{StaticResource TileValue}" />
+                            <TextBlock Text="doğrulandı" Style="{StaticResource Small}" />
+                        </StackPanel>
+                    </Border>
+                    <Border Style="{StaticResource Panel}" Padding="14,10" Margin="5,0">
+                        <StackPanel>
+                            <TextBlock Text="Atlandı" Style="{StaticResource Small}" />
+                            <TextBlock Text="{Binding Apply.SkippedCount, StringFormat=N0}" Style="{StaticResource TileValue}" />
+                            <TextBlock Text="dokunulmadı" Style="{StaticResource Small}" />
+                        </StackPanel>
+                    </Border>
+                    <Border Style="{StaticResource Panel}" Padding="14,10" Margin="5,0,0,0">
+                        <StackPanel>
+                            <TextBlock Text="Yapılamadı" Style="{StaticResource Small}" />
+                            <TextBlock Text="{Binding Apply.FailedCount, StringFormat=N0}" Style="{StaticResource TileValue}"
+                                       Foreground="{DynamicResource SystemFillColorCriticalBrush}" />
+                            <TextBlock Text="dosyalar yerinde duruyor" Style="{StaticResource Small}" />
+                        </StackPanel>
+                    </Border>
+                </UniformGrid>
+
+                <Border Style="{StaticResource Panel}" Margin="0,0,0,12" Visibility="{Binding Apply.Errors, Converter={StaticResource HasVis}}">
+                    <StackPanel>
+                        <TextBlock Text="Yapılamayanlar" Style="{StaticResource H2}" Margin="16,12,16,6" />
+                        <ItemsControl ItemsSource="{Binding Apply.Errors}" Margin="16,0,16,12">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate><TextBlock Text="{Binding}" Style="{StaticResource Mono}" TextWrapping="Wrap" Margin="0,2" /></DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </StackPanel>
+                </Border>
+
+                <UniformGrid Columns="3">
+                    <Border Style="{StaticResource Panel}" Padding="14" Margin="0,0,5,0">
+                        <StackPanel>
+                            <TextBlock Text="Arşivi aç" Style="{StaticResource H2}" />
+                            <TextBlock Style="{StaticResource Small}" Text="{Binding Apply.Archive}" Margin="0,4,0,10" />
+                            <ui:Button Content="Aç" Command="{Binding Apply.OpenArchiveCommand}" />
+                        </StackPanel>
+                    </Border>
+                    <Border Style="{StaticResource Panel}" Padding="14" Margin="5,0">
+                        <StackPanel>
+                            <TextBlock Text="Geri Al" Style="{StaticResource H2}" />
+                            <TextBlock Style="{StaticResource Small}" Text="Bu işlemin tamamını geri al." Margin="0,4,0,10" />
+                            <ui:Button Content="Geri Al…" Command="{Binding Apply.UndoCommand}" />
+                        </StackPanel>
+                    </Border>
+                    <Border Style="{StaticResource Panel}" Padding="14" Margin="5,0,0,0" Opacity="0.6">
+                        <StackPanel>
+                            <TextBlock Text="Yedekle" Style="{StaticResource H2}" />
+                            <TextBlock Style="{StaticResource Small}" Text="Arşivi ikinci diske al. Yakında." Margin="0,4,0,10" />
+                        </StackPanel>
+                    </Border>
+                </UniformGrid>
+                <StackPanel Orientation="Horizontal" Margin="0,16,0,0">
+                    <ui:Button Content="Yeni işlem" Appearance="Primary" Command="{Binding BackCommand}" Margin="0,0,8,0" />
+                    <ui:Button Content="Ana ekrana dön" Appearance="Transparent"
+                               Command="{Binding DataContext.GoHomeCommand, RelativeSource={RelativeSource AncestorType=Window}}" />
+                </StackPanel>
+            </StackPanel>
+        </Grid>
+    </ScrollViewer>
+</UserControl>

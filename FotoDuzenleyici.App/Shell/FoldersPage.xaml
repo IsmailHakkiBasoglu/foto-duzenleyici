@@ -1,0 +1,97 @@
+<UserControl x:Class="FotoDuzenleyici.App.Shell.FoldersPage"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml">
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <StackPanel MaxWidth="720" Margin="20,4,20,24" DataContext="{Binding Folders}">
+            <TextBlock Text="Fotoğraf arşivini düzenleyelim" Style="{StaticResource H1}" />
+            <TextBlock Style="{StaticResource Muted}" Margin="0,0,0,18"
+                       Text="Dağınık klasörlerdeki fotoğraf ve videoları tarihine göre aylık klasörlere yerleştirir, kopyaları ayırır. Sen onaylamadan hiçbir dosyaya dokunulmaz." />
+
+            <Border Style="{StaticResource Panel}">
+                <StackPanel>
+                    <!-- Nereden -->
+                    <DockPanel Margin="16,14">
+                        <ui:Button DockPanel.Dock="Right" VerticalAlignment="Top" Content="Klasör ekle" Icon="{ui:SymbolIcon Add24}"
+                                   Command="{Binding AddSourceCommand}" Margin="12,0,0,0" />
+                        <ui:SymbolIcon DockPanel.Dock="Left" Symbol="Folder24" FontSize="26" VerticalAlignment="Top" Margin="0,0,14,0"
+                                       Foreground="{DynamicResource AccentTextFillColorPrimaryBrush}" />
+                        <StackPanel>
+                            <TextBlock Text="Nereden?" FontWeight="SemiBold" Foreground="{DynamicResource TextFillColorPrimaryBrush}" />
+                            <TextBlock Style="{StaticResource Small}" Text="Taranacak klasörler: telefon yedeği, SD kart kopyası, eski arşiv… (birden çok)" />
+                            <ItemsControl ItemsSource="{Binding Sources}" Margin="0,6,0,0">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Border Margin="0,4,0,0" Padding="10,4" CornerRadius="6" BorderThickness="1"
+                                                BorderBrush="{DynamicResource ControlStrokeColorDefaultBrush}"
+                                                Background="{DynamicResource SubtleFillColorSecondaryBrush}">
+                                            <DockPanel>
+                                                <ui:Button DockPanel.Dock="Right" Appearance="Transparent" Icon="{ui:SymbolIcon Dismiss16}" Padding="4"
+                                                           ToolTip="Listeden çıkar"
+                                                           Command="{Binding DataContext.RemoveSourceCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                                           CommandParameter="{Binding}" />
+                                                <TextBlock DockPanel.Dock="Right" Style="{StaticResource Small}" VerticalAlignment="Center" Margin="8,0"
+                                                           Foreground="{DynamicResource SystemFillColorCriticalBrush}" Text="bulunamadı · taranmayacak"
+                                                           Visibility="{Binding Exists, Converter={StaticResource HasVis}, ConverterParameter=!}" />
+                                                <TextBlock Text="{Binding Path}" Style="{StaticResource Mono}" VerticalAlignment="Center" />
+                                            </DockPanel>
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </StackPanel>
+                    </DockPanel>
+
+                    <!-- Nereye -->
+                    <Border Style="{StaticResource Row}" Padding="16,14">
+                        <DockPanel>
+                            <ui:Button DockPanel.Dock="Right" VerticalAlignment="Top" Content="Seç…" Command="{Binding PickArchiveCommand}" Margin="12,0,0,0" />
+                            <ui:SymbolIcon DockPanel.Dock="Left" Symbol="Archive24" FontSize="26" VerticalAlignment="Top" Margin="0,0,14,0"
+                                           Foreground="{DynamicResource AccentTextFillColorPrimaryBrush}" />
+                            <StackPanel>
+                                <TextBlock Text="Nereye?" FontWeight="SemiBold" Foreground="{DynamicResource TextFillColorPrimaryBrush}" />
+                                <TextBlock Style="{StaticResource Small}" Text="Düzenli arşivin duracağı klasör. Daha önce düzenlediysen aynı klasörü seç." />
+                                <TextBlock Text="{Binding Archive, TargetNullValue='(seçilmedi)'}" Style="{StaticResource Mono}" Margin="0,6,0,0" />
+                                <Border Margin="0,8,0,0" Padding="10,8" CornerRadius="6" Background="{DynamicResource SystemFillColorAttentionBackgroundBrush}">
+                                    <TextBlock TextWrapping="Wrap" FontSize="12.5" Foreground="{DynamicResource TextFillColorPrimaryBrush}">
+                                        <Run FontWeight="SemiBold" Text="Arşiv de taranır." />
+                                        <Run Text="Arşivde zaten olan bir fotoğrafın kopyası gelirse tespit edilir; arşive elle atılmış fotoğraflar da aynı adlandırmaya uyar. Tarih ve model adı iki kez yazılmaz." />
+                                    </TextBlock>
+                                </Border>
+                            </StackPanel>
+                        </DockPanel>
+                    </Border>
+
+                    <!-- Düzen -->
+                    <Border Style="{StaticResource Row}" Padding="16,12">
+                        <DockPanel>
+                            <ui:Button DockPanel.Dock="Right" Content="Değiştir" Appearance="Transparent" Click="Options_Click" />
+                            <TextBlock Style="{StaticResource Small}" Text="Düzen:" VerticalAlignment="Center" Margin="0,0,10,0" />
+                            <TextBlock Text="{Binding OptionsSummary}" VerticalAlignment="Center" TextWrapping="Wrap"
+                                       Foreground="{DynamicResource TextFillColorPrimaryBrush}" />
+                        </DockPanel>
+                    </Border>
+                </StackPanel>
+            </Border>
+
+            <StackPanel Orientation="Horizontal" Margin="0,18,0,0">
+                <ui:Button Appearance="Primary" Content="Tara ve incele →" FontSize="15" Padding="22,10"
+                           IsEnabled="{Binding CanScan}"
+                           Command="{Binding DataContext.ScanCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" />
+                <TextBlock Style="{StaticResource Small}" VerticalAlignment="Center" Margin="14,0,0,0"
+                           Text="Tarama yalnızca okur; hiçbir dosya değişmez." />
+            </StackPanel>
+
+            <Border Style="{StaticResource Safe}" Margin="0,22,0,0">
+                <DockPanel>
+                    <ui:SymbolIcon Symbol="ShieldCheckmark24" Margin="0,0,10,0" VerticalAlignment="Top"
+                                   Foreground="{DynamicResource SystemFillColorSuccessBrush}" />
+                    <TextBlock TextWrapping="Wrap" FontSize="13" Foreground="{DynamicResource TextFillColorPrimaryBrush}">
+                        <Run FontWeight="SemiBold" Text="Güvenli çalışır." />
+                        <Run Text="Uygulama aşamasında her dosya kopyalanıp doğrulanır, eski hali Geri Dönüşüm Kutusu'na gider ve her işlem Geri Al ile tersine çevrilebilir." />
+                    </TextBlock>
+                </DockPanel>
+            </Border>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

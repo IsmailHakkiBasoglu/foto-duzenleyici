@@ -74,6 +74,7 @@ public class ShellTests : IDisposable
         _f.Dialogs.Answer = true;
         Assert.False(vm.CanClose());
         Assert.Single(_f.Dialogs.Asked);
+        Assert.True(flow.Apply!.IsCancellationRequested);
         gate.Set();
         await flow.ApplyTask!;
         Assert.True(flow.Apply!.Stopped);

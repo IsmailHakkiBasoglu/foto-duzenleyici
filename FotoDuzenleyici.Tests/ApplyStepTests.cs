@@ -56,6 +56,10 @@ public class ApplyStepTests : IDisposable
         Assert.False(vm.Stopped);
         Assert.Equal(2, vm.Result!.Done);
         Assert.Equal(0, vm.Result.Failed);
+        // Ekran alanlara (field) bağlanamaz: sayılar özellik olarak da verilir.
+        Assert.Equal(2, vm.DoneCount);
+        Assert.Equal(0, vm.FailedCount);
+        Assert.Equal(0, vm.SkippedCount);
         Assert.True(File.Exists(Path.Combine(dest, "a.pdf")));
         Assert.False(File.Exists(a));
         Assert.Equal(Journal, vm.Journal);

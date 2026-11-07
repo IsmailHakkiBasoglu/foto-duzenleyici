@@ -2,6 +2,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\FotoDuzenleyici.Core\FotoDuzenleyici.Core.csproj" />
+    <ProjectReference Include="..\FotoDuzenleyici.ViewModels\FotoDuzenleyici.ViewModels.csproj" />
   </ItemGroup>
 
   <PropertyGroup>
@@ -23,6 +24,10 @@
 
   <ItemGroup>
     <Resource Include="app.ico" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="WPF-UI" Version="4.2.1" />
   </ItemGroup>
 
 </Project>

@@ -59,6 +59,7 @@ public class ConfirmStepTests : IDisposable
         var vm = Vm();
         Assert.NotNull(vm.Unfinished);
         Assert.Equal(1, vm.Unfinished!.Value.Remaining);
+        Assert.Equal(1, vm.UnfinishedRemaining);   // ekran için özellik (tuple alanına bağlanılamaz)
         Assert.False(vm.CanApply);
     }
 

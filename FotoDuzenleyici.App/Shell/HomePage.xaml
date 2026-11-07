@@ -1,0 +1,80 @@
+<UserControl x:Class="FotoDuzenleyici.App.Shell.HomePage"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml">
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <StackPanel MaxWidth="900" Margin="20,12,20,24">
+            <TextBlock Text="Ne yapmak istiyorsun?" Style="{StaticResource H1}" />
+            <TextBlock Style="{StaticResource Muted}" Margin="0,0,0,18"
+                       Text="Her araç tek başına çalışır. Sen onaylamadan hiçbir dosyaya dokunulmaz." />
+
+            <UniformGrid Columns="3">
+                <!-- Düzenle -->
+                <Border Style="{StaticResource Panel}" Margin="0,0,6,0" Padding="18"
+                        BorderBrush="{DynamicResource AccentTextFillColorPrimaryBrush}">
+                    <DockPanel>
+                        <ui:Button DockPanel.Dock="Bottom" HorizontalAlignment="Left" Margin="0,10,0,0" Appearance="Primary"
+                                   Content="Başla →" Command="{Binding StartOrganizeCommand}" CommandParameter="{Binding LastOrganize}" />
+                        <StackPanel DockPanel.Dock="Bottom" Visibility="{Binding LastOrganize, Converter={StaticResource HasVis}}">
+                            <TextBlock Style="{StaticResource Small}" Text="Son kullanılan:" Margin="0,8,0,0" />
+                            <TextBlock Style="{StaticResource Mono}" Text="{Binding LastOrganize.Archive, StringFormat='→ {0}'}" />
+                        </StackPanel>
+                        <StackPanel>
+                            <ui:SymbolIcon Symbol="FolderArrowRight24" FontSize="28" HorizontalAlignment="Left"
+                                           Foreground="{DynamicResource AccentTextFillColorPrimaryBrush}" />
+                            <TextBlock Text="Düzenle" Style="{StaticResource H2}" Margin="0,8,0,4" />
+                            <TextBlock Style="{StaticResource Small}"
+                                       Text="Dağınık klasörlerdeki fotoğraf ve videoları tarihe göre aylık klasörlere yerleştirir. Arşivde zaten olanın kopyasını tanır." />
+                        </StackPanel>
+                    </DockPanel>
+                </Border>
+                <!-- Temizle -->
+                <Border Style="{StaticResource Panel}" Margin="6,0" Padding="18" Opacity="0.6">
+                    <StackPanel>
+                        <ui:SymbolIcon Symbol="Broom24" FontSize="28" HorizontalAlignment="Left" />
+                        <TextBlock Text="Temizle" Style="{StaticResource H2}" Margin="0,8,0,4" />
+                        <TextBlock Style="{StaticResource Small}"
+                                   Text="Bir klasördeki birebir kopyaları, benzer kareleri ve bulanık fotoğrafları yerinde ayıklar." />
+                        <TextBlock Style="{StaticResource Small}" Text="Yakında · şimdilik komut satırında (--clean)" Margin="0,10,0,0" />
+                    </StackPanel>
+                </Border>
+                <!-- Yedekle -->
+                <Border Style="{StaticResource Panel}" Margin="6,0,0,0" Padding="18" Opacity="0.6">
+                    <StackPanel>
+                        <ui:SymbolIcon Symbol="HardDrive20" FontSize="28" HorizontalAlignment="Left" />
+                        <TextBlock Text="Yedekle" Style="{StaticResource H2}" Margin="0,8,0,4" />
+                        <TextBlock Style="{StaticResource Small}"
+                                   Text="Arşivi ikinci bir diske kopyalar, her dosyayı hash ile doğrular, bozulanı onarır." />
+                        <TextBlock Style="{StaticResource Small}" Text="Yakında · şimdilik komut satırında (--backup)" Margin="0,10,0,0" />
+                    </StackPanel>
+                </Border>
+            </UniformGrid>
+
+            <StackPanel Margin="0,24,0,0" Visibility="{Binding Recent, Converter={StaticResource HasVis}}">
+                <TextBlock Text="Son kullanılanlar" Style="{StaticResource H2}" FontSize="14" Margin="0,0,0,6" />
+                <ItemsControl ItemsSource="{Binding Recent}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Border Style="{StaticResource Row}" Padding="0,6">
+                                <DockPanel>
+                                    <ui:Button DockPanel.Dock="Right" Content="Aç" Appearance="Transparent"
+                                               Command="{Binding DataContext.StartOrganizeCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                               CommandParameter="{Binding}" />
+                                    <TextBlock DockPanel.Dock="Right" Style="{StaticResource Small}" VerticalAlignment="Center" Margin="12,0"
+                                               Text="{Binding Used, StringFormat='d MMMM'}" />
+                                    <TextBlock VerticalAlignment="Center" TextTrimming="CharacterEllipsis"
+                                               Foreground="{DynamicResource TextFillColorPrimaryBrush}">
+                                        <Run Text="{Binding Sources[0], Mode=OneWay}" />
+                                        <Run Text="{Binding Sources.Count, Mode=OneWay, StringFormat='({0} klasör)'}" Foreground="{DynamicResource TextFillColorTertiaryBrush}" />
+                                        <Run Text="→" />
+                                        <Run Text="{Binding Archive, Mode=OneWay}" />
+                                    </TextBlock>
+                                </DockPanel>
+                            </Border>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </StackPanel>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>
