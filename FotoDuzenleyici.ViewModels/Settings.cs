@@ -17,6 +17,10 @@ public sealed class AppSettings
     /// <summary>Sistem | Açık | Koyu</summary>
     public string Theme { get; set; } = "Sistem";
     public bool RecycleSource { get; set; } = true;
+    /// <summary>Taramada benzer fotoğrafları ara (küçültülmüş kopya, seri çekim).</summary>
+    public bool FindSimilar { get; set; } = true;
+    /// <summary>Taramada bulanık / karanlık kareleri işaretle.</summary>
+    public bool MarkFlawed { get; set; } = true;
 
     /// <summary>Çifti başa ekler. Aynı kaynak kümesi + arşiv (sıra, sondaki ayıraç ve harf büyüklüğü fark etmez) tek kayıttır.</summary>
     public void AddRecent(IEnumerable<string> sources, string archive, DateTime now)

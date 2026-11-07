@@ -111,6 +111,8 @@
                         <RadioButton Content="Taşı" GroupName="pf" Margin="0,0,10,0" IsChecked="{Binding Review.Filter, Converter={StaticResource EnumBool}, ConverterParameter=Move}" />
                         <RadioButton Content="Kopya" GroupName="pf" Margin="0,0,10,0" IsChecked="{Binding Review.Filter, Converter={StaticResource EnumBool}, ConverterParameter=Duplicate}" />
                         <RadioButton Content="Yerinde" GroupName="pf" Margin="0,0,10,0" IsChecked="{Binding Review.Filter, Converter={StaticResource EnumBool}, ConverterParameter=InPlace}" />
+                        <RadioButton Content="Benzer" GroupName="pf" Margin="0,0,10,0" IsChecked="{Binding Review.Filter, Converter={StaticResource EnumBool}, ConverterParameter=Similar}" />
+                        <RadioButton Content="Kusurlu" GroupName="pf" Margin="0,0,10,0" IsChecked="{Binding Review.Filter, Converter={StaticResource EnumBool}, ConverterParameter=Flawed}" />
                         <RadioButton Content="Adı değişen" GroupName="pf" IsChecked="{Binding Review.Filter, Converter={StaticResource EnumBool}, ConverterParameter=Renamed}" />
                     </StackPanel>
                 </DockPanel>

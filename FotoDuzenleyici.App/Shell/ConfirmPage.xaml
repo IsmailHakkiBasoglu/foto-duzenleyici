@@ -31,6 +31,28 @@
                             </StackPanel>
                         </DockPanel>
                     </Border>
+                    <Border Style="{StaticResource Row}" Visibility="{Binding Confirm.Summary.SimilarCount, Converter={StaticResource HasVis}}">
+                        <DockPanel>
+                            <TextBlock DockPanel.Dock="Left" Width="90" TextAlignment="Right" Margin="0,0,14,0" FontSize="20" FontWeight="SemiBold"
+                                       Foreground="{DynamicResource TextFillColorPrimaryBrush}" Text="{Binding Confirm.Summary.SimilarCount, StringFormat=N0}" />
+                            <TextBlock DockPanel.Dock="Right" Style="{StaticResource Mono}" VerticalAlignment="Center" Text="→ _Benzerler" />
+                            <StackPanel>
+                                <TextBlock Text="_Benzerler'e ayrılacak" FontWeight="SemiBold" Foreground="{DynamicResource TextFillColorPrimaryBrush}" />
+                                <TextBlock Style="{StaticResource Small}" Text="Benzerler'de ayıkladığın kareler; silinmez" />
+                            </StackPanel>
+                        </DockPanel>
+                    </Border>
+                    <Border Style="{StaticResource Row}" Visibility="{Binding Confirm.Summary.FlawedCount, Converter={StaticResource HasVis}}">
+                        <DockPanel>
+                            <TextBlock DockPanel.Dock="Left" Width="90" TextAlignment="Right" Margin="0,0,14,0" FontSize="20" FontWeight="SemiBold"
+                                       Foreground="{DynamicResource TextFillColorPrimaryBrush}" Text="{Binding Confirm.Summary.FlawedCount, StringFormat=N0}" />
+                            <TextBlock DockPanel.Dock="Right" Style="{StaticResource Mono}" VerticalAlignment="Center" Text="→ _Kusurlu" />
+                            <StackPanel>
+                                <TextBlock Text="_Kusurlu'ya ayrılacak" FontWeight="SemiBold" Foreground="{DynamicResource TextFillColorPrimaryBrush}" />
+                                <TextBlock Style="{StaticResource Small}" Text="Kusurlu'da ayıkladığın bulanık / karanlık kareler; silinmez" />
+                            </StackPanel>
+                        </DockPanel>
+                    </Border>
                     <Border Style="{StaticResource Row}">
                         <DockPanel>
                             <TextBlock DockPanel.Dock="Left" Width="90" TextAlignment="Right" Margin="0,0,14,0" FontSize="20" FontWeight="SemiBold"

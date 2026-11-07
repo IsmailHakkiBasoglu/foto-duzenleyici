@@ -3,7 +3,7 @@ using CommunityToolkit.Mvvm.Input;
 
 namespace FotoDuzenleyici.ViewModels;
 
-public enum PlanFilter { All, Move, Duplicate, InPlace, Renamed }
+public enum PlanFilter { All, Move, Duplicate, InPlace, Renamed, Similar, Flawed }
 
 /// <summary>2. adım (ilk parça): özet kutucukları, dikkat listesi, süzülebilir plan tablosu.</summary>
 public sealed partial class ReviewStepViewModel : ObservableObject
@@ -46,6 +46,8 @@ public sealed partial class ReviewStepViewModel : ObservableObject
             PlanFilter.Duplicate => i.Action == PlanAction.Duplicate,
             PlanFilter.InPlace => i.Action == PlanAction.AlreadyInPlace,
             PlanFilter.Renamed => i.Renamed,
+            PlanFilter.Similar => i.Action == PlanAction.Similar,
+            PlanFilter.Flawed => i.Action == PlanAction.Flawed,
             _ => true,
         };
         if (!f) return false;

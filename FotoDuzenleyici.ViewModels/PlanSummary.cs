@@ -2,7 +2,7 @@ namespace FotoDuzenleyici.ViewModels;
 
 /// <summary>Plandan ekranlarda gösterilen sayılar. <see cref="ApplyCount"/>: "Zaten yerinde" dışındaki öğeler.</summary>
 public sealed record PlanSummary(int MoveCount, long MoveBytes, int InPlace, int DupCount, long DupBytes,
-    int Undated, int Renamed, int ApplyCount)
+    int Undated, int Renamed, int ApplyCount, int SimilarCount = 0, int FlawedCount = 0)
 {
     public static PlanSummary From(Plan plan, PlanOptions opt)
     {
@@ -14,7 +14,9 @@ public sealed record PlanSummary(int MoveCount, long MoveBytes, int InPlace, int
             dups.Count, dups.Sum(i => i.File.Size),
             moves.Count(i => IsUndated(i, opt)),
             plan.Items.Count(i => i.Renamed),
-            plan.Items.Count(i => i.Action != PlanAction.AlreadyInPlace));
+            plan.Items.Count(i => i.Action != PlanAction.AlreadyInPlace),
+            plan.Items.Count(i => i.Action == PlanAction.Similar),
+            plan.Items.Count(i => i.Action == PlanAction.Flawed));
     }
 
     /// <summary>Hedefin arşive göre ilk klasörü "Tarihsiz" ise.</summary>

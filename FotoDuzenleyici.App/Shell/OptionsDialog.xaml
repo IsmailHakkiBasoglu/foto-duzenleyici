@@ -13,6 +13,9 @@
             <CheckBox x:Name="RenameWithDate" Content="Dosya adının başına tarih ekle" Margin="0,4" />
             <CheckBox x:Name="AppendSource" Content="Dosya adına kaynak (kamera) adını ekle" Margin="0,4" />
             <CheckBox x:Name="RawSeparate" Content="RAW dosyaları ayrı klasörde" Margin="0,4" />
+            <TextBlock Text="Tarama" FontWeight="SemiBold" Margin="0,14,0,2" Foreground="{DynamicResource TextFillColorPrimaryBrush}" />
+            <CheckBox x:Name="FindSimilar" Content="Benzer fotoğrafları ara (küçültülmüş kopya, seri çekim)" Margin="0,4" />
+            <CheckBox x:Name="MarkFlawed" Content="Bulanık / karanlık kareleri işaretle" Margin="0,4" />
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,18,0,0">
                 <ui:Button Content="Vazgeç" IsCancel="True" Margin="0,0,8,0" />
                 <ui:Button Content="Kaydet" Appearance="Primary" IsDefault="True" Click="Save_Click" />
