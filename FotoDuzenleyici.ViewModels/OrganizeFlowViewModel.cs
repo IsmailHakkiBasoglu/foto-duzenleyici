@@ -67,14 +67,43 @@ public sealed partial class OrganizeFlowViewModel : ObservableObject
     [RelayCommand]
     void GoToConfirm()
     {
-        if (IsBusy || Review is null) return;
+        if (IsBusy || Review is null || Step != FlowStep.Review) return;
         Confirm = new ConfirmStepViewModel(Review.Plan, Review.Session.PlanOptions, Review.Session.Sources, _s, _settings, DateTime.Now);
-        OnConfirmCreated(Confirm);
+        Confirm.ApplyRequested += StartApply;
+        Confirm.ResumeRequested += StartResume;
         Step = FlowStep.Confirm;
     }
 
-    /// <summary>Uygulama adımı (Görev 5) olaylara buradan bağlanır.</summary>
-    partial void OnConfirmCreated(ConfirmStepViewModel c);
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(NavigationLocked))]
+    private ApplyStepViewModel? apply;
+
+    /// <summary>Son başlatılan uygulama / devam işi (testler ve pencere kapanışı bekler).</summary>
+    public Task? ApplyTask { get; private set; }
+
+    /// <summary>Uygulama sürerken adım değiştirilemez, Ana ekrana dönülemez.</summary>
+    public bool NavigationLocked => Apply?.IsRunning == true;
+
+    void StartApply()
+    {
+        var c = Confirm!;
+        var items = c.Plan.Items.Where(i => i.Action != PlanAction.AlreadyInPlace).ToList();
+        ApplyTask = RunApply(a => a.RunAsync(items, c.JournalPath, c.RecycleSource));
+    }
+
+    void StartResume(string journal) => ApplyTask = RunApply(a => a.ResumeAsync(journal));
+
+    /// <summary>Plan uygulandıktan (ya da devam ettirildikten) sonra geçersizdir: İnceleme ve Onayla kapanır.</summary>
+    Task RunApply(Func<ApplyStepViewModel, Task> work)
+    {
+        var a = new ApplyStepViewModel(_s, Confirm!.Archive);
+        a.PropertyChanged += (_, e) => { if (e.PropertyName == nameof(ApplyStepViewModel.IsRunning)) OnPropertyChanged(nameof(NavigationLocked)); };
+        Apply = a;
+        Confirm = null;
+        Review = null;
+        Step = FlowStep.Apply;
+        return work(a);
+    }
 
     [RelayCommand]
     void Cancel() => _cts?.Cancel();
@@ -89,7 +118,8 @@ public sealed partial class OrganizeFlowViewModel : ObservableObject
     [RelayCommand]
     void Back()
     {
-        if (IsBusy) return;
+        if (IsBusy || NavigationLocked) return;
+        if (Step == FlowStep.Apply) Apply = null;
         Step = Step switch
         {
             FlowStep.Confirm => FlowStep.Review,
