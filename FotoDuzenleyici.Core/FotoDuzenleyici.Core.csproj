@@ -14,5 +14,6 @@
 
   <ItemGroup>
     <Using Include="System.IO" />
+    <InternalsVisibleTo Include="FotoDuzenleyici.Tests" />
   </ItemGroup>
 </Project>
