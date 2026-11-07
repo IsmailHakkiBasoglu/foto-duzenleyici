@@ -44,11 +44,22 @@ public sealed class Scanner
             if (_opt.IncludedKinds.Contains(FileClassifier.Classify(f))) yield return f;
         }
         foreach (var s in subs)
+        {
+            // Bağlantı noktaları (junction, symlink, bağlı birim) izlenmez: aynı fiziksel dosya iki yoldan
+            // sayılıp kendi kopyası sanılmasın. Gizli+sistem klasörler ($RECYCLE.BIN, System Volume Information) atlanır.
+            FileAttributes a;
+            try { a = File.GetAttributes(s); }
+            catch (Exception ex) { lock (Errors) Errors.Add($"{s}: {ex.Message}"); continue; }
+            if (a.HasFlag(FileAttributes.ReparsePoint)) continue;
+            if (a.HasFlag(FileAttributes.Hidden) && a.HasFlag(FileAttributes.System)) continue;
             foreach (var f in Walk(s, excluded))
                 yield return f;
+        }
     }
 
-    static string Normalize(string p) => Path.GetFullPath(p).TrimEnd('\\', '/');
+    /// <summary>Tam yol, sonda ayıraç yok; ama sürücü kökü <c>E:\</c> olarak kalır (<c>E:</c> göreli yoldur).</summary>
+    internal static string Normalize(string p) =>
+        Path.TrimEndingDirectorySeparator(Path.GetFullPath(p.Replace('/', '\\')));
 
     public List<MediaFile> Scan(IProgress<(int done, int total)>? progress = null, CancellationToken ct = default)
     {

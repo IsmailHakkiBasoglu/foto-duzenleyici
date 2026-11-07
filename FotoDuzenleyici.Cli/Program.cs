@@ -70,9 +70,13 @@ if (cleanRoots.Count > 0)
         File.WriteAllText(cCsv, sb.ToString(), new UTF8Encoding(true));
         Console.WriteLine($"CSV: {cCsv}");
     }
+    foreach (var (j, left) in cs.FindUnfinished())
+        Console.WriteLine($"Uyarı: yarım kalan temizlik ({left} dosya): --resume \"{j}\"  ya da  --undo \"{j}\"");
     if (!apply) return 0;
     // Komut satırından yalnız birebir kopyalar ayıklanır; benzer ve kusurlu kareler gözle karar ister.
     var journalC = cs.NewJournalPath();
+    // Yol baştan yazılır: işlem yarıda kesilse de --resume / --undo için bilinsin.
+    Console.WriteLine($"Günlük: {journalC}");
     var rc = new Executor(journalC).Run(cplan.Items.Where(i => i.Action == PlanAction.Duplicate), move: true);
     Console.WriteLine($"\n== Ayıklandı (_Ayiklananlar\\Tekrarlar) ==\nBaşarılı: {rc.Done}  Hatalı: {rc.Failed}\n" +
                       $"Günlük: {journalC}\nGeri almak için: --undo \"{journalC}\"");

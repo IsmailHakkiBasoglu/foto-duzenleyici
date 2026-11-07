@@ -101,6 +101,10 @@ public sealed class CleanSession
     public string NewJournalPath() =>
         Path.Combine(Roots[0], RejectsFolder, "_Gunluk", $"temizlik-{DateTime.Now:yyyyMMdd-HHmmss}.jsonl");
 
+    /// <summary>Her kökün <c>_Ayiklananlar\_Gunluk</c> klasöründe yarım kalmış temizlik günlükleri.</summary>
+    public List<(string Journal, int Remaining)> FindUnfinished() =>
+        Roots.SelectMany(r => Executor.FindUnfinishedIn(Path.Combine(r, RejectsFolder, "_Gunluk"))).ToList();
+
     /// <summary>Dosyayı kapsayan en uzun kök.</summary>
     string? RootOf(string path)
     {

@@ -19,6 +19,8 @@ public sealed class JournalEntry
     public bool KeepSource { get; set; }
     /// <summary>true ise kopyalanmaz, aynı diskte yeniden adlandırılarak taşınır (Temizle); son durum Moved.</summary>
     public bool Move { get; set; }
+    /// <summary>Taşınan bir kopyanın korunan eşi: taşımadan hemen önce hâlâ yerinde mi diye bakılır.</summary>
+    public string? Keeper { get; set; }
     public string? Error { get; set; }
 }
 
@@ -57,6 +59,7 @@ public sealed class Executor
         {
             Source = it.File.Path, Target = it.TargetPath, Action = it.Action.ToString(),
             Sha256 = it.File.Sha256 ?? "", State = "Planned", KeepSource = !recycleSource, Move = move,
+            Keeper = move ? it.DuplicateOf?.Path : null,
         }).ToList();
         Directory.CreateDirectory(Path.GetDirectoryName(_journalPath)!);
         using (var jw = OpenJournal())
@@ -91,7 +94,7 @@ public sealed class Executor
         {
             progress?.Report((n++, list.Count, Path.GetFileName(p.Source)));
             ct.ThrowIfCancellationRequested();
-            var entry = new JournalEntry { Source = p.Source, Target = p.Target, Action = p.Action, Sha256 = p.Sha256, KeepSource = p.KeepSource, Move = p.Move };
+            var entry = new JournalEntry { Source = p.Source, Target = p.Target, Action = p.Action, Sha256 = p.Sha256, KeepSource = p.KeepSource, Move = p.Move, Keeper = p.Keeper };
             try
             {
                 // Hash'i başlamadan günlüğe yaz: kaynak Geri Dönüşüm Kutusu'na gidip satır yazılamazsa hedef yine doğrulanabilsin.
@@ -162,6 +165,13 @@ public sealed class Executor
     static void ProcessMove(JournalEntry e)
     {
         if (!File.Exists(e.Source) && File.Exists(e.Target)) { e.State = "Moved"; return; } // önceki turda taşınmış
+        // Plan ile uygulama arasında korunan kopya kaybolduysa ya da değiştiyse son kopya ayıklanmasın.
+        if (!string.IsNullOrEmpty(e.Keeper))
+        {
+            if (!File.Exists(e.Keeper)) throw new IOException("Korunan kopya artık yok; taşınmadı: " + e.Keeper);
+            if (File.Exists(e.Source) && new FileInfo(e.Keeper).Length != new FileInfo(e.Source).Length)
+                throw new IOException("Korunan kopya değişmiş; taşınmadı: " + e.Keeper);
+        }
         if (File.Exists(e.Target)) throw new IOException("Hedef zaten var, üzerine yazılmaz");
         if (!File.Exists(e.Source)) throw new FileNotFoundException("Kaynak yok");
         if (!string.Equals(Path.GetPathRoot(Path.GetFullPath(e.Source)), Path.GetPathRoot(Path.GetFullPath(e.Target)),
@@ -180,7 +190,9 @@ public sealed class Executor
         CancellationToken ct = default, Action<string>? recycle = null)
     {
         recycle ??= RecycleBin;
-        var entries = FinalStates(journalPath).Where(e => e.State is "Copied" or "Recycled" or "Moved").ToList();
+        // Taşıma bitmiş ama "Moved" satırı yazılamadan süreç durmuşsa (Planned/Started, kaynak yok, hedef var) o da geri alınır.
+        var entries = FinalStates(journalPath).Where(e => e.State is "Copied" or "Recycled" or "Moved" ||
+            (e.Move && e.State is "Planned" or "Started" && !File.Exists(e.Source) && File.Exists(e.Target))).ToList();
         var res = new ExecuteResult(); int n = 0;
         foreach (var e in entries)
         {
@@ -190,7 +202,7 @@ public sealed class Executor
             {
                 if (!File.Exists(e.Target)) { res.Skipped++; continue; }
                 if (File.Exists(e.Source)) { res.Skipped++; continue; }
-                if (e.State == "Moved")
+                if (e.Move)
                 {
                     // Taşınmıştı: aynı diskte geri adlandır; Geri Dönüşüm Kutusu kullanılmaz.
                     Directory.CreateDirectory(Path.GetDirectoryName(e.Source)!);
@@ -246,9 +258,12 @@ public sealed class Executor
         FinalStates(path).Where(e => e.State is "Planned" or "Started").ToList();
 
     /// <summary>Hedefin _Gunluk klasöründe bitmemiş dosyası olan günlükler.</summary>
-    public static List<(string Journal, int Remaining)> FindUnfinished(string destinationRoot)
+    public static List<(string Journal, int Remaining)> FindUnfinished(string destinationRoot) =>
+        FindUnfinishedIn(Path.Combine(destinationRoot, "_Gunluk"));
+
+    /// <summary>Verilen günlük klasöründe bitmemiş dosyası olan günlükler (Temizle: <c>_Ayiklananlar\_Gunluk</c>).</summary>
+    public static List<(string Journal, int Remaining)> FindUnfinishedIn(string dir)
     {
-        var dir = Path.Combine(destinationRoot, "_Gunluk");
         if (!Directory.Exists(dir)) return new();
         return Directory.GetFiles(dir, "*.jsonl").OrderBy(f => f, StringComparer.OrdinalIgnoreCase)
             .Select(f => (f, Pending(f).Count)).Where(x => x.Count > 0).ToList();
