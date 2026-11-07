@@ -39,7 +39,8 @@ sealed class MemorySettings : ISettingsStore
     public int Saves;
     public bool LoadFailed { get; set; }
     public AppSettings Load() => Stored;
-    public void Save(AppSettings s) { Stored = s; Saves++; }
+    public bool ThrowOnSave;
+    public void Save(AppSettings s) { if (ThrowOnSave) throw new IOException("ayarlar.json kilitli"); Stored = s; Saves++; }
 }
 
 sealed class Fakes
@@ -52,5 +53,6 @@ sealed class Fakes
     public long Free = long.MaxValue;
     public Action<string>? Recycle;
 
-    public Services Services => new(Folders, Files, Dialogs, Shell, Settings, _ => Free, Recycle);
+    public Func<string, long>? FreeFn;
+    public Services Services => new(Folders, Files, Dialogs, Shell, Settings, FreeFn ?? (_ => Free), Recycle);
 }

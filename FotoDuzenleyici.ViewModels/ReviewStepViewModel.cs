@@ -59,6 +59,8 @@ public sealed partial class ReviewStepViewModel : ObservableObject
     void SaveCsv()
     {
         var path = _s.Files.SaveCsv("plan.csv");
-        if (path is not null) PlanCsv.Write(Plan, path);
+        if (path is null) return;
+        try { PlanCsv.Write(Plan, path); }
+        catch (Exception ex) { _s.Dialogs.Info("Plan kaydedilemedi", ex.Message + "\n\nDosya başka bir programda (Excel?) açıksa kapatıp yeniden dene."); }
     }
 }

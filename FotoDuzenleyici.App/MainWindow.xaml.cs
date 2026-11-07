@@ -77,6 +77,10 @@ public partial class MainWindow : Window
     public MainWindow()
     {
         InitializeComponent();
+        // Yeni kabuğun teması (koyu olabilir) uygulama geneline yayılır; Klasik görünüm açık temada sabit kalsın.
+        Resources.MergedDictionaries.Insert(0, new Wpf.Ui.Markup.ThemesDictionary { Theme = Wpf.Ui.Appearance.ApplicationTheme.Light });
+        SetResourceReference(BackgroundProperty, "ApplicationBackgroundBrush");
+        SetResourceReference(ForegroundProperty, "TextFillColorPrimaryBrush");
         _thumbs = new ThumbnailLoader(ThumbnailLoader.DefaultDecode); // arayüz iş parçacığında: sonuçlar buraya gelir
         _saveTimer.Tick += (_, _) => SaveReviews();
         Closing += (_, _) => { if (_saveTimer.IsEnabled) SaveReviews(); };

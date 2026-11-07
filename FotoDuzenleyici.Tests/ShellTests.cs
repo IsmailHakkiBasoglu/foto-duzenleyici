@@ -49,7 +49,7 @@ public class ShellTests : IDisposable
     }
 
     [Fact]
-    public async Task GoHome_BlockedWhileApplying_AndCanCloseAsksAndCancels()
+    public async Task GoHome_BlockedWhileApplying_AndCloseAsksAndCancels()
     {
         var src = Dir("kaynak"); var ar = Dir("arsiv");
         File.WriteAllText(Path.Combine(src, "a.pdf"), "A");
@@ -72,20 +72,20 @@ public class ShellTests : IDisposable
         Assert.Same(flow, vm.CurrentPage);
 
         _f.Dialogs.Answer = true;
-        Assert.False(vm.CanClose());
+        Assert.Equal(CloseDecision.WaitThenClose, vm.RequestClose());
         Assert.Single(_f.Dialogs.Asked);
         Assert.True(flow.Apply!.IsCancellationRequested);
         gate.Set();
         await flow.ApplyTask!;
         Assert.True(flow.Apply!.Stopped);
-        Assert.True(vm.CanClose());
+        Assert.Equal(CloseDecision.Close, vm.RequestClose());
     }
 
     [Fact]
-    public void CanClose_Idle_DoesNotAsk()
+    public void Close_Idle_DoesNotAsk()
     {
         var vm = new ShellViewModel(_f.Services);
-        Assert.True(vm.CanClose());
+        Assert.Equal(CloseDecision.Close, vm.RequestClose());
         Assert.Empty(_f.Dialogs.Asked);
     }
 

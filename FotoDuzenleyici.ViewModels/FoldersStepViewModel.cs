@@ -50,7 +50,7 @@ public sealed partial class FoldersStepViewModel : ObservableObject
     /// <summary>Seçenekler iletişim kutusu <see cref="AppSettings"/>'i değiştirdikten sonra çağrılır.</summary>
     public void NotifyOptionsChanged()
     {
-        _s.Settings.Save(_settings);
+        _s.Settings.TrySave(_settings);
         OnPropertyChanged(nameof(OptionsSummary));
     }
 
@@ -97,7 +97,7 @@ public sealed partial class FoldersStepViewModel : ObservableObject
     {
         if (Archive is null) return;
         _settings.AddRecent(Sources.Select(e => e.Path), Archive, now);
-        _s.Settings.Save(_settings);
+        _s.Settings.TrySave(_settings);
     }
 
     void Add(string path)

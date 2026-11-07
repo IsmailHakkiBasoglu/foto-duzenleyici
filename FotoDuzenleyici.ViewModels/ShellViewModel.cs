@@ -27,7 +27,8 @@ public sealed partial class ShellViewModel : ObservableObject
     partial void OnThemeChanged(string value)
     {
         _settings.Theme = value;
-        _s.Settings.Save(_settings);
+        try { _s.Settings.Save(_settings); }
+        catch (Exception ex) { ErrorMessage = "Ayarlar kaydedilemedi: " + ex.Message; }
     }
 
     OrganizeFlowViewModel? Flow => CurrentPage as OrganizeFlowViewModel;
@@ -71,25 +72,38 @@ public sealed partial class ShellViewModel : ObservableObject
         catch (Exception ex) { ErrorMessage = ex.Message; }
     }
 
+    /// <summary>Uygulama sürerken açılmaz: eski pencere aynı günlüğü "yarım" sanıp ikinci bir işlem başlatabilir.</summary>
     [RelayCommand]
-    void OpenClassic() => _s.Shell.OpenClassic();
+    void OpenClassic()
+    {
+        if (Locked) { ErrorMessage = "İşlem sürerken Klasik görünüm açılamaz; bitmesini bekle ya da durdur."; return; }
+        _s.Shell.OpenClassic();
+    }
 
     [RelayCommand]
     void DismissError() => ErrorMessage = null;
 
+    bool _waitingToClose;
+
     /// <summary>
-    /// Pencere kapanmadan önce. Uygulama sürüyorsa sorar; evet → durdurur ve false döner (pencere, iş bitince
-    /// <see cref="RunningTask"/>'ı bekleyip yeniden kapatır). Hayır → false.
+    /// Pencere kapanmadan önce. İş yoksa kapanır. İş sürüyorsa sorar: evet → durdurur ve
+    /// <see cref="CloseDecision.WaitThenClose"/> (pencere <see cref="RunningTask"/>'ı bekleyip kapanır); hayır → kalır.
+    /// Bekleme sürerken yeniden kapatmak istenirse sorulmaz ve kalınır: o anki dosya yarıda kesilmez.
     /// </summary>
-    public bool CanClose()
+    public CloseDecision RequestClose()
     {
-        if (Flow is not { NavigationLocked: true } f) return true;
-        if (_s.Dialogs.Confirm("İşlem sürüyor",
+        if (Flow is not { NavigationLocked: true } f) { _waitingToClose = false; return CloseDecision.Close; }
+        if (_waitingToClose) return CloseDecision.Stay;
+        if (!_s.Dialogs.Confirm("İşlem sürüyor",
                 "Dosyalar hâlâ işleniyor. Durdurulsun mu? O anki dosya bitirilir, kalanlar sonra devam ettirilebilir."))
-            f.Apply?.CancelCommand.Execute(null);
-        return false;
+            return CloseDecision.Stay;
+        f.Apply?.CancelCommand.Execute(null);
+        _waitingToClose = true;
+        return CloseDecision.WaitThenClose;
     }
 
     /// <summary>Sürmekte olan uygulama / geri alma işi; yoksa null.</summary>
     public Task? RunningTask => Flow is { NavigationLocked: true } f ? f.ApplyTask : null;
 }
+
+public enum CloseDecision { Close, Stay, WaitThenClose }

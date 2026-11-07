@@ -38,3 +38,13 @@ public interface ISettingsStore
 /// </summary>
 public sealed record Services(IFolderPicker Folders, IFilePicker Files, IDialogs Dialogs, IShell Shell,
     ISettingsStore Settings, Func<string, long> FreeSpace, Action<string>? Recycle = null);
+
+public static class SettingsStoreExtensions
+{
+    /// <summary>Kaydetmeyi dener; ayar dosyası kilitli ya da salt okunursa false döner. Ayar kaydı asıl işi durdurmamalı.</summary>
+    public static bool TrySave(this ISettingsStore store, AppSettings s)
+    {
+        try { store.Save(s); return true; }
+        catch (Exception) { return false; }
+    }
+}

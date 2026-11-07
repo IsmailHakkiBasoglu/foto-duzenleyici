@@ -126,9 +126,25 @@ public sealed partial class ApplyStepViewModel : ObservableObject
         if (!_s.Dialogs.Confirm("Geri Al",
                 "Bu işlemde taşınan dosyalar doğrulanarak eski yerlerine döner; arşivdeki kopyaları Geri Dönüşüm Kutusu'na gider. Devam edilsin mi?"))
             return;
-        await UndoAsync(Journal);
+        // Durdurulmuş bir işte kalanlar: geri alınan işin "yarım" sayılıp sonra Devam et diye önerilmemesi için
+        // bırakılır (dosyalarına dokunulmaz).
+        var journal = Journal;
+        if (File.Exists(journal) && Executor.Pending(journal).Count > 0)
+        {
+            try { Executor.Abandon(journal); }
+            catch (Exception ex) { ErrorMessage = ex.Message; return; }
+        }
+        await UndoAsync(journal);
     }
 
     [RelayCommand]
     void OpenArchive() => _s.Shell.OpenFolder(Archive);
+
+    /// <summary>Durdurulan işi yeniden taramadan, aynı günlükten sürdürür.</summary>
+    [RelayCommand]
+    async Task Resume()
+    {
+        if (IsRunning || !Stopped || Mode == ApplyMode.Undo || string.IsNullOrEmpty(Journal)) return;
+        await ResumeAsync(Journal);
+    }
 }

@@ -70,11 +70,18 @@
                                        Visibility="{Binding Confirm.SpaceOk, Converter={StaticResource BoolVis}}" />
                         <ui:SymbolIcon Margin="0,0,12,0" VerticalAlignment="Top" Symbol="ErrorCircle24" Foreground="{DynamicResource SystemFillColorCriticalBrush}"
                                        Visibility="{Binding Confirm.SpaceOk, Converter={StaticResource HasVis}, ConverterParameter=!}" />
-                        <TextBlock TextWrapping="Wrap" Foreground="{DynamicResource TextFillColorPrimaryBrush}">
+                        <TextBlock TextWrapping="Wrap" Foreground="{DynamicResource TextFillColorPrimaryBrush}"
+                                   Visibility="{Binding Confirm.SpaceKnown, Converter={StaticResource BoolVis}}">
                             <Run FontWeight="SemiBold" Text="Yer:" />
                             <Run Text="{Binding Confirm.FreeBytes, Converter={StaticResource Bytes}, Mode=OneWay}" />
                             <Run Text="boş; gereken en fazla" />
                             <Run Text="{Binding Confirm.NeedBytes, Converter={StaticResource Bytes}, Mode=OneWay}" /><Run Text="." />
+                        </TextBlock>
+                        <TextBlock TextWrapping="Wrap" Foreground="{DynamicResource TextFillColorPrimaryBrush}"
+                                   Visibility="{Binding Confirm.SpaceKnown, Converter={StaticResource HasVis}, ConverterParameter=!}">
+                            <Run FontWeight="SemiBold" Text="Yer: bilinmiyor." />
+                            <Run Text="Arşivin bulunduğu diskin boş alanı okunamadı (ağ paylaşımı ya da çıkarılmış disk). Gereken en fazla" />
+                            <Run Text="{Binding Confirm.NeedBytes, Converter={StaticResource Bytes}, Mode=OneWay}" /><Run Text="; yer biterse işlem güvenle durur." />
                         </TextBlock>
                     </DockPanel>
                     <Border Style="{StaticResource Row}" Visibility="{Binding Confirm.OtherDriveSources, Converter={StaticResource HasVis}}">

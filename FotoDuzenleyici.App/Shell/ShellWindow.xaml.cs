@@ -11,7 +11,6 @@ namespace FotoDuzenleyici.App.Shell;
 public partial class ShellWindow : FluentWindow
 {
     readonly ShellViewModel _vm;
-    bool _closeWhenDone;
 
     public ShellWindow()
     {
@@ -51,17 +50,21 @@ public partial class ShellWindow : FluentWindow
     /// <summary>Uygulama sürüyorsa önce sorulur; durdurulursa iş bitince pencere kendiliğinden kapanır.</summary>
     protected override async void OnClosing(CancelEventArgs e)
     {
-        if (_closeWhenDone || _vm.CanClose()) { base.OnClosing(e); return; }
-        e.Cancel = true;
-        // Kullanıcı "Durdur" dediyse belirteç tetiklendi; iş bitince kapat.
-        if (_vm.RunningTask is { } t && IsStopping())
+        var running = _vm.RunningTask;
+        switch (_vm.RequestClose())
         {
-            _closeWhenDone = true;
-            try { await t; } catch { }
-            Close();
+            case CloseDecision.Close:
+                base.OnClosing(e);
+                return;
+            case CloseDecision.Stay:
+                e.Cancel = true;
+                return;
+            case CloseDecision.WaitThenClose:
+                // O anki dosya bitirilsin; bekleme sürerken yeniden X'e basılırsa model "Stay" der.
+                e.Cancel = true;
+                if (running is not null) { try { await running; } catch { } }
+                Close();
+                return;
         }
     }
-
-    bool IsStopping() =>
-        _vm.CurrentPage is OrganizeFlowViewModel { Apply: { } a } && a.IsCancellationRequested;
 }

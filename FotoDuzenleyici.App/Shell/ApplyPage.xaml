@@ -54,7 +54,7 @@
                             </TextBlock.Text>
                         </TextBlock>
                         <TextBlock Style="{StaticResource Muted}" Visibility="{Binding Apply.Stopped, Converter={StaticResource BoolVis}}"
-                                   Text="{Binding Apply.PendingAfterStop, StringFormat='Durduruldu: kalan {0:N0} dosya, yeniden tarayıp Onayla ekranında devam ettirilebilir.'}" />
+                                   Text="{Binding Apply.PendingAfterStop, StringFormat='Durduruldu: kalan {0:N0} dosya günlükte bekliyor; aşağıdan kaldığı yerden devam ettirebilirsin.'}" />
                         <TextBlock Style="{StaticResource Muted}" Text="{Binding Apply.Journal, StringFormat='Günlük: {0}'}" TextTrimming="CharacterEllipsis" />
                     </StackPanel>
                 </DockPanel>
@@ -122,7 +122,9 @@
                     </Border>
                 </UniformGrid>
                 <StackPanel Orientation="Horizontal" Margin="0,16,0,0">
-                    <ui:Button Content="Yeni işlem" Appearance="Primary" Command="{Binding BackCommand}" Margin="0,0,8,0" />
+                    <ui:Button Content="Kaldığı yerden devam et" Appearance="Primary" Command="{Binding Apply.ResumeCommand}" Margin="0,0,8,0"
+                               Visibility="{Binding Apply.Stopped, Converter={StaticResource BoolVis}}" />
+                    <ui:Button Content="Yeni işlem" Command="{Binding BackCommand}" Margin="0,0,8,0" />
                     <ui:Button Content="Ana ekrana dön" Appearance="Transparent"
                                Command="{Binding DataContext.GoHomeCommand, RelativeSource={RelativeSource AncestorType=Window}}" />
                 </StackPanel>

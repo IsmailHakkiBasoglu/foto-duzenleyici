@@ -16,7 +16,9 @@ public sealed partial class ConfirmStepViewModel : ObservableObject
         Archive = opt.DestinationRoot;
         Summary = PlanSummary.From(plan, opt);
         NeedBytes = Summary.MoveBytes + Summary.DupBytes;
-        FreeBytes = s.FreeSpace(ExistingAncestor(Archive));
+        // Ağ paylaşımı (NAS) ya da takılı olmayan disk: boş alan okunamaz → "bilinmiyor", Uygula engellenmez.
+        try { FreeBytes = s.FreeSpace(ExistingAncestor(Archive)); SpaceKnown = true; }
+        catch (Exception) { FreeBytes = -1; SpaceKnown = false; }
         var archiveRoot = Path.GetPathRoot(Path.GetFullPath(Archive)) ?? "";
         OtherDriveSources = sources
             .Where(p => !string.Equals(Path.GetPathRoot(Path.GetFullPath(p)), archiveRoot, StringComparison.OrdinalIgnoreCase))
@@ -31,7 +33,8 @@ public sealed partial class ConfirmStepViewModel : ObservableObject
     public PlanSummary Summary { get; }
     public long NeedBytes { get; }
     public long FreeBytes { get; }
-    public bool SpaceOk => FreeBytes >= NeedBytes;
+    public bool SpaceKnown { get; }
+    public bool SpaceOk => !SpaceKnown || FreeBytes >= NeedBytes;
     public IReadOnlyList<string> OtherDriveSources { get; }
     public string JournalPath { get; }
 
@@ -48,7 +51,7 @@ public sealed partial class ConfirmStepViewModel : ObservableObject
     partial void OnRecycleSourceChanged(bool value)
     {
         _settings.RecycleSource = value;
-        _s.Settings.Save(_settings);
+        _s.Settings.TrySave(_settings);
     }
 
     public bool CanApply => SpaceOk && Unfinished is null && Summary.ApplyCount > 0;
