@@ -158,6 +158,38 @@ tr.sel td{background:var(--accent-soft)}
 .next{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:14px}
 .next .card{padding:14px}
 .next p{margin:4px 0 10px}
+/* Ekran 2b-2d: incelemeler */
+.secthead{display:flex;align-items:center;gap:12px;margin:2px 0 12px}
+.secthead .t{flex:1}
+.ph{border-radius:6px;background:linear-gradient(135deg,#7a9cc6,#c8a27a);position:relative;flex:none}
+.ph.b{background:linear-gradient(135deg,#6f8f6a,#cfd8a0)} .ph.c{background:linear-gradient(135deg,#a37ac6,#e0b3a0)}
+.ph.dk{background:linear-gradient(135deg,#1c1c22,#3a3330)} .ph.bl{filter:blur(1.5px)}
+.dgroup{display:flex;gap:14px;padding:12px 16px;border-top:1px solid var(--line)}
+.dgroup:first-child{border-top:0}
+.dgroup .ph{width:72px;height:72px}
+.dgroup .t{flex:1;min-width:0}
+.loc{display:flex;align-items:center;gap:8px;padding:3px 0;font-size:13px}
+.loc input{margin:0;accent-color:var(--accent)}
+.loc .path{flex:1}
+.sgroup{padding:12px 16px;border-top:1px solid var(--line)}
+.sgroup:first-child{border-top:0}
+.sgroup .h{display:flex;align-items:center;gap:8px;margin-bottom:8px;font-size:13px}
+.strip{display:flex;gap:10px;overflow:hidden}
+.fcard{width:132px;flex:none;border:2px solid transparent;border-radius:8px;padding:4px;cursor:pointer}
+.fcard .ph{width:100%;height:92px}
+.fcard .bd{position:absolute;left:4px;top:4px;display:flex;gap:3px}
+.fcard .bd span{font-size:10px;font-weight:700;padding:0 5px;border-radius:4px;background:rgba(0,0,0,.6);color:#fff}
+.fcard .st{position:absolute;right:5px;top:3px;color:#fff;font-size:15px;text-shadow:0 0 3px #000}
+.fcard .n{font-size:12px;margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fcard .m{font-size:11px;color:var(--muted)}
+.fcard.keep{border-color:var(--ok)}
+.fcard.drop{opacity:.55;border-color:var(--bad)}
+.fcard.drop .ph::after{content:"Ayıkla";position:absolute;inset:auto 0 0 0;background:var(--bad);color:#fff;font-size:11px;font-weight:600;text-align:center;border-radius:0 0 4px 4px}
+.fgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;padding:12px 16px}
+.fgrid .fcard{width:auto}
+.fgrid .fcard .ph{height:110px}
+.toggle{display:inline-flex;align-items:center;gap:6px;font-size:13px}
+.toggle input{accent-color:var(--accent);margin:0}
 .note{max-width:1180px;margin:0 auto;padding:0 16px 30px;color:#222;font-size:13px}
 .note li{margin:4px 0}
 @media (max-width:900px){.tiles{grid-template-columns:repeat(2,1fr)} .nav{display:none} .win{height:auto;min-height:760px}}
@@ -172,6 +204,9 @@ tr.sel td{background:var(--accent-soft)}
   <button data-s="s3" aria-pressed="false">3 · Onayla</button>
   <button data-s="s4" aria-pressed="false">3a · Uygulanıyor</button>
   <button data-s="s5" aria-pressed="false">3b · Bitti</button>
+  <button data-s="s6" aria-pressed="false">2b · Yinelenenler</button>
+  <button data-s="s7" aria-pressed="false">2c · Benzerler</button>
+  <button data-s="s8" aria-pressed="false">2d · Kusurlu</button>
   <span class="sp"></span>
   <button id="theme">Koyu / açık</button>
 </div>
@@ -464,6 +499,151 @@ tr.sel td{background:var(--accent-soft)}
 </div>
 </div>
 
+<!-- EKRAN 2b: Yinelenenler -->
+<div class="win" id="s6" hidden>
+  <div class="titlebar"><span class="logo"></span>Foto Düzenleyici — D:Arşiv<span class="sp"></span><span class="wb">—</span><span class="wb">☐</span><span class="wb">✕</span></div>
+  <div class="top">
+    <div class="steps">
+      <div class="step done"><span class="n">✓</span>Klasörler</div><span class="chev">›</span>
+      <div class="step on"><span class="n">2</span>Tara ve incele</div><span class="chev">›</span>
+      <div class="step"><span class="n">3</span>Onayla ve uygula</div>
+    </div>
+    <button class="ghost">⌂ Ana ekran</button><button class="ghost">↶ Geri Al…</button><button class="ghost">⚙</button>
+  </div>
+  <div class="body">
+    <nav class="nav">
+      <a href="#">◧ Özet ve Plan</a>
+      <div class="sec">Karar bekleyenler</div>
+      <a href="#" class="on">⧉ Yinelenenler <span class="c">412</span></a>
+      <a href="#"><span class="dot"></span>◫ Benzerler <span class="c">96 / 506</span></a>
+      <a href="#">◌ Kusurlu <span class="c">12 / 84</span></a>
+      <div class="sec">Diğer</div>
+      <a href="#">⚠ Okunamayanlar <span class="c">3</span></a>
+    </nav>
+    <div class="main">
+      <div class="secthead"><div class="t"><h2>Yinelenenler</h2><div class="muted small">Aynı içerikli dosyalar. Her grupta seçili konum korunur, ötekiler _Tekrarlar'a ayrılır. Önerilen: düzenli arşivdeki kopya, yoksa en eskisi.</div></div><button class="btn">Öneriye dön</button></div>
+      <div class="muted small" style="margin-bottom:8px">412 grup · 1.208 kopya · 31,2 GB kazanılacak · 2 grupta elle seçim</div>
+      <div class="scroll"><div class="card">
+        <div class="dgroup"><div class="ph"></div><div class="t">
+          <div><b>IMG_4521.CR3</b> <span class="muted small">· 28,7 MB · 3 konum · 57,4 MB boşa</span></div>
+          <label class="loc"><input type="radio" name="g1" checked><span class="path">D:\Arşiv\2024-03\2024-03-Raw\IMG_4521.CR3</span><span class="pill ok">düzenli</span></label>
+          <label class="loc"><input type="radio" name="g1"><span class="path">E:\18.10.2026 CANON 250D\DCIM\100CANON\IMG_4521.CR3</span></label>
+          <label class="loc"><input type="radio" name="g1"><span class="path">D:\Fotoğraflar\Yedek\IMG_4521.CR3</span></label>
+        </div></div>
+        <div class="dgroup"><div class="ph b"></div><div class="t">
+          <div><b>MVI_3028.MP4</b> <span class="muted small">· 412,0 MB · 2 konum · 412,0 MB boşa</span> <span class="pill info">elle seçildi</span></div>
+          <label class="loc"><input type="radio" name="g2"><span class="path">D:\Arşiv\2024-02\2024-02-Video\MVI_3028.MP4</span><span class="pill ok">düzenli</span></label>
+          <label class="loc"><input type="radio" name="g2" checked><span class="path">D:\Videolar\Doğum günü\MVI_3028.MP4</span></label>
+        </div></div>
+        <div class="dgroup"><div class="ph c"></div><div class="t">
+          <div><b>IMG-20240312-WA0007.jpg</b> <span class="muted small">· 0,3 MB · 4 konum · 0,9 MB boşa</span></div>
+          <label class="loc"><input type="radio" name="g3" checked><span class="path">D:\Fotoğraflar\Telefon yedeği\WhatsApp\IMG-20240312-WA0007.jpg</span><span class="muted small">en eski</span></label>
+          <label class="loc"><input type="radio" name="g3"><span class="path">D:\Fotoğraflar\Telefon yedeği 2\WhatsApp\IMG-20240312-WA0007.jpg</span></label>
+          <label class="loc"><input type="radio" name="g3"><span class="path">D:\Masaüstü\IMG-20240312-WA0007.jpg</span></label>
+          <label class="loc"><input type="radio" name="g3"><span class="path">D:\Masaüstü\kopya (2).jpg</span></label>
+        </div></div>
+      </div></div>
+      <div class="actionbar">
+        <div class="t"><b>Plan güncellenecek: 2 grupta korunan konum değişti.</b><div class="muted">Onay ekranına geçerken plan seçimlerinle yeniden kurulur.</div></div>
+        <button class="btn primary big">Onay ekranına →</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- EKRAN 2c: Benzerler -->
+<div class="win" id="s7" hidden>
+  <div class="titlebar"><span class="logo"></span>Foto Düzenleyici — D:Arşiv<span class="sp"></span><span class="wb">—</span><span class="wb">☐</span><span class="wb">✕</span></div>
+  <div class="top">
+    <div class="steps">
+      <div class="step done"><span class="n">✓</span>Klasörler</div><span class="chev">›</span>
+      <div class="step on"><span class="n">2</span>Tara ve incele</div><span class="chev">›</span>
+      <div class="step"><span class="n">3</span>Onayla ve uygula</div>
+    </div>
+    <button class="ghost">⌂ Ana ekran</button><button class="ghost">↶ Geri Al…</button><button class="ghost">⚙</button>
+  </div>
+  <div class="body">
+    <nav class="nav">
+      <a href="#">◧ Özet ve Plan</a>
+      <div class="sec">Karar bekleyenler</div>
+      <a href="#">⧉ Yinelenenler <span class="c">412</span></a>
+      <a href="#" class="on"><span class="dot"></span>◫ Benzerler <span class="c">96 / 506</span></a>
+      <a href="#">◌ Kusurlu <span class="c">12 / 84</span></a>
+      <div class="sec">Diğer</div>
+      <a href="#">⚠ Okunamayanlar <span class="c">3</span></a>
+    </nav>
+    <div class="main">
+      <div class="secthead"><div class="t"><h2>Benzerler</h2><div class="muted small">Kareye tıkla: kalsın ↔ ayıkla. Ayıklananlar _Benzerler'e gider, silinmez. Çift tıkla ya da Enter: tam ekran karşılaştır.</div></div>
+        <label class="toggle"><input type="checkbox" checked> Yalnız incelenmemişler</label><span class="muted small">İncelenen: 410 / 506</span></div>
+      <div class="scroll"><div class="card">
+        <div class="sgroup"><div class="h"><span class="pill warn">Seri çekim</span><b>5 kare</b><span class="muted">2024-03-12 11:20:04 – 11:20:06 · Canon EOS 250D</span></div>
+          <div class="strip">
+            <div class="fcard keep"><div class="ph"><span class="st">◎</span><span class="bd"><span>RAW</span></span></div><div class="n">IMG_4521.JPG</div><div class="m">%100 net · 6000×4000</div></div>
+            <div class="fcard drop"><div class="ph bl"><span class="bd"><span>RAW</span><span>BULANIK</span></span></div><div class="n">IMG_4522.JPG</div><div class="m">%41 net</div></div>
+            <div class="fcard drop"><div class="ph bl"><span class="bd"><span>RAW</span></span></div><div class="n">IMG_4523.JPG</div><div class="m">%63 net</div></div>
+            <div class="fcard keep"><div class="ph"><span class="bd"><span>RAW</span></span></div><div class="n">IMG_4524.JPG</div><div class="m">%92 net</div></div>
+            <div class="fcard keep"><div class="ph"><span class="bd"><span>RAW</span></span></div><div class="n">IMG_4525.JPG</div><div class="m">%88 net</div></div>
+          </div></div>
+        <div class="sgroup"><div class="h"><span class="pill info">Küçültülmüş kopya</span><b>2 kare</b><span class="muted">2023-12-25 13:15</span></div>
+          <div class="strip">
+            <div class="fcard keep"><div class="ph b"><span class="st">★</span></div><div class="n">PXL_20231225_101532771.jpg</div><div class="m">4032×3024 · 3,8 MB</div></div>
+            <div class="fcard drop"><div class="ph b"></div><div class="n">IMG-20231225-WA0012.jpg</div><div class="m">1600×1200 · 0,2 MB</div></div>
+          </div></div>
+        <div class="sgroup"><div class="h"><span class="pill">Aynı kare</span><b>2 kare</b><span class="muted">2019-07-04 21:13 · aynı EXIF, farklı ad</span></div>
+          <div class="strip">
+            <div class="fcard keep"><div class="ph c"><span class="st">★</span></div><div class="n">DSC00412.JPG</div><div class="m">5472×3648 · 6,1 MB</div></div>
+            <div class="fcard keep"><div class="ph c"></div><div class="n">tatil-012.jpg</div><div class="m">5472×3648 · 5,9 MB</div></div>
+          </div></div>
+      </div></div>
+      <div class="actionbar">
+        <div class="t"><b>Benzerlerden 3 kare ayıklanacak; 96 grup henüz incelenmedi.</b><div class="muted">İncelenmeyen gruplarda bütün kareler kalır. Ayıkladığın karelerin RAW eşi var; Onay'a geçerken RAW'ların ne olacağı sorulacak.</div></div>
+        <button class="btn primary big">Onay ekranına →</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- EKRAN 2d: Kusurlu -->
+<div class="win" id="s8" hidden>
+  <div class="titlebar"><span class="logo"></span>Foto Düzenleyici — D:Arşiv<span class="sp"></span><span class="wb">—</span><span class="wb">☐</span><span class="wb">✕</span></div>
+  <div class="top">
+    <div class="steps">
+      <div class="step done"><span class="n">✓</span>Klasörler</div><span class="chev">›</span>
+      <div class="step on"><span class="n">2</span>Tara ve incele</div><span class="chev">›</span>
+      <div class="step"><span class="n">3</span>Onayla ve uygula</div>
+    </div>
+    <button class="ghost">⌂ Ana ekran</button><button class="ghost">↶ Geri Al…</button><button class="ghost">⚙</button>
+  </div>
+  <div class="body">
+    <nav class="nav">
+      <a href="#">◧ Özet ve Plan</a>
+      <div class="sec">Karar bekleyenler</div>
+      <a href="#">⧉ Yinelenenler <span class="c">412</span></a>
+      <a href="#"><span class="dot"></span>◫ Benzerler <span class="c">96 / 506</span></a>
+      <a href="#" class="on">◌ Kusurlu <span class="c">12 / 84</span></a>
+      <div class="sec">Diğer</div>
+      <a href="#">⚠ Okunamayanlar <span class="c">3</span></a>
+    </nav>
+    <div class="main">
+      <div class="secthead"><div class="t"><h2>Kusurlu</h2><div class="muted small">Bulanık ya da çok karanlık kareler. Öntanımlı: hepsi kalır. Ayıkladıkların _Kusurlu'ya gider.</div></div>
+        <label class="toggle"><input type="checkbox" checked> Bulanıklar</label><label class="toggle"><input type="checkbox" checked> Karanlıklar</label></div>
+      <div class="muted small" style="margin-bottom:8px">Bulanık: 61 · Karanlık: 27 · Ayıklanacak: 12 / 84</div>
+      <div class="scroll"><div class="card"><div class="fgrid">
+        <div class="fcard drop"><div class="ph bl"><span class="bd"><span>BULANIK</span></span></div><div class="n">DSC00398.JPG</div><div class="m">2019-07-04 · netlik 12</div></div>
+        <div class="fcard keep"><div class="ph dk"><span class="bd"><span>KARANLIK</span></span></div><div class="n">IMG_0102.JPG</div><div class="m">2021-12-31 · parlaklık 18</div></div>
+        <div class="fcard drop"><div class="ph bl dk"><span class="bd"><span>BULANIK</span><span>KARANLIK</span></span></div><div class="n">IMG_0103.JPG</div><div class="m">2021-12-31</div></div>
+        <div class="fcard keep"><div class="ph bl b"><span class="bd"><span>BULANIK</span><span>RAW</span></span></div><div class="n">IMG_5011.JPG</div><div class="m">2024-06-01 · netlik 21</div></div>
+        <div class="fcard keep"><div class="ph bl c"><span class="bd"><span>BULANIK</span></span></div><div class="n">PXL_20230812_1900.jpg</div><div class="m">2023-08-12 · netlik 17</div></div>
+        <div class="fcard drop"><div class="ph dk"><span class="bd"><span>KARANLIK</span></span></div><div class="n">IMG_0099.JPG</div><div class="m">2022-02-02 · parlaklık 9</div></div>
+      </div></div></div>
+      <div class="actionbar">
+        <div class="t"><b>Kusurlu'dan 12 kare ayıklanacak.</b><div class="muted">Ayıklananlar _Kusurlu klasörüne gider; Geri Al ile geri alınabilir.</div></div>
+        <button class="btn primary big">Onay ekranına →</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div class="note">
   <b>Taslakla ilgili notlar</b> (gerçek uygulamada görünmez):
   <ul>
@@ -481,7 +661,7 @@ tr.sel td{background:var(--accent-soft)}
 <script>
 document.querySelectorAll('.switcher [data-s]').forEach(b=>b.addEventListener('click',()=>{
   document.querySelectorAll('.switcher [data-s]').forEach(x=>x.setAttribute('aria-pressed',x===b));
-  ['s0','s1','s2','s3','s4','s5'].forEach(id=>document.getElementById(id).hidden=b.dataset.s!==id);
+  ['s0','s1','s2','s3','s4','s5','s6','s7','s8'].forEach(id=>document.getElementById(id).hidden=b.dataset.s!==id);
 }));
 document.getElementById('theme').addEventListener('click',()=>{
   const r=document.documentElement, dark=r.dataset.theme==='dark'||(!r.dataset.theme&&matchMedia('(prefers-color-scheme: dark)').matches);
