@@ -41,7 +41,8 @@ Durum işaretleri: ✅ bitti · 🔄 sürüyor · ⬜ planlandı
 
 - ⬜ SD kart veya telefon takılınca "içe aktar" penceresi
 - ⬜ Gelen kutusu klasörünü izleyip yeni dosyaları otomatik yerleştirme
-- ⬜ Arşivi ikinci bir diske yedekleme ve yedeği hash ile doğrulama
+- 🔄 Arşivi ikinci bir diske yedekleme ve yedeği hash ile doğrulama (çekirdek ve komut satırı hazır;
+  ekranı yeni arayüzde)
 
 ## Aşama 5 — Arşiv kütüphanesi (uzun vade)
 

@@ -6,6 +6,17 @@ Biçim [Keep a Changelog](https://keepachangelog.com/tr-TR/1.1.0/), sürüm numa
 
 ## [Yayınlanmamış]
 
+### Eklendi
+- **Yedekleme (çekirdek ve komut satırı):** `--root <arşiv> --backup <yedek>` arşivi ikinci bir diske
+  artımlı kopyalar. Her dosya kopyalanırken SHA-256 ile doğrulanır; doğrulanmayan dosya yedeklendi
+  sayılmaz. Hiçbir şey silinmez: arşivden silinen dosya yedekte kalır, değişen dosyanın eski hali
+  `_EskiSurumler\yyyy-MM-dd` altına taşınır. `_Tekrarlar` varsayılan olarak atlanır
+  (`--include-duplicates`). Yer yetmiyorsa ya da yedek klasörü arşivle iç içeyse hiç başlamaz; yarıda
+  kesilirse kaldığı yerden sürer. Yedek listesi yedek kökünde `.fotoduzenleyici-yedek.json`.
+- `--verify-backup <yedek>`: yedeği baştan sona okuyup eksik ve bozuk dosyaları bulur (sorun varsa
+  çıkış kodu 1). Çekirdekte bozuk dosyaları arşivden onarma da var (bozuk kopya `_Bozuk`'a taşınır);
+  yedek ekranı yeni arayüzle gelecek.
+
 ## [0.1.6] - 2026-11-07
 
 ### Eklendi
