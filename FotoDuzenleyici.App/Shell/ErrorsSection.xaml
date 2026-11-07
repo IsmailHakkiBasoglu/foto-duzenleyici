@@ -1,0 +1,25 @@
+<UserControl x:Class="FotoDuzenleyici.App.Shell.ErrorsSection"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <DockPanel>
+        <StackPanel DockPanel.Dock="Top" Margin="0,0,0,8">
+            <TextBlock Text="Okunamayanlar" Style="{StaticResource H2}" />
+            <TextBlock Style="{StaticResource Small}"
+                       Text="Taranırken, benzerlik izi çıkarılırken ya da netlik ölçülürken okunamayan dosyalar. Bunlara dokunulmaz." />
+        </StackPanel>
+        <Border Style="{StaticResource Panel}">
+            <Grid>
+                <TextBlock Text="Okunamayan dosya yok." Style="{StaticResource Muted}" Margin="16,12"
+                           Visibility="{Binding ScanErrors.Count, Converter={StaticResource HasVis}, ConverterParameter=!}" />
+                <ListBox ItemsSource="{Binding ScanErrors}" BorderThickness="0" Background="Transparent" Margin="8"
+                         VirtualizingPanel.IsVirtualizing="True" ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                    <ListBox.ItemTemplate>
+                        <DataTemplate>
+                            <TextBlock Text="{Binding}" Style="{StaticResource Mono}" TextWrapping="Wrap" TextTrimming="None" />
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+            </Grid>
+        </Border>
+    </DockPanel>
+</UserControl>
