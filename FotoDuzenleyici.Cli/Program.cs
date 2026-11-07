@@ -11,7 +11,10 @@ using FotoDuzenleyici.Core;
 //           Cli --root <arşiv> --backup <yedek> [--include-duplicates] [--csv <dosya>]
 //               arşivi yedeğe artımlı, hash doğrulamalı kopyalar; hiçbir şey silinmez (hata varsa çıkış 2)
 //           Cli --verify-backup <yedek> [--csv <dosya>]   (yedeği tam okur; sorun varsa çıkış 1)
-var roots = new List<string>(); var excl = new List<string>();
+//           Cli --clean <klasör> [--clean <klasör>]... [--priority <klasör>]... [--csv <dosya>] [--apply]
+//               Temizle: birebir kopyaları raporlar; --apply ile fazla kopyalar <kök>\_Ayiklananlar\Tekrarlar'a
+//               taşınır (silinmez; --undo <günlük> ile geri alınır). Kopyada öncelikli klasördeki, yoksa en eski kalır.
+var roots = new List<string>(); var excl = new List<string>(); var cleanRoots = new List<string>(); var priority = new List<string>();
 string? dest = null, csv = null, undo = null, resume = null, backup = null, verifyBackup = null;
 bool srcFolder = false, renameDate = false, appendSrc = false, noHash = false, apply = false, keepSource = false, similar = false, quality = false,
     includeDups = false;
@@ -35,7 +38,47 @@ for (int i = 0; i < args.Length; i++)
         case "--backup": backup = args[++i]; break;
         case "--verify-backup": verifyBackup = args[++i]; break;
         case "--include-duplicates": includeDups = true; break;
+        case "--clean": cleanRoots.Add(args[++i]); break;
+        case "--priority": priority.Add(args[++i]); break;
     }
+
+if (cleanRoots.Count > 0)
+{
+    var cs = new CleanSession(cleanRoots, priority);
+    int lastC = -1;
+    cs.Scan(new Progress<(int d, int t)>(p =>
+    {
+        int pct = p.t == 0 ? 100 : p.d * 100 / p.t;
+        if (pct != lastC && pct % 10 == 0) { lastC = pct; Console.Error.WriteLine($"  tarama %{pct}"); }
+    }));
+    var cplan = cs.BuildPlan();
+    long wasted = cplan.Items.Sum(i => i.File.Size);
+    Console.WriteLine($"Taranan: {cs.Files.Count:N0} dosya  ({string.Join(", ", cs.Roots)})");
+    Console.WriteLine($"Kopya grubu: {cs.Duplicates.Count:N0}  Fazla kopya: {cplan.Items.Count:N0}  Kazanılacak: {wasted / 1e9:N2} GB");
+    if (priority.Count > 0) Console.WriteLine($"Öncelikli klasörler: {string.Join(", ", priority)}");
+    foreach (var g in cs.Duplicates.OrderByDescending(g => g.Copies.Count * g.Keeper.Size).Take(10))
+    {
+        var k = cs.Keeper(g);
+        Console.WriteLine("  " + string.Join("  |  ", DuplicateKeeper.Members(g).Select(m => (m == k ? "★ " : "") + m.Path)));
+    }
+    cs.ScanErrors.Take(5).ToList().ForEach(e => Console.WriteLine("  " + e));
+    if (csv != null)
+    {
+        var cCsv = Path.ChangeExtension(csv, null) + "-temizlik.csv";
+        var sb = new StringBuilder("Eylem;Kaynak;Hedef;Korunan\n");
+        foreach (var i in cplan.Items) sb.AppendLine($"{i.Action};{i.File.Path};{i.TargetPath};{i.DuplicateOf?.Path}");
+        File.WriteAllText(cCsv, sb.ToString(), new UTF8Encoding(true));
+        Console.WriteLine($"CSV: {cCsv}");
+    }
+    if (!apply) return 0;
+    // Komut satırından yalnız birebir kopyalar ayıklanır; benzer ve kusurlu kareler gözle karar ister.
+    var journalC = cs.NewJournalPath();
+    var rc = new Executor(journalC).Run(cplan.Items.Where(i => i.Action == PlanAction.Duplicate), move: true);
+    Console.WriteLine($"\n== Ayıklandı (_Ayiklananlar\\Tekrarlar) ==\nBaşarılı: {rc.Done}  Hatalı: {rc.Failed}\n" +
+                      $"Günlük: {journalC}\nGeri almak için: --undo \"{journalC}\"");
+    rc.Errors.ForEach(Console.WriteLine);
+    return rc.Failed == 0 ? 0 : 2;
+}
 
 IProgress<BackupProgress> BackupBar(string label)
 {

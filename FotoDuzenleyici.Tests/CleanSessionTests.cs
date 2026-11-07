@@ -118,6 +118,35 @@ public class CleanSessionTests : IDisposable
     }
 
     [Fact]
+    public void EndToEnd_CleanApplyRescanUndo()
+    {
+        var keep = Make(@"kok\a\x.pdf", "AYNI", Old);
+        var c1 = Make(@"kok\b\x.pdf", "AYNI", New);
+        var c2 = Make(@"kok\c\d\x.pdf", "AYNI", New);
+        var solo = Make(@"kok\tek.pdf", "TEK", New);
+
+        var s = Session(new[] { "kok" });
+        s.Scan();
+        var plan = s.BuildPlan();
+        Assert.Equal(2, plan.Items.Count);
+        var journal = s.NewJournalPath();
+        var r = new Executor(journal).Run(plan.Items, move: true);
+        Assert.Equal(2, r.Done);
+        Assert.False(File.Exists(c1));
+        Assert.True(File.Exists(T(@"kok\_Ayiklananlar\Tekrarlar\c\d\x.pdf")));
+
+        var again = Session(new[] { "kok" });
+        again.Scan();
+        Assert.Empty(again.Duplicates);
+        Assert.Equal(new[] { keep, solo }.OrderBy(p => p), again.Files.Select(f => f.Path).OrderBy(p => p));
+
+        var u = Executor.Undo(journal);
+        Assert.Equal(2, u.Done);
+        Assert.True(File.Exists(c1));
+        Assert.True(File.Exists(c2));
+    }
+
+    [Fact]
     public void NewJournalPath_IsUnderFirstRootRejects()
     {
         var s = Session(new[] { "r1", "r2" });

@@ -21,6 +21,14 @@ Biçim [Keep a Changelog](https://keepachangelog.com/tr-TR/1.1.0/), sürüm numa
   arşive elle atılmış dosyalar da aynı adlandırmaya uyar. İç içe klasörler iki kez taranmaz.
 - Çekirdekte `OrganizeSession`: birden çok kaynak klasör + arşiv ile tara → kopya bul → planla akışı,
   arayüzden bağımsız (yeni arayüzün temeli). Komut satırı da arşivi tarıyor.
+- **Temizle (çekirdek ve komut satırı):** `--clean <klasör>` (birden çok) birebir kopyaları dosyaları tarih
+  klasörüne taşımadan bulur; `--priority <klasör>` ile kopyalardan hangisinin kalacağı belirlenir
+  (öncelikli klasördeki, yoksa en eski). `--apply` fazla kopyaları temizlenen klasörün
+  `_Ayiklananlar\Tekrarlar\<asıl yol>` altına taşır: aynı diskte yeniden adlandırma, anında biter, silinmez;
+  `--undo <günlük>` yerine döndürür. Çekirdek benzer ve kusurlu kareleri de `_Ayiklananlar\Benzerler` /
+  `\Kusurlu`'ya ayıklamayı destekliyor; ekranı yeni arayüzle gelecek.
+- `_Ayiklananlar` klasörleri hiçbir taramaya girmez (Düzenle dahil): ayıklanan bir dosya sonraki
+  düzenlemede arşive geri gelmez.
 
 ### Değişti
 - Adında çekim günü başka biçimde zaten yazılı olan dosyalara (`IMG-20240312-WA0007`, `12.03.2024 doğum
