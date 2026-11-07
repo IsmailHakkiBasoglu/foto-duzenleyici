@@ -48,6 +48,15 @@ sealed class WpfServices : IFolderPicker, IFilePicker, IDialogs, IShell
         else MessageBox.Show(o, message, title);
     }
 
+    public Answer Ask(string title, string message)
+    {
+        var o = Owner;
+        var r = o is null
+            ? MessageBox.Show(message, title, MessageBoxButton.YesNoCancel, MessageBoxImage.Question)
+            : MessageBox.Show(o, message, title, MessageBoxButton.YesNoCancel, MessageBoxImage.Question);
+        return r switch { MessageBoxResult.Yes => Answer.Yes, MessageBoxResult.No => Answer.No, _ => Answer.Cancel };
+    }
+
     public void OpenFile(string path)
     {
         try { Process.Start(new ProcessStartInfo(path) { UseShellExecute = true }); }

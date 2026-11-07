@@ -36,6 +36,8 @@ public sealed partial class OrganizeFlowViewModel : ObservableObject
     {
         if (IsBusy || !Folders.CanScan) return;
         ErrorMessage = null;
+        Review?.Detach();
+        Review = null;
         IsBusy = true;
         _cts = new CancellationTokenSource();
         if (CancelBeforeStartForTest) _cts.Cancel();
@@ -58,7 +60,7 @@ public sealed partial class OrganizeFlowViewModel : ObservableObject
                 var r = ScanReview(session, findSimilar, markFlawed, simProg, qualProg, ct);
                 return (session.BuildPlan(), r.Data, r.Note);
             }, ct);
-            Review = new ReviewStepViewModel(session, plan, _s, data);
+            Review = new ReviewStepViewModel(session, plan, _s, data, m => ErrorMessage = m);
             ProgressText = null;
             ErrorMessage = note;
             Step = FlowStep.Review;
@@ -142,6 +144,7 @@ public sealed partial class OrganizeFlowViewModel : ObservableObject
     void GoToConfirm()
     {
         if (IsBusy || Review is null || Step != FlowStep.Review) return;
+        if (!Review.PrepareForConfirm()) return;
         Confirm = new ConfirmStepViewModel(Review.Plan, Review.Session.PlanOptions, Review.Session.Sources, _s, _settings, DateTime.Now);
         Confirm.ApplyRequested += StartApply;
         Confirm.ResumeRequested += StartResume;
@@ -185,6 +188,9 @@ public sealed partial class OrganizeFlowViewModel : ObservableObject
         Step = FlowStep.Apply;
         return work(a);
     }
+
+    /// <summary>Bekleyen inceleme kararlarını hemen yazar (pencere kapanırken, Ana ekrana dönerken).</summary>
+    public void FlushReviews() => Review?.FlushReviews();
 
     [RelayCommand]
     void Cancel() => _cts?.Cancel();

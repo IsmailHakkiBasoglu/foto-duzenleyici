@@ -53,6 +53,7 @@ public sealed partial class ShellViewModel : ObservableObject
     void GoHome()
     {
         if (Locked) return;
+        Flow?.FlushReviews();
         CurrentPage = NewHome();
     }
 
@@ -96,7 +97,7 @@ public sealed partial class ShellViewModel : ObservableObject
     /// </summary>
     public CloseDecision RequestClose()
     {
-        if (Flow is not { NavigationLocked: true } f) { _waitingToClose = false; return CloseDecision.Close; }
+        if (Flow is not { NavigationLocked: true } f) { _waitingToClose = false; Flow?.FlushReviews(); return CloseDecision.Close; }
         if (_waitingToClose) return CloseDecision.Stay;
         if (!_s.Dialogs.Confirm("İşlem sürüyor",
                 "Dosyalar hâlâ işleniyor. Durdurulsun mu? O anki dosya bitirilir, kalanlar sonra devam ettirilebilir."))

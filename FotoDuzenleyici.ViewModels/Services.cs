@@ -15,6 +15,8 @@ public interface IDialogs
 {
     bool Confirm(string title, string message);
     void Info(string title, string message);
+    /// <summary>Evet / Hayır / İptal sorusu.</summary>
+    Answer Ask(string title, string message);
 }
 
 /// <summary>Dosya Gezgini'nde klasör açar, eski pencereyi (Klasik görünüm) açar.</summary>
@@ -28,6 +30,8 @@ public interface IShell
 }
 
 /// <summary>Tam ekran karşılaştırma penceresi (klasikteki CompareWindow). Kararlar doğrudan grupların satırlarına yazılır.</summary>
+public enum Answer { Yes, No, Cancel }
+
 public interface ICompare
 {
     /// <param name="changed">Pencerede bir karar verildikçe çağrılır.</param>

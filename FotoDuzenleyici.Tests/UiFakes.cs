@@ -23,6 +23,9 @@ sealed class FakeDialogs : IDialogs
     public List<string> Infos { get; } = new();
     public bool Confirm(string title, string message) { Asked.Add(title + ": " + message); return Answer; }
     public void Info(string title, string message) => Infos.Add(title + ": " + message);
+    public ViewModels.Answer NextAsk = ViewModels.Answer.Yes;
+    public int AskedCount;
+    public ViewModels.Answer Ask(string title, string message) { AskedCount++; Asked.Add(title + ": " + message); return NextAsk; }
 }
 
 sealed class FakeShell : IShell
