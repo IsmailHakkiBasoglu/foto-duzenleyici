@@ -6,6 +6,10 @@ Biçim [Keep a Changelog](https://keepachangelog.com/tr-TR/1.1.0/), sürüm numa
 
 ## [Yayınlanmamış]
 
+### Eklendi
+- Yeni arayüzde Benzerler'e klasikteki toplu düğmeler: **Önerileri uygula (yalnız ★ kalsın)**, **Bulanıkları
+  ayıkla** (seri çekimlerde; en net kareye ve incelenmiş gruplara dokunmaz) ve **Hepsini koru**.
+
 ## [0.3.0] - 2026-11-08
 
 ### Eklendi
