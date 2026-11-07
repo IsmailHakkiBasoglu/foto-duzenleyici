@@ -145,7 +145,10 @@ public partial class MainWindow : Window
         _rootNode?.CollectExcluded(ex);
         var kinds = new HashSet<FileKind> { FileKind.Photo, FileKind.Raw, FileKind.Video };
         if (OptPdf.IsChecked == true) kinds.Add(FileKind.Pdf);
-        return new ScanOptions { Roots = { RootBox.Text }, ExcludedFolders = ex, IncludedKinds = kinds };
+        // Hedef (arşiv) de taranır: başka oturumda arşive girmiş bir fotoğrafın kopyası tanınır,
+        // arşive elle atılmış dosyalar da aynı adlandırmaya uyar.
+        var roots = OrganizeSession.ScanRoots(new[] { RootBox.Text }, DestBox.Text.Trim()).Where(Directory.Exists).ToList();
+        return new ScanOptions { Roots = roots, ExcludedFolders = ex, IncludedKinds = kinds };
     }
 
     async void Scan_Click(object s, RoutedEventArgs e)

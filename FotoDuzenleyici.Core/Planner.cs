@@ -152,9 +152,9 @@ public static class Planner
         var f = members[0].File;
         var stem = Path.GetFileNameWithoutExtension(f.Path);
         var day = date.ToString("yyyy-MM-dd");
-        // Önceki turda eklenmiş kaynak ("... Fuji" ya da "... Fuji (2)") tekrar eklenmez.
+        // Adında kaynak zaten ayrı bir sözcük olarak geçiyorsa ("... Fuji", "Canon_IMG", "IMG canon") tekrar eklenmez.
         bool hasSrc = f.Source is not null &&
-            Regex.IsMatch(stem, $@" {Regex.Escape(f.Source)}( \(\d+\))?$", RegexOptions.IgnoreCase);
+            Regex.IsMatch(stem, $@"(?<![\p{{L}}\d]){Regex.Escape(f.Source)}(?![\p{{L}}\d])", RegexOptions.IgnoreCase);
         var src = opt.AppendSourceToName && f.Source is not null && !hasSrc ? " " + f.Source : "";
 
         string Compose(bool dated, bool withTime, int n = 0)
@@ -183,7 +183,9 @@ public static class Planner
             return (!taken.Contains(full) && !(File.Exists(full) && !IsSelf(k, full))) || (members[k].InPlace && IsSelf(k, full));
         });
 
-        var candidate = Compose(opt.RenameWithDate, false);
+        // Adında çekim günü başka biçimde zaten yazılıysa (IMG-20240312-WA0007, 12.03.2024 …) önek eklenmez:
+        // adda iki tarih olmasın. Çakışmada tarih yine zorunludur.
+        var candidate = Compose(opt.RenameWithDate && !NameHasDate(stem, date), false);
         bool collided = false;
 
         if (!FirstOk(candidate))
@@ -201,6 +203,23 @@ public static class Planner
             names.Add(Path.GetFileName(Full(k, candidate)));
         }
         return (names, collided);
+    }
+
+    static readonly Regex YmdInName = new(
+        @"(?<!\d)((?:19|20)\d{2})[-_.]?(0[1-9]|1[0-2])[-_.]?(0[1-9]|[12]\d|3[01])(?!\d)", RegexOptions.Compiled);
+    static readonly Regex DmyInName = new(
+        @"(?<!\d)(0[1-9]|[12]\d|3[01])[-_.](0[1-9]|1[0-2])[-_.]((?:19|20)\d{2})(?!\d)", RegexOptions.Compiled);
+
+    /// <summary>Adda (yyyy-MM-dd, yyyyMMdd, yyyy_MM_dd, yyyy.MM.dd, dd.MM.yyyy, dd-MM-yyyy …) bu gün geçiyor mu?</summary>
+    internal static bool NameHasDate(string stem, DateTime day)
+    {
+        if (day == DateTime.MinValue) return false;
+        bool Is(int y, int m, int d) => y == day.Year && m == day.Month && d == day.Day;
+        foreach (Match x in YmdInName.Matches(stem))
+            if (Is(int.Parse(x.Groups[1].Value), int.Parse(x.Groups[2].Value), int.Parse(x.Groups[3].Value))) return true;
+        foreach (Match x in DmyInName.Matches(stem))
+            if (Is(int.Parse(x.Groups[3].Value), int.Parse(x.Groups[2].Value), int.Parse(x.Groups[1].Value))) return true;
+        return false;
     }
 
     /// <summary>EXIF'i okunamayan RAW/JPG eşini, aynı klasör ve aynı adlı eşinden gelen tarih/kaynakla eşitler.</summary>
