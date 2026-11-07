@@ -107,7 +107,12 @@ if (resume != null)
 if (roots.Count == 0) { Console.WriteLine("--root gerekli"); return 1; }
 dest ??= Path.Combine(roots[0], "_YENI_DUZEN");
 
-var so = new ScanOptions { Roots = roots, ExcludedFolders = new(excl, StringComparer.OrdinalIgnoreCase) };
+// Arşiv (hedef) de taranır: başka oturumda arşive girmiş bir dosyanın kopyası tanınır.
+var so = new ScanOptions
+{
+    Roots = OrganizeSession.ScanRoots(roots, dest).Where(Directory.Exists).ToList(),
+    ExcludedFolders = new(excl, StringComparer.OrdinalIgnoreCase),
+};
 var sw = System.Diagnostics.Stopwatch.StartNew();
 var scanner = new Scanner(so);
 int lastPct = -1;

@@ -16,6 +16,18 @@ Biçim [Keep a Changelog](https://keepachangelog.com/tr-TR/1.1.0/), sürüm numa
 - `--verify-backup <yedek>`: yedeği baştan sona okuyup eksik ve bozuk dosyaları bulur (sorun varsa
   çıkış kodu 1). Çekirdekte bozuk dosyaları arşivden onarma da var (bozuk kopya `_Bozuk`'a taşınır);
   yedek ekranı yeni arayüzle gelecek.
+- **Arşiv her zaman taranır:** hedef klasör taranan klasörün dışında olsa da taramaya katılır. Başka bir
+  oturumda arşive girmiş bir fotoğrafın aynısı yeniden gelirse `_Tekrarlar`'a ayrılır, arşivdeki kalır;
+  arşive elle atılmış dosyalar da aynı adlandırmaya uyar. İç içe klasörler iki kez taranmaz.
+- Çekirdekte `OrganizeSession`: birden çok kaynak klasör + arşiv ile tara → kopya bul → planla akışı,
+  arayüzden bağımsız (yeni arayüzün temeli). Komut satırı da arşivi tarıyor.
+
+### Değişti
+- Adında çekim günü başka biçimde zaten yazılı olan dosyalara (`IMG-20240312-WA0007`, `12.03.2024 doğum
+  günü`, `IMG_20240312_101500`) "ada tarih ekle" seçeneğinde ikinci bir tarih öneki eklenmiyor. Farklı bir
+  günün tarihi yazılıysa önek eklenir. İsim çakışmasında tarih yine zorunlu.
+- Kaynak (model) adı, dosya adında herhangi bir yerde ayrı bir sözcük olarak geçiyorsa (`Canon_IMG_0001`,
+  `Canon IMG_0001`) sona tekrar eklenmiyor.
 
 ## [0.1.6] - 2026-11-07
 
