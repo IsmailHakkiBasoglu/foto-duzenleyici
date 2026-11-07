@@ -1,0 +1,62 @@
+<UserControl x:Class="FotoDuzenleyici.App.Shell.SimilarSection"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+             xmlns:local="clr-namespace:FotoDuzenleyici.App.Shell">
+    <DockPanel>
+        <DockPanel DockPanel.Dock="Top" Margin="0,0,0,8">
+            <StackPanel DockPanel.Dock="Right" HorizontalAlignment="Right" VerticalAlignment="Top">
+                <CheckBox Content="Yalnız incelenmemişler" IsChecked="{Binding OnlyUnreviewed}" />
+                <TextBlock Text="{Binding CounterText}" Style="{StaticResource Small}" HorizontalAlignment="Right" />
+            </StackPanel>
+            <StackPanel Margin="0,0,14,0">
+                <TextBlock Text="Benzerler" Style="{StaticResource H2}" />
+                <TextBlock Style="{StaticResource Small}"
+                           Text="Kareye tıkla: kalsın ↔ ayıkla. Ayıklananlar _Benzerler'e gider, silinmez. Çift tıkla ya da Enter: tam ekran karşılaştır. ★ önerilen kopya, ◎ seri çekimde en net kare." />
+            </StackPanel>
+        </DockPanel>
+        <Border Style="{StaticResource Panel}">
+            <Grid>
+                <!-- Boş durum: arama yapılmadı ya da benzer bulunmadı -->
+                <StackPanel Margin="16,14" Visibility="{Binding Total, Converter={StaticResource HasVis}, ConverterParameter=!}">
+                    <TextBlock Text="{Binding EmptyText}" Style="{StaticResource Muted}" />
+                    <ui:Button Content="Klasörlere ve Düzen seçeneklerine dön" Appearance="Transparent" Margin="-10,6,0,0"
+                               Visibility="{Binding Done, Converter={StaticResource HasVis}, ConverterParameter=!}"
+                               Command="{Binding DataContext.BackCommand, RelativeSource={RelativeSource AncestorType=local:ReviewPage}}" />
+                </StackPanel>
+                <ListBox x:Name="List" ItemsSource="{Binding Visible}" SelectedItem="{Binding Selected}"
+                         BorderThickness="0" Background="Transparent" KeyDown="List_KeyDown"
+                         VirtualizingPanel.IsVirtualizing="True" VirtualizingPanel.VirtualizationMode="Recycling"
+                         VirtualizingPanel.ScrollUnit="Pixel" ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                    <ListBox.ItemTemplate>
+                        <DataTemplate>
+                            <StackPanel Margin="6,8">
+                                <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
+                                    <Border CornerRadius="9" Padding="8,1" Background="{DynamicResource SystemFillColorCautionBackgroundBrush}">
+                                        <TextBlock Text="{Binding KindText}" FontSize="11" FontWeight="SemiBold"
+                                                   Foreground="{DynamicResource TextFillColorPrimaryBrush}" />
+                                    </Border>
+                                    <TextBlock Margin="8,0,0,0" FontWeight="SemiBold" Foreground="{DynamicResource TextFillColorPrimaryBrush}"
+                                               Text="{Binding Rows.Count, StringFormat='{}{0} kare'}" />
+                                    <TextBlock Margin="8,0,0,0" Style="{StaticResource Small}" VerticalAlignment="Center"
+                                               Text="{Binding Rows[0].Taken}" />
+                                    <TextBlock Margin="10,0,0,0" Text="✓ incelendi" FontSize="12" VerticalAlignment="Center"
+                                               Foreground="{DynamicResource SystemFillColorSuccessBrush}"
+                                               Visibility="{Binding Reviewed, Converter={StaticResource BoolVis}}" />
+                                </StackPanel>
+                                <ItemsControl ItemsSource="{Binding Rows}">
+                                    <ItemsControl.ItemsPanel>
+                                        <ItemsPanelTemplate><WrapPanel /></ItemsPanelTemplate>
+                                    </ItemsControl.ItemsPanel>
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate><local:FrameCard Margin="0,0,8,8" /></DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </StackPanel>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+            </Grid>
+        </Border>
+    </DockPanel>
+</UserControl>

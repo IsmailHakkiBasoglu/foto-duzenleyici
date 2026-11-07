@@ -22,8 +22,10 @@ _Tekrarlar\       (birebir aynı içerikli kopyalar)
 > (Uygulama henüz dijital olarak imzalı değil.)
 
 Açılışta **Ana ekran** gelir; **Düzenle** dört adımda ilerler: *Klasörler → Tara ve incele → Onayla →
-Uygulanıyor / Bitti*. Benzer ve kusurlu kareleri gözden geçirme, yinelenenlerde korunacak kopyayı seçme
-şimdilik **Klasik görünüm**de (sağ üstteki ⚙ menüsü). Eski pencereyi doğrudan açmak için:
+Uygulanıyor / Bitti*. *Tara ve incele* adımında sol menüden **Yinelenenler** (korunacak kopyayı seç),
+**Benzerler** (aynı kare, küçültülmüş kopya, seri çekim) ve **Kusurlu** (bulanık / karanlık) bölümlerini
+gözden geçirebilirsin; kararların Onayla'ya geçerken plana yansır. Eski pencere **Klasik görünüm** olarak
+sağ üstteki ⚙ menüsünde. Eski pencereyi doğrudan açmak için:
 `FotoDuzenleyici.exe --klasik`.
 
 ## Güvenlik

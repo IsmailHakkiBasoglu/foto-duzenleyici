@@ -6,6 +6,22 @@ Biçim [Keep a Changelog](https://keepachangelog.com/tr-TR/1.1.0/), sürüm numa
 
 ## [Yayınlanmamış]
 
+### Eklendi
+- **Yeni arayüz (2. parça): inceleme ekranları.** "Tara ve incele" adımının sol menüsünde Özet ve Plan,
+  Yinelenenler, Benzerler, Kusurlu ve Okunamayanlar bölümleri. Klasikteki davranış aynen:
+  - **Yinelenenler:** her grupta korunacak konum seçilir; "düzenli" ve "elle seçildi" etiketleri, Öneriye dön.
+  - **Benzerler:** aynı kare, küçültülmüş kopya ve seri çekim grupları; tıkla kalsın ↔ ayıkla, çift tık ya da
+    Enter ile tam ekran karşılaştırma, "Yalnız incelenmemişler" süzgeci. Her grupta en az bir kare kalır.
+  - **Kusurlu:** bulanık / karanlık kareler; süzgeçler ve tıkla ayıkla.
+- Tarama dört aşamaya çıktı: metadata, kopyalar, benzerlik izi, netlik. Benzerlik ve netlik Düzen
+  seçeneklerinden kapatılabilir; durdurulursa inceleme bulunanlarla açılır, hesaplananlar önbellekte kalır.
+- İncelemedeki kararlar Onayla'ya geçerken plana yansır; ayıklanan karelerin RAW eşi varsa bir kez sorulur.
+  Onayla özetinde "_Benzerler'e / _Kusurlu'ya ayrılacak" satırları; plan süzgecinde Benzer ve Kusurlu.
+- Kararlar Klasik görünümle aynı dosyada saklanır; biri ötekinin kararını görür.
+
+### Değişti
+- Benzer / kusurlu grup kurma mantığı, iki pencerenin ortak kullandığı Core sınıfına (`ReviewBuilder`) taşındı.
+
 ## [0.2.0] - 2026-11-07
 
 ### Eklendi

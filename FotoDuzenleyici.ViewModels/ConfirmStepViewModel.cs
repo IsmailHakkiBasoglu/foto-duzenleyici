@@ -15,7 +15,8 @@ public sealed partial class ConfirmStepViewModel : ObservableObject
         Plan = plan;
         Archive = opt.DestinationRoot;
         Summary = PlanSummary.From(plan, opt);
-        NeedBytes = Summary.MoveBytes + Summary.DupBytes;
+        // _Benzerler / _Kusurlu'ya gidenler de kopyalanıp doğrulanır: yer onlar için de gerekir.
+        NeedBytes = Summary.MoveBytes + Summary.DupBytes + Summary.SimilarBytes + Summary.FlawedBytes;
         // Ağ paylaşımı (NAS) ya da takılı olmayan disk: boş alan okunamaz → "bilinmiyor", Uygula engellenmez.
         try { FreeBytes = s.FreeSpace(ExistingAncestor(Archive)); SpaceKnown = true; }
         catch (Exception) { FreeBytes = -1; SpaceKnown = false; }

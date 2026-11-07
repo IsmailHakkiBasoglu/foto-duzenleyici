@@ -43,6 +43,8 @@ public sealed partial class FoldersStepViewModel : ObservableObject
             if (_settings.RenameWithDate) parts.Add("Ada tarih ekle");
             if (_settings.AppendSourceToName) parts.Add("Ada kaynak ekle");
             if (_settings.SeparateRawFolder) parts.Add("RAW ayrı klasörde");
+            if (_settings.FindSimilar) parts.Add("Benzerleri ara");
+            if (_settings.MarkFlawed) parts.Add("Bulanıkları işaretle");
             return string.Join(" · ", parts);
         }
     }

@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.IO;
 using System.Windows;
+using FotoDuzenleyici.Core;
 using FotoDuzenleyici.ViewModels;
 using Microsoft.Win32;
 
@@ -47,6 +48,21 @@ sealed class WpfServices : IFolderPicker, IFilePicker, IDialogs, IShell
         else MessageBox.Show(o, message, title);
     }
 
+    public Answer Ask(string title, string message)
+    {
+        var o = Owner;
+        var r = o is null
+            ? MessageBox.Show(message, title, MessageBoxButton.YesNoCancel, MessageBoxImage.Question)
+            : MessageBox.Show(o, message, title, MessageBoxButton.YesNoCancel, MessageBoxImage.Question);
+        return r switch { MessageBoxResult.Yes => Answer.Yes, MessageBoxResult.No => Answer.No, _ => Answer.Cancel };
+    }
+
+    public void OpenFile(string path)
+    {
+        try { Process.Start(new ProcessStartInfo(path) { UseShellExecute = true }); }
+        catch (Exception ex) { Info("Dosya açılamadı", ex.Message); }
+    }
+
     public void OpenFolder(string path)
     {
         if (Directory.Exists(path)) Process.Start(new ProcessStartInfo("explorer.exe", $"\"{path}\"") { UseShellExecute = true });
@@ -68,6 +84,29 @@ sealed class WpfServices : IFolderPicker, IFilePicker, IDialogs, IShell
     public static Services Create()
     {
         var w = new WpfServices();
-        return new Services(w, w, w, w, new JsonSettingsStore(JsonSettingsStore.DefaultPath), FreeSpace);
+        return new Services(w, w, w, w, new JsonSettingsStore(JsonSettingsStore.DefaultPath), FreeSpace,
+            Schedule: Later, Compare: new WpfCompare());
+    }
+
+    /// <summary>Arayüz iş parçacığında, gecikmeyle tek sefer. Dispose bekleyeni iptal eder.</summary>
+    static IDisposable Later(TimeSpan delay, Action work)
+    {
+        var t = new System.Windows.Threading.DispatcherTimer { Interval = delay };
+        t.Tick += (_, _) => { t.Stop(); work(); };
+        t.Start();
+        return new Stopper(t);
+    }
+
+    sealed class Stopper(System.Windows.Threading.DispatcherTimer t) : IDisposable { public void Dispose() => t.Stop(); }
+}
+
+/// <summary>Klasikteki karşılaştırma penceresi, yeni kabuğun üstünde kalıcı (modal).</summary>
+sealed class WpfCompare : ICompare
+{
+    public (SimilarGroupState Current, bool FinishedAll) Open(IReadOnlyList<SimilarGroupState> groups, int start, ReviewStore store, Action changed)
+    {
+        var w = new CompareWindow(groups, start, store, changed) { Owner = Application.Current?.MainWindow };
+        w.ShowDialog();
+        return (w.Current, w.FinishedAll);
     }
 }

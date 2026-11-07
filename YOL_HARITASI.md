@@ -35,8 +35,8 @@ Durum işaretleri: ✅ bitti · 🔄 sürüyor · ⬜ planlandı
 - ✅ Kopya ve benzer grupları yan yana karşılaştırma ekranı (benzerler 0.1.5; Yinelenenler
   grup kartları ve korunacak konumu seçme, 0.1.6)
 - ⬜ Ay ay zaman çizelgesi; ay başına dosya sayısı ve boyut grafiği
-- 🔄 Koyu tema, modern görünüm (WPF-UI / Fluent): 1. parça kabuk + Düzenle akışı (0.2.0); Temizle,
-  Yedekle ve inceleme ekranları (Benzerler, Kusurlu, Yinelenenler) sonraki parçalarda
+- 🔄 Koyu tema, modern görünüm (WPF-UI / Fluent): 1. parça kabuk + Düzenle akışı (0.2.0); 2. parça
+  inceleme ekranları (Yinelenenler, Benzerler, Kusurlu); Temizle ve Yedekle ekranları sonraki parçalarda
 
 ## Aşama 4 — Otomatik içe aktarma ve yedek
 

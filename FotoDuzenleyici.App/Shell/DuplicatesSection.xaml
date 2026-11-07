@@ -1,0 +1,79 @@
+<UserControl x:Class="FotoDuzenleyici.App.Shell.DuplicatesSection"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml">
+    <DockPanel>
+        <DockPanel DockPanel.Dock="Top" Margin="0,0,0,8">
+            <ui:Button DockPanel.Dock="Right" Content="Öneriye dön" Command="{Binding ResetCommand}" VerticalAlignment="Top" />
+            <StackPanel Margin="0,0,14,0">
+                <TextBlock Text="Yinelenenler" Style="{StaticResource H2}" />
+                <TextBlock Style="{StaticResource Small}"
+                           Text="Aynı içerikli dosyalar. Her grupta seçili konum korunur, ötekiler _Tekrarlar'a ayrılır. Önerilen: düzenli arşivdeki kopya, yoksa en eskisi. Çift tıkla: dosyayı aç." />
+                <TextBlock Style="{StaticResource Small}" Margin="0,6,0,0" Text="{Binding CounterText}" />
+            </StackPanel>
+        </DockPanel>
+        <Border Style="{StaticResource Panel}">
+            <ListBox ItemsSource="{Binding Groups}" BorderThickness="0" Background="Transparent"
+                     VirtualizingPanel.IsVirtualizing="True" VirtualizingPanel.VirtualizationMode="Recycling"
+                     VirtualizingPanel.ScrollUnit="Pixel" ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                <ListBox.ItemContainerStyle>
+                    <Style TargetType="ListBoxItem">
+                        <Setter Property="Template">
+                            <Setter.Value>
+                                <ControlTemplate TargetType="ListBoxItem"><ContentPresenter /></ControlTemplate>
+                            </Setter.Value>
+                        </Setter>
+                    </Style>
+                </ListBox.ItemContainerStyle>
+                <ListBox.ItemTemplate>
+                    <DataTemplate>
+                        <Border BorderBrush="{DynamicResource DividerStrokeColorDefaultBrush}" BorderThickness="0,0,0,1" Padding="16,12">
+                            <DockPanel>
+                                <Border DockPanel.Dock="Left" Width="72" Height="72" CornerRadius="6" Margin="0,0,14,0" ClipToBounds="True"
+                                        Background="{DynamicResource SubtleFillColorSecondaryBrush}"
+                                        DataContext="{Binding Preview}" Loaded="Thumb_Loaded">
+                                    <Image Source="{Binding Thumb}" Stretch="UniformToFill" />
+                                </Border>
+                                <StackPanel>
+                                    <TextBlock Foreground="{DynamicResource TextFillColorPrimaryBrush}">
+                                        <Run FontWeight="SemiBold" Text="{Binding Rows[0].Name, Mode=OneWay}" />
+                                        <Run Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="12"
+                                             Text="{Binding SizeText, StringFormat='· {0}', Mode=OneWay}" />
+                                        <Run Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="12"
+                                             Text="{Binding CountText, StringFormat='· {0}', Mode=OneWay}" />
+                                        <Run Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="12"
+                                             Text="{Binding WastedText, StringFormat='· {0}', Mode=OneWay}" />
+                                    </TextBlock>
+                                    <Border HorizontalAlignment="Left" CornerRadius="9" Padding="8,1" Margin="0,4,0,2"
+                                            Background="{DynamicResource AccentFillColorDefaultBrush}"
+                                            Visibility="{Binding UserChosen, Converter={StaticResource BoolVis}}">
+                                        <TextBlock Text="elle seçildi" FontSize="11" FontWeight="SemiBold"
+                                                   Foreground="{DynamicResource TextOnAccentFillColorPrimaryBrush}" />
+                                    </Border>
+                                    <ItemsControl ItemsSource="{Binding Rows}" Margin="0,4,0,0">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <DockPanel Margin="0,1" Background="Transparent" MouseLeftButtonDown="Row_MouseDown">
+                                                    <Border DockPanel.Dock="Right" CornerRadius="9" Padding="8,1" Margin="8,0,0,0"
+                                                            Background="{DynamicResource SystemFillColorSuccessBackgroundBrush}"
+                                                            Visibility="{Binding Organized, Converter={StaticResource BoolVis}}">
+                                                        <TextBlock Text="düzenli" FontSize="11" FontWeight="SemiBold"
+                                                                   Foreground="{DynamicResource SystemFillColorSuccessBrush}" />
+                                                    </Border>
+                                                    <RadioButton IsChecked="{Binding IsKeeper, Mode=TwoWay}" GroupName="{Binding Owner.Number}"
+                                                                 MinWidth="0" VerticalAlignment="Center" Margin="0,0,6,0" />
+                                                    <TextBlock Text="{Binding File.Path}" Style="{StaticResource Mono}" VerticalAlignment="Center"
+                                                               ToolTip="{Binding File.Path}" />
+                                                </DockPanel>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </StackPanel>
+                            </DockPanel>
+                        </Border>
+                    </DataTemplate>
+                </ListBox.ItemTemplate>
+            </ListBox>
+        </Border>
+    </DockPanel>
+</UserControl>

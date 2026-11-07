@@ -189,8 +189,7 @@ public partial class MainWindow : Window
         var opts = BuildScanOptions();
         var dest = DestBox.Text.Trim();
         // Önceki turlarda ayrılanlar (_Benzerler, _Kusurlu) ne benzerlik aramasına ne ölçüme girer.
-        var ignoreDirs = dest.Length == 0 ? Array.Empty<string>()
-            : new[] { Path.Combine(Path.GetFullPath(dest), "_Benzerler"), Path.Combine(Path.GetFullPath(dest), "_Kusurlu") };
+        var ignoreDirs = dest.Length == 0 ? Array.Empty<string>() : ReviewBuilder.IgnoreDirs(BuildPlanOptions());
         var prog = new Progress<(int d, int t)>(p => { Progress.Maximum = p.t; Progress.Value = p.d; StatusText.Text = $"Metadata okunuyor… {p.d}/{p.t}"; });
         try
         {
@@ -286,23 +285,12 @@ public partial class MainWindow : Window
 
     async Task ShowSimilar(Dictionary<MediaFile, ImagePrint> hashes, IReadOnlyList<string> ignoreDirs)
     {
-        var groups = SimilarFinder.Find(_files, hashes, SameFrameFinder.Find(_files, _dups, ignoreDirs));
-        var states = SimilarGroupState.FromGroups(groups);
-
         // Önceki kararlar: dosya kimliği yoldan bağımsız; okunamayan dosyanın kararı saklanmaz.
         StatusText.Text = "Önceki kararlar yükleniyor…";
-        var rows = states.SelectMany(g => g.Rows).ToList();
-        var pairs = RawJpgPairs.Index(_files);
-        foreach (var r in rows) r.HasRaw = r.File.Kind == FileKind.Photo && pairs.ContainsKey(r.File);
-        await Task.Run(() =>
-        {
-            foreach (var r in rows)
-                try { r.StoreKey = HashCache.Key(r.Path); } catch (Exception) { r.StoreKey = null; }
-        });
+        var (files, dups, scores) = (_files, _dups, _scores);
+        var states = await Task.Run(() => ReviewBuilder.BuildSimilar(files, dups, hashes, ignoreDirs, scores, _reviews));
         foreach (var g in states)
         {
-            g.ApplyBurstRanks(_scores);
-            g.Restore(_reviews);
             g.PropertyChanged += (_, e) => { if (e.PropertyName == nameof(SimilarGroupState.Reviewed)) ReviewsChanged(); };
             foreach (var r in g.Rows)
             {
@@ -329,18 +317,10 @@ public partial class MainWindow : Window
     async Task ShowFlawed()
     {
         if (!_qualityDone) { FlawedCounter.Text = "Ölçüm yapılmadı."; return; }
-        var list = FlawedList.Build(_scores, _groups, _groups.Count + 1);
-        var rows = list.Select(g => g.Rows[0]).ToList();
-        var pairs = RawJpgPairs.Index(_files);
-        foreach (var r in rows) r.HasRaw = pairs.ContainsKey(r.File);
-        await Task.Run(() =>
-        {
-            foreach (var r in rows)
-                try { r.StoreKey = HashCache.Key(r.Path); } catch (Exception) { r.StoreKey = null; }
-        });
+        var (files, scores, groups) = (_files, _scores, _groups);
+        var list = await Task.Run(() => ReviewBuilder.BuildFlawed(files, scores, groups, _reviews));
         foreach (var g in list)
         {
-            g.Restore(_reviews);
             g.Rows[0].Changed = row =>
             {
                 if (row.StoreKey is { } k) _reviews.SetKeep(k, row.Keep);
@@ -468,16 +448,7 @@ public partial class MainWindow : Window
     }
 
     /// <summary>Kalsın işareti kaldırılan dosya → grubunda kalan dosya (öneri işaretliyse o).</summary>
-    Dictionary<MediaFile, MediaFile> BuildSimilarMap()
-    {
-        var map = new Dictionary<MediaFile, MediaFile>();
-        foreach (var g in _groups)
-        {
-            var keeper = g.Rows.FirstOrDefault(r => r.Keep && r.Suggested) ?? g.Rows.First(r => r.Keep);
-            foreach (var r in g.Rows.Where(r => !r.Keep)) map[r.File] = keeper.File;
-        }
-        return map;
-    }
+    Dictionary<MediaFile, MediaFile> BuildSimilarMap() => ReviewBuilder.SimilarMap(_groups);
 
     void SuggestSimilar_Click(object s, RoutedEventArgs e)
     {
@@ -512,23 +483,15 @@ public partial class MainWindow : Window
         var dest = Path.GetFullPath(DestBox.Text.Trim());
         if (await OfferResumeAsync(dest)) { StatusText.Text += "  Dosyalar değişti; plan için yeniden Tara."; return; }
         var similarOf = BuildSimilarMap();
-        var flawedSet = _flawed.SelectMany(g => g.Rows).Where(r => !r.Keep).Select(r => r.File).ToHashSet();
+        var flawedSet = ReviewBuilder.FlawedSet(_flawed);
         // Ayıklanan karelerin (Benzerler + Kusurlu) RAW eşleri: her Plan'da tek soruda sorulur (kullanıcı kararı).
-        var released = similarOf.Keys.Concat(flawedSet).ToHashSet();
-        var raws = RawJpgPairs.UnreleasedRaws(_files, released);
+        var raws = ReviewBuilder.PendingRaws(_files, similarOf, flawedSet);
         if (raws.Count > 0)
         {
-            var ans = MessageBox.Show(
-                $"Benzerler'de ve Kusurlu'da ayıkladığın {raws.Count} karenin RAW eşi var.\n\n" +
-                "Evet: RAW'lar da JPG'leriyle birlikte taşınsın (_Benzerler / _Kusurlu).\n" +
-                "Hayır: RAW'lar normal klasörlerine gitsin, yalnız JPG'ler ayıklansın.\n" +
-                "İptal: plan oluşturulmasın.",
-                "RAW eşleri", MessageBoxButton.YesNoCancel, MessageBoxImage.Question);
+            var ans = MessageBox.Show(ReviewBuilder.RawQuestion(raws.Count), ReviewBuilder.RawQuestionTitle,
+                MessageBoxButton.YesNoCancel, MessageBoxImage.Question);
             if (ans == MessageBoxResult.Cancel) return;
-            if (ans == MessageBoxResult.Yes)
-                foreach (var (raw, photo) in raws)
-                    if (similarOf.TryGetValue(photo, out var keeper)) similarOf[raw] = keeper;
-                    else flawedSet.Add(raw);
+            if (ans == MessageBoxResult.Yes) ReviewBuilder.IncludeRaws(raws, similarOf, flawedSet);
         }
         // Hedef klasör taramadan sonra değişmiş olabilir: öneriler ve "düzenli" etiketleri tazelenir.
         var planOpt = BuildPlanOptions();

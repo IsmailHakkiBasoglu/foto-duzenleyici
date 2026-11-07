@@ -23,6 +23,9 @@ sealed class FakeDialogs : IDialogs
     public List<string> Infos { get; } = new();
     public bool Confirm(string title, string message) { Asked.Add(title + ": " + message); return Answer; }
     public void Info(string title, string message) => Infos.Add(title + ": " + message);
+    public ViewModels.Answer NextAsk = ViewModels.Answer.Yes;
+    public int AskedCount;
+    public ViewModels.Answer Ask(string title, string message) { AskedCount++; Asked.Add(title + ": " + message); return NextAsk; }
 }
 
 sealed class FakeShell : IShell
@@ -32,6 +35,8 @@ sealed class FakeShell : IShell
     public List<ClassicStart?> Starts { get; } = new();
     public void OpenFolder(string path) => Opened.Add(path);
     public void OpenClassic(ClassicStart? start) { Classic++; Starts.Add(start); }
+    public List<string> Files { get; } = new();
+    public void OpenFile(string path) => Files.Add(path);
 }
 
 sealed class MemorySettings : ISettingsStore
@@ -55,5 +60,14 @@ sealed class Fakes
     public Action<string>? Recycle;
 
     public Func<string, long>? FreeFn;
-    public Services Services => new(Folders, Files, Dialogs, Shell, Settings, FreeFn ?? (_ => Free), Recycle);
+    /// <summary>Her Fakes kendi geçici klasöründe: testler kullanıcının karar ve önbellek dosyalarına dokunmaz.</summary>
+    public CachePaths Caches = Temp();
+    public Func<TimeSpan, Action, IDisposable>? Schedule = null;
+
+    static CachePaths Temp()
+    {
+        var d = Path.Combine(Path.GetTempPath(), "fd_caches_" + Guid.NewGuid().ToString("N"));
+        return new CachePaths(Path.Combine(d, "kararlar.json"), Path.Combine(d, "iz.bin"), Path.Combine(d, "netlik.bin"));
+    }
+    public Services Services => new(Folders, Files, Dialogs, Shell, Settings, FreeFn ?? (_ => Free), Recycle, Caches, Schedule);
 }

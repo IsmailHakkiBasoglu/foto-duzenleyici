@@ -18,6 +18,8 @@ public partial class OptionsDialog : FluentWindow
         RenameWithDate.IsChecked = s.RenameWithDate;
         AppendSource.IsChecked = s.AppendSourceToName;
         RawSeparate.IsChecked = s.SeparateRawFolder;
+        FindSimilar.IsChecked = s.FindSimilar;
+        MarkFlawed.IsChecked = s.MarkFlawed;
     }
 
     void Save_Click(object sender, RoutedEventArgs e)
@@ -26,6 +28,8 @@ public partial class OptionsDialog : FluentWindow
         _s.RenameWithDate = RenameWithDate.IsChecked == true;
         _s.AppendSourceToName = AppendSource.IsChecked == true;
         _s.SeparateRawFolder = RawSeparate.IsChecked == true;
+        _s.FindSimilar = FindSimilar.IsChecked == true;
+        _s.MarkFlawed = MarkFlawed.IsChecked == true;
         DialogResult = true;
     }
 }

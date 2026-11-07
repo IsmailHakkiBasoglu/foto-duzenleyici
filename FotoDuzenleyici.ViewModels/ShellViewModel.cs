@@ -53,6 +53,7 @@ public sealed partial class ShellViewModel : ObservableObject
     void GoHome()
     {
         if (Locked) return;
+        Flow?.FlushReviews();
         CurrentPage = NewHome();
     }
 
@@ -81,6 +82,8 @@ public sealed partial class ShellViewModel : ObservableObject
         if (Flow?.Folders is { CanScan: true } fo)
             start = new ClassicStart(fo.ExistingSources.ToList(), fo.Archive!, _settings.SourceFolder,
                 _settings.RenameWithDate, _settings.AppendSourceToName, _settings.SeparateRawFolder, _settings.RecycleSource);
+        // Klasik pencere karar dosyasını açılışta okur: bekleyen kararlar önce yazılsın.
+        Flow?.FlushReviews();
         _s.Shell.OpenClassic(start);
     }
 
@@ -96,7 +99,7 @@ public sealed partial class ShellViewModel : ObservableObject
     /// </summary>
     public CloseDecision RequestClose()
     {
-        if (Flow is not { NavigationLocked: true } f) { _waitingToClose = false; return CloseDecision.Close; }
+        if (Flow is not { NavigationLocked: true } f) { _waitingToClose = false; Flow?.FlushReviews(); return CloseDecision.Close; }
         if (_waitingToClose) return CloseDecision.Stay;
         if (!_s.Dialogs.Confirm("İşlem sürüyor",
                 "Dosyalar hâlâ işleniyor. Durdurulsun mu? O anki dosya bitirilir, kalanlar sonra devam ettirilebilir."))

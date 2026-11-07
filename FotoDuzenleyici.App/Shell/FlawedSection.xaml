@@ -1,0 +1,54 @@
+<UserControl x:Class="FotoDuzenleyici.App.Shell.FlawedSection"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+             xmlns:local="clr-namespace:FotoDuzenleyici.App.Shell">
+    <DockPanel>
+        <DockPanel DockPanel.Dock="Top" Margin="0,0,0,8">
+            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Top">
+                <CheckBox Content="Bulanıklar" IsChecked="{Binding ShowBlurry}" Margin="0,0,12,0" />
+                <CheckBox Content="Karanlıklar" IsChecked="{Binding ShowDark}" />
+            </StackPanel>
+            <StackPanel Margin="0,0,14,0">
+                <TextBlock Text="Kusurlu" Style="{StaticResource H2}" />
+                <TextBlock Style="{StaticResource Small}"
+                           Text="Bulanık ya da çok karanlık kareler. Öntanımlı: hepsi kalır. Kareye tıkla: kalsın ↔ ayıkla; ayıkladıkların _Kusurlu'ya gider. Çift tıkla: tam ekran." />
+                <TextBlock Style="{StaticResource Small}" Margin="0,6,0,0" Text="{Binding CounterText}" />
+            </StackPanel>
+        </DockPanel>
+        <Border Style="{StaticResource Panel}">
+            <Grid>
+                <StackPanel Margin="16,14" Visibility="{Binding Total, Converter={StaticResource HasVis}, ConverterParameter=!}">
+                    <TextBlock Text="{Binding EmptyText}" Style="{StaticResource Muted}" />
+                    <ui:Button Content="Klasörlere ve Düzen seçeneklerine dön" Appearance="Transparent" Margin="-10,6,0,0"
+                               Visibility="{Binding Done, Converter={StaticResource HasVis}, ConverterParameter=!}"
+                               Command="{Binding DataContext.BackCommand, RelativeSource={RelativeSource AncestorType=local:ReviewPage}}" />
+                </StackPanel>
+                <ListBox x:Name="List" ItemsSource="{Binding Visible}" SelectedItem="{Binding Selected}" BorderThickness="0" Background="Transparent" Margin="8"
+                         VirtualizingPanel.IsVirtualizing="True" VirtualizingPanel.VirtualizationMode="Recycling"
+                         ScrollViewer.CanContentScroll="True" ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                    <ListBox.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <ui:VirtualizingWrapPanel ItemSize="152,160" />
+                        </ItemsPanelTemplate>
+                    </ListBox.ItemsPanel>
+                    <ListBox.ItemContainerStyle>
+                        <Style TargetType="ListBoxItem">
+                            <Setter Property="Template">
+                                <Setter.Value>
+                                    <ControlTemplate TargetType="ListBoxItem"><ContentPresenter /></ControlTemplate>
+                                </Setter.Value>
+                            </Setter>
+                        </Style>
+                    </ListBox.ItemContainerStyle>
+                    <ListBox.ItemTemplate>
+                        <DataTemplate>
+                            <!-- Her kusurlu kare tek kareli bir grup -->
+                            <local:FrameCard DataContext="{Binding Rows[0]}" Margin="4" />
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+            </Grid>
+        </Border>
+    </DockPanel>
+</UserControl>
