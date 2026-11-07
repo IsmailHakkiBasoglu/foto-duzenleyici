@@ -1,4 +1,5 @@
 using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
 
 namespace FotoDuzenleyici.ViewModels;
 
@@ -19,6 +20,29 @@ public sealed partial class SimilarReviewViewModel : FrameReviewViewModel
 
     protected override IReadOnlyList<SimilarGroupState> BuildVisible() =>
         OnlyUnreviewed ? Groups.Where(g => !g.Reviewed).ToList() : Groups;
+
+    /// <summary>"Önerileri uygula": önerisi (★) olan gruplarda yalnız o kalır; seri çekimlere dokunulmaz.</summary>
+    [RelayCommand]
+    void ApplySuggestions()
+    {
+        foreach (var g in Groups)
+            if (g.Rows.FirstOrDefault(r => r.Suggested) is { } star) g.KeepOnly(star);
+    }
+
+    /// <summary>"Bulanıkları ayıkla": seri çekimlerde BULANIK kareler; en net kareye ve incelenmiş gruplara dokunulmaz.</summary>
+    [RelayCommand]
+    void ReleaseSoft()
+    {
+        int n = Groups.Sum(g => g.ReleaseSoft());
+        Warn(n == 0 ? "Ayıklanacak bulanık kare yok." : $"{n:N0} bulanık kare ayıklandı.");
+    }
+
+    /// <summary>"Hepsini koru": bütün kareler kalır.</summary>
+    [RelayCommand]
+    void KeepAll()
+    {
+        foreach (var r in Groups.SelectMany(g => g.Rows)) r.Keep = true;
+    }
 
     protected override void Counters(bool listChanged = true)
     {
