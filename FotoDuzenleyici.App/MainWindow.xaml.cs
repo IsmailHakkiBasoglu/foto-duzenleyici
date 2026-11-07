@@ -68,6 +68,8 @@ public partial class MainWindow : Window
     // Hızlı gezinmede yalnızca son seçilen satırın görüntüsü gösterilir.
     int _previewSeq;
     FolderNode? _rootNode;
+    /// <summary>Yeni arayüzden gelen ikinci ve sonraki kaynaklar (ağaçta gösterilmez, tamamı taranır).</summary>
+    List<string> _extraRoots = new();
     CancellationTokenSource? _cts;
     readonly ReviewStore _reviews = new(ReviewStore.DefaultPath);
     readonly ThumbnailLoader _thumbs;
@@ -77,6 +79,10 @@ public partial class MainWindow : Window
     public MainWindow()
     {
         InitializeComponent();
+        // Yeni kabuğun teması (koyu olabilir) uygulama geneline yayılır; Klasik görünüm açık temada sabit kalsın.
+        Resources.MergedDictionaries.Insert(0, new Wpf.Ui.Markup.ThemesDictionary { Theme = Wpf.Ui.Appearance.ApplicationTheme.Light });
+        SetResourceReference(BackgroundProperty, "ApplicationBackgroundBrush");
+        SetResourceReference(ForegroundProperty, "TextFillColorPrimaryBrush");
         _thumbs = new ThumbnailLoader(ThumbnailLoader.DefaultDecode); // arayüz iş parçacığında: sonuçlar buraya gelir
         _saveTimer.Tick += (_, _) => SaveReviews();
         Closing += (_, _) => { if (_saveTimer.IsEnabled) SaveReviews(); };
@@ -106,9 +112,27 @@ public partial class MainWindow : Window
         var dlg = new OpenFolderDialog { Title = "Taranacak ana klasörü seç" };
         if (dlg.ShowDialog() != true) return;
         RootBox.Text = dlg.FolderName;
+        _extraRoots = new();
         if (string.IsNullOrWhiteSpace(DestBox.Text)) DestBox.Text = dlg.FolderName + "_DUZENLI";
         BuildTree(dlg.FolderName);
         await OfferResumeAsync(DestBox.Text.Trim());
+    }
+
+    /// <summary>Yeni arayüzden "Klasik görünümde incele": klasörler ve seçenekler doldurulur, tarama kendiliğinden başlar.</summary>
+    public void StartFrom(FotoDuzenleyici.ViewModels.ClassicStart start)
+    {
+        if (start.Sources.Count == 0) return;
+        RootBox.Text = start.Sources[0];
+        _extraRoots = start.Sources.Skip(1).ToList();
+        RootBox.ToolTip = string.Join(Environment.NewLine, start.Sources);
+        DestBox.Text = start.Archive;
+        OptSourceFolder.IsChecked = start.SourceFolder != SourceFolderMode.None;
+        OptRenameDate.IsChecked = start.RenameWithDate;
+        OptAppendSource.IsChecked = start.AppendSourceToName;
+        OptRawSeparate.IsChecked = start.SeparateRawFolder;
+        OptRecycle.IsChecked = start.RecycleSource;
+        BuildTree(start.Sources[0]);
+        Scan_Click(this, new RoutedEventArgs());
     }
 
     async void PickDest_Click(object s, RoutedEventArgs e)
@@ -147,7 +171,7 @@ public partial class MainWindow : Window
         if (OptPdf.IsChecked == true) kinds.Add(FileKind.Pdf);
         // Hedef (arşiv) de taranır: başka oturumda arşive girmiş bir fotoğrafın kopyası tanınır,
         // arşive elle atılmış dosyalar da aynı adlandırmaya uyar.
-        var roots = OrganizeSession.ScanRoots(new[] { RootBox.Text }, DestBox.Text.Trim()).Where(Directory.Exists).ToList();
+        var roots = OrganizeSession.ScanRoots(new[] { RootBox.Text }.Concat(_extraRoots), DestBox.Text.Trim()).Where(Directory.Exists).ToList();
         return new ScanOptions { Roots = roots, ExcludedFolders = ex, IncludedKinds = kinds };
     }
 
@@ -691,9 +715,6 @@ public partial class MainWindow : Window
         if (_plan == null) return;
         var dlg = new SaveFileDialog { Filter = "CSV|*.csv", FileName = "plan.csv" };
         if (dlg.ShowDialog() != true) return;
-        var sb = new StringBuilder("Eylem;Kaynak;Hedef;Tarih;TarihKaynagi;Kamera;Not\n");
-        foreach (var i in _plan.Items)
-            sb.AppendLine($"{i.Action};{i.File.Path};{i.TargetPath};{i.File.Taken:yyyy-MM-dd HH:mm:ss};{i.File.DateSource};{i.File.Source};{i.Note}");
-        File.WriteAllText(dlg.FileName, sb.ToString(), new UTF8Encoding(true));
+        PlanCsv.Write(_plan, dlg.FileName);
     }
 }

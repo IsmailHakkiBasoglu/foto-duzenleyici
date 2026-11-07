@@ -1,0 +1,492 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Arayüz Taslağı</title>
+<style>
+:root{
+  --bg:#f3f3f3; --card:#ffffff; --line:#e5e5e5; --text:#1b1b1b; --muted:#616161; --soft:#f7f7f7;
+  --accent:#005fb8; --accent-ink:#ffffff; --accent-soft:#e6f0fa;
+  --ok:#0f7b0f; --ok-soft:#e5f3e5; --warn:#9d5d00; --warn-soft:#fff4ce; --bad:#c42b1c; --bad-soft:#fde7e9;
+  --shadow:0 1px 2px rgba(0,0,0,.06),0 2px 8px rgba(0,0,0,.04);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#202020; --card:#2b2b2b; --line:#3a3a3a; --text:#f0f0f0; --muted:#a8a8a8; --soft:#323232;
+    --accent:#4cc2ff; --accent-ink:#002642; --accent-soft:#1d3546;
+    --ok:#6ccb5f; --ok-soft:#21331f; --warn:#fce100; --warn-soft:#3b3417; --bad:#ff99a4; --bad-soft:#442726;
+    --shadow:none;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#202020; --card:#2b2b2b; --line:#3a3a3a; --text:#f0f0f0; --muted:#a8a8a8; --soft:#323232;
+  --accent:#4cc2ff; --accent-ink:#002642; --accent-soft:#1d3546;
+  --ok:#6ccb5f; --ok-soft:#21331f; --warn:#fce100; --warn-soft:#3b3417; --bad:#ff99a4; --bad-soft:#442726;
+  --shadow:none;
+}
+*{box-sizing:border-box}
+body{margin:0;background:#c9c9c9;color:var(--text);font:14px/1.45 "Segoe UI Variable Text","Segoe UI",system-ui,sans-serif}
+.switcher{display:flex;gap:8px;align-items:center;padding:12px 16px;flex-wrap:wrap;background:#1b1b1b;color:#eee;font-size:13px}
+.switcher button{font:inherit;border:1px solid #555;background:#2d2d2d;color:#eee;border-radius:6px;padding:6px 12px;cursor:pointer}
+.switcher button[aria-pressed="true"]{background:#eee;color:#111;border-color:#eee}
+.switcher .sp{flex:1}
+.stage{padding:20px 16px 40px;display:flex;justify-content:center}
+.win{width:1180px;max-width:100%;height:760px;background:var(--bg);border-radius:8px;overflow:hidden;box-shadow:0 10px 40px rgba(0,0,0,.25);display:flex;flex-direction:column;border:1px solid rgba(0,0,0,.2)}
+.win[hidden]{display:none}
+.titlebar{height:40px;display:flex;align-items:center;gap:10px;padding:0 0 0 14px;font-size:12px;color:var(--muted)}
+.titlebar .logo{width:18px;height:18px;border-radius:4px;background:linear-gradient(135deg,#ff9a3c,#e8505b 50%,#5b6ee8)}
+.titlebar .sp{flex:1}
+.titlebar .wb{width:46px;height:40px;display:grid;place-items:center;color:var(--muted)}
+.top{display:flex;align-items:center;gap:16px;padding:6px 20px 14px}
+.steps{display:flex;align-items:center;gap:6px;flex:1;min-width:0}
+.step{display:flex;align-items:center;gap:8px;padding:6px 12px 6px 6px;border-radius:999px;color:var(--muted);white-space:nowrap}
+.step .n{width:24px;height:24px;border-radius:50%;display:grid;place-items:center;font-size:12px;font-weight:600;border:1.5px solid currentColor}
+.step.on{background:var(--accent-soft);color:var(--accent);font-weight:600}
+.step.on .n{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.step.done{color:var(--ok)}
+.step.done .n{background:var(--ok);color:#fff;border-color:var(--ok)}
+.chev{color:var(--line);font-size:18px}
+.ghost{font:inherit;background:transparent;border:1px solid transparent;color:var(--text);border-radius:6px;padding:6px 10px;cursor:pointer;display:inline-flex;gap:6px;align-items:center}
+.ghost:hover{background:var(--soft)}
+.btn{font:inherit;border-radius:6px;padding:7px 16px;border:1px solid var(--line);background:var(--card);color:var(--text);cursor:pointer;display:inline-flex;gap:8px;align-items:center}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);font-weight:600}
+.btn.big{padding:10px 22px;font-size:15px}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.body{flex:1;min-height:0;display:flex}
+.card{background:var(--card);border:1px solid var(--line);border-radius:8px;box-shadow:var(--shadow)}
+.muted{color:var(--muted)}
+.small{font-size:12px}
+h1{font:600 28px/1.2 "Segoe UI Variable Display","Segoe UI",sans-serif;margin:0 0 6px}
+h2{font:600 16px/1.3 "Segoe UI Variable Display","Segoe UI",sans-serif;margin:0}
+.pill{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:600;padding:1px 8px;border-radius:999px}
+.pill.ok{background:var(--ok-soft);color:var(--ok)} .pill.warn{background:var(--warn-soft);color:var(--warn)}
+.pill.bad{background:var(--bad-soft);color:var(--bad)} .pill.info{background:var(--accent-soft);color:var(--accent)}
+
+/* Ekran 1 */
+.welcome{flex:1;overflow:auto;display:flex;justify-content:center;padding:24px 20px}
+.wcol{width:680px;max-width:100%}
+.folder{display:flex;gap:14px;align-items:center;padding:14px 16px;border-top:1px solid var(--line)}
+.folder:first-of-type{border-top:0}
+.ficon{width:40px;height:40px;border-radius:8px;display:grid;place-items:center;background:var(--accent-soft);color:var(--accent);flex:none}
+.folder .t{flex:1;min-width:0}
+.folder .t b{display:block}
+.path{font:12.5px Consolas,monospace;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.empty{border:1.5px dashed var(--line);border-radius:6px;padding:10px 12px;color:var(--muted);font-size:13px}
+.opts{padding:12px 16px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;border-top:1px solid var(--line)}
+.chips{display:flex;gap:6px;flex-wrap:wrap;flex:1}
+.chip{font-size:12px;padding:3px 10px;border-radius:999px;background:var(--soft);border:1px solid var(--line)}
+.cta{display:flex;align-items:center;gap:14px;margin-top:18px}
+.safe{display:flex;gap:10px;margin-top:22px;padding:12px 14px;border-radius:8px;background:var(--ok-soft);color:var(--text);font-size:13px}
+.safe .i{color:var(--ok);font-size:16px}
+.mods{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.mods.soon{grid-template-columns:repeat(2,1fr);margin-top:12px}
+.mod{padding:18px;display:flex;flex-direction:column;gap:8px}
+.mod p{margin:0;flex:1}
+.mod .btn{align-self:flex-start;margin-top:6px}
+.mod.main{border-color:var(--accent)}
+.mod .mi{width:40px;height:40px;border-radius:8px;display:grid;place-items:center;background:var(--accent-soft);font-size:20px}
+.mod.off{opacity:.6;padding:12px 18px}
+.src{display:flex;align-items:center;gap:8px;padding:6px 10px;border:1px solid var(--line);border-radius:6px;margin-top:6px;background:var(--soft)}
+.src .path{flex:1}
+.src .x{color:var(--muted);cursor:pointer}
+.hint{display:flex;gap:8px;margin-top:8px;padding:8px 10px;border-radius:6px;background:var(--accent-soft);font-size:12.5px}
+.recent{margin-top:22px}
+.recent li{list-style:none;display:flex;justify-content:space-between;padding:8px 0;border-top:1px solid var(--line);font-size:13px}
+.recent ul{padding:0;margin:8px 0 0}
+
+/* Ekran 2 */
+.nav{width:232px;flex:none;padding:4px 10px 16px;overflow:auto}
+.nav a{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:6px;color:var(--text);text-decoration:none;position:relative;font-size:13.5px}
+.nav a .c{margin-left:auto;font-size:12px;color:var(--muted)}
+.nav a.on{background:var(--card);box-shadow:var(--shadow)}
+.nav a.on::before{content:"";position:absolute;left:0;top:9px;bottom:9px;width:3px;border-radius:3px;background:var(--accent)}
+.nav .sec{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);padding:14px 10px 4px}
+.nav .dot{width:8px;height:8px;border-radius:50%;background:var(--warn);flex:none}
+.main{flex:1;min-width:0;display:flex;flex-direction:column;padding:0 20px 0 6px}
+.scroll{flex:1;overflow:auto;padding-bottom:16px}
+.tiles{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:2px 0 14px}
+.tile{padding:12px 14px}
+.tile .k{font-size:12px;color:var(--muted)}
+.tile .v{font:600 24px/1.2 "Segoe UI Variable Display","Segoe UI",sans-serif;margin-top:2px}
+.tile .s{font-size:12px;color:var(--muted)}
+.todo{padding:6px 0;margin-bottom:14px}
+.todo .r{display:flex;align-items:center;gap:12px;padding:10px 16px;border-top:1px solid var(--line)}
+.todo .r:first-child{border-top:0}
+.todo .r .t{flex:1}
+table{width:100%;border-collapse:collapse;font-size:13px;table-layout:fixed}
+th{font-weight:600;text-align:left;color:var(--muted);font-size:12px;padding:8px 12px;border-bottom:1px solid var(--line)}
+td{padding:7px 12px;border-bottom:1px solid var(--line);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+tr:last-child td{border-bottom:0}
+tr.sel td{background:var(--accent-soft)}
+.mid{direction:rtl;text-align:left}
+.mid span{direction:ltr;unicode-bidi:bidi-override}
+.tblhead{display:flex;align-items:center;gap:10px;padding:12px 16px;border-bottom:1px solid var(--line)}
+.search{margin-left:auto;border:1px solid var(--line);border-radius:6px;padding:5px 10px;font:inherit;font-size:13px;background:var(--soft);color:var(--text);width:220px}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:6px;overflow:hidden}
+.seg span{padding:4px 10px;font-size:12px;border-left:1px solid var(--line)}
+.seg span:first-child{border-left:0}
+.seg span.on{background:var(--accent-soft);color:var(--accent);font-weight:600}
+.actionbar{display:flex;align-items:center;gap:14px;padding:12px 16px;margin:0 0 14px;border-radius:8px;background:var(--card);border:1px solid var(--line);box-shadow:0 -2px 12px rgba(0,0,0,.05)}
+.actionbar .t{flex:1;font-size:13px}
+.actionbar .t b{font-size:14px}
+/* Ekran 3-5 */
+.sum{padding:4px 0}
+.sum .r{display:flex;align-items:center;gap:14px;padding:11px 16px;border-top:1px solid var(--line)}
+.sum .r:first-child{border-top:0}
+.sum .num{font:600 20px/1 "Segoe UI Variable Display","Segoe UI",sans-serif;width:86px;text-align:right;flex:none}
+.sum .t{flex:1;min-width:0}
+.sum .arrow{color:var(--muted);flex:none}
+.sum .r.dim{color:var(--muted)}
+.checks{padding:4px 0;margin-top:14px}
+.checks .r{display:flex;gap:12px;align-items:flex-start;padding:10px 16px;border-top:1px solid var(--line);font-size:13px}
+.checks .r:first-child{border-top:0}
+.checks .ic{width:20px;height:20px;border-radius:50%;display:grid;place-items:center;font-size:11px;font-weight:700;flex:none;margin-top:1px}
+.ic.ok{background:var(--ok);color:#fff} .ic.warn{background:var(--warn);color:#fff} .ic.info{background:var(--accent);color:var(--accent-ink)}
+.warnbox{display:flex;gap:10px;align-items:center;margin-top:14px;padding:12px 14px;border-radius:8px;background:var(--warn-soft);font-size:13px}
+.warnbox .t{flex:1}
+.bar{height:8px;border-radius:999px;background:var(--soft);border:1px solid var(--line);overflow:hidden}
+.bar i{display:block;height:100%;background:var(--accent);border-radius:999px}
+.prog{padding:20px}
+.prog .big{font:600 40px/1 "Segoe UI Variable Display","Segoe UI",sans-serif}
+.kv{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:14px}
+.kv div{padding:10px 12px;border-radius:6px;background:var(--soft)}
+.kv b{display:block;font-size:18px}
+.done-hero{display:flex;gap:16px;align-items:center;margin-bottom:16px}
+.done-hero .ok{width:52px;height:52px;border-radius:50%;background:var(--ok);color:#fff;display:grid;place-items:center;font-size:26px;flex:none}
+.errs td{font-size:12.5px}
+.next{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:14px}
+.next .card{padding:14px}
+.next p{margin:4px 0 10px}
+.note{max-width:1180px;margin:0 auto;padding:0 16px 30px;color:#222;font-size:13px}
+.note li{margin:4px 0}
+@media (max-width:900px){.tiles{grid-template-columns:repeat(2,1fr)} .nav{display:none} .win{height:auto;min-height:760px}}
+</style>
+</head>
+<body>
+<div class="switcher">
+  <b>Foto Düzenleyici · arayüz taslağı</b>
+  <button data-s="s0" aria-pressed="true">0 · Ana ekran</button>
+  <button data-s="s1" aria-pressed="false">1 · Düzenle: klasörler</button>
+  <button data-s="s2" aria-pressed="false">2 · Tarama sonrası</button>
+  <button data-s="s3" aria-pressed="false">3 · Onayla</button>
+  <button data-s="s4" aria-pressed="false">3a · Uygulanıyor</button>
+  <button data-s="s5" aria-pressed="false">3b · Bitti</button>
+  <span class="sp"></span>
+  <button id="theme">Koyu / açık</button>
+</div>
+
+<div class="stage">
+<!-- EKRAN 0 -->
+<div class="win" id="s0">
+  <div class="titlebar"><span class="logo"></span>Foto Düzenleyici<span class="sp"></span><span class="wb">—</span><span class="wb">☐</span><span class="wb">✕</span></div>
+  <div class="top"><div class="steps"></div><button class="ghost">↶ Geri Al…</button><button class="ghost">⚙</button></div>
+  <div class="welcome"><div class="wcol" style="width:900px">
+    <h1>Ne yapmak istiyorsun?</h1>
+    <p class="muted" style="margin:0 0 18px">Her araç tek başına çalışır; Düzenle, Temizle'nin denetimlerini istersen içine alır.</p>
+    <div class="mods">
+      <div class="card mod main"><div class="mi">🗂</div><h2>Düzenle</h2>
+        <p class="muted small">Dağınık klasörlerdeki fotoğraf ve videoları tarihe göre aylık klasörlere yerleştirir. Arşivde zaten olanın kopyasını tanır.</p>
+        <span class="muted small">Son: Telefon yedeği → D:\Arşiv · 4 Kasım</span>
+        <button class="btn primary">Başla →</button></div>
+      <div class="card mod"><div class="mi">🧹</div><h2>Temizle</h2>
+        <p class="muted small">Bir klasördeki birebir kopyaları, benzer kareleri ve bulanık / karanlık fotoğrafları bulur. Dosyaları tarih klasörüne taşımaz.</p>
+        <span class="muted small">Yinelenen · Benzer · Kusurlu</span>
+        <button class="btn">Başla →</button></div>
+      <div class="card mod"><div class="mi">⛁</div><h2>Yedekle</h2>
+        <p class="muted small">Arşivi ikinci bir diske kopyalar, her dosyayı hash ile doğrular, bozulanı arşivden onarır.</p>
+        <span class="muted small">Son yedek: henüz yok</span>
+        <button class="btn">Başla →</button></div>
+    </div>
+    <div class="mods soon">
+      <div class="card mod off"><h2>İçe aktar</h2><p class="muted small">SD kart ya da telefon takılınca.</p><span class="pill">yakında</span></div>
+      <div class="card mod off"><h2>Zaman çizelgesi</h2><p class="muted small">Ay ay dosya sayısı ve boyut.</p><span class="pill">yakında</span></div>
+    </div>
+  </div></div>
+</div>
+
+<!-- EKRAN 1 -->
+<div class="win" id="s1" hidden>
+  <div class="titlebar"><span class="logo"></span>Foto Düzenleyici<span class="sp"></span><span class="wb">—</span><span class="wb">☐</span><span class="wb">✕</span></div>
+  <div class="top">
+    <div class="steps">
+      <div class="step on"><span class="n">1</span>Klasörleri seç</div><span class="chev">›</span>
+      <div class="step"><span class="n">2</span>Tara ve incele</div><span class="chev">›</span>
+      <div class="step"><span class="n">3</span>Onayla ve uygula</div>
+    </div>
+    <button class="ghost">↶ Geri Al…</button>
+    <button class="ghost">⛁ Yedekle…</button>
+    <button class="ghost">⚙</button>
+  </div>
+  <div class="welcome"><div class="wcol">
+    <h1>Fotoğraf arşivini düzenleyelim</h1>
+    <p class="muted" style="margin:0 0 18px">Dağınık klasörlerdeki fotoğraf ve videoları tarihine göre aylık klasörlere yerleştirir,
+      kopyaları ayırır. Sen onaylamadan hiçbir dosyaya dokunulmaz.</p>
+
+    <div class="card">
+      <div class="folder">
+        <div class="ficon">📁</div>
+        <div class="t"><b>Nereden?</b><span class="muted small">Taranacak klasörler: telefon yedeği, SD kart kopyası, eski arşiv… (birden çok)</span>
+          <div class="src"><span>📁</span><span class="path">D:\Fotoğraflar\Telefon yedeği</span><span class="muted small">3.412 dosya</span><span class="x">✕</span></div>
+          <div class="src"><span>📁</span><span class="path">E:\DCIM</span><span class="muted small">846 dosya</span><span class="x">✕</span></div>
+          <div class="empty" style="margin-top:6px">+ başka klasör sürükle ya da ekle</div></div>
+        <button class="btn">+ Klasör ekle</button>
+      </div>
+      <div class="folder">
+        <div class="ficon">🗂</div>
+        <div class="t"><b>Nereye?</b><span class="muted small">Düzenli arşivin duracağı klasör. Daha önce düzenlediysen aynı klasörü seç.</span>
+          <div class="src"><span>🗂</span><span class="path">D:\Arşiv</span><span class="muted small">9.120 dosya · düzenli</span></div>
+          <div class="hint"><span>ℹ</span><span><b>Arşiv de taranır.</b> Arşivde zaten olan bir fotoğrafın kopyası gelirse tespit edilir;
+            arşive elle atılmış fotoğraflar da aynı adlandırmaya uyar. Tarih ve model adı iki kez yazılmaz.</span></div></div>
+        <button class="btn">Değiştir…</button>
+      </div>
+      <div class="opts">
+        <span class="muted small">Düzen:</span>
+        <div class="chips">
+          <span class="chip">2026-01 › 2026-01-Foto</span><span class="chip">Ada tarih ekle</span><span class="chip">RAW ayrı klasörde</span><span class="chip">PDF dahil</span>
+        </div>
+        <button class="ghost" style="color:var(--accent)">Değiştir</button>
+      </div>
+      <div class="opts">
+        <span class="muted small">Temizle denetimleri:</span>
+        <div class="chips">
+          <span class="chip">☑ Yinelenenleri ayır</span><span class="chip">☑ Benzerleri göster</span><span class="chip">☑ Kusurluları işaretle</span>
+        </div>
+        <button class="ghost" style="color:var(--accent)">Değiştir</button>
+      </div>
+    </div>
+
+    <div class="cta">
+      <button class="btn primary big">Tara ve incele →</button>
+      <span class="muted small">Tarama yalnızca okur; ~4.250 yeni dosya + arşivdeki 9.120 dosya karşılaştırılacak.</span>
+    </div>
+
+    <div class="safe"><span class="i">🛡</span><div><b>Güvenli çalışır.</b> Tarama yalnızca okur. Uygulama aşamasında her dosya
+      kopyalanıp doğrulanır, eski hali Geri Dönüşüm Kutusu'na gider ve her işlem <b>Geri Al</b> ile tersine çevrilebilir.</div></div>
+
+    <div class="recent"><h2 style="font-size:14px">Son kullanılanlar</h2>
+      <ul>
+        <li><span class="path" style="font-size:13px">D:\Fotoğraflar\Telefon yedeği → D:\Arşiv</span><span class="muted">4 Kasım</span></li>
+        <li><span class="path" style="font-size:13px">E:\DCIM → D:\Arşiv</span><span class="muted">30 Ekim</span></li>
+      </ul></div>
+  </div></div>
+</div>
+
+<!-- EKRAN 2 -->
+<div class="win" id="s2" hidden>
+  <div class="titlebar"><span class="logo"></span>Foto Düzenleyici — D:\Arşiv<span class="sp"></span><span class="wb">—</span><span class="wb">☐</span><span class="wb">✕</span></div>
+  <div class="top">
+    <div class="steps">
+      <div class="step done"><span class="n">✓</span>Klasörler</div><span class="chev">›</span>
+      <div class="step on"><span class="n">2</span>Tara ve incele</div><span class="chev">›</span>
+      <div class="step"><span class="n">3</span>Onayla ve uygula</div>
+    </div>
+    <button class="ghost">⟳ Yeniden tara</button>
+    <button class="ghost">↶ Geri Al…</button>
+    <button class="ghost">⚙</button>
+  </div>
+  <div class="body">
+    <nav class="nav">
+      <a href="#" class="on">◧ Özet</a>
+      <a href="#">☰ Plan <span class="c">12.418</span></a>
+      <div class="sec">Karar bekleyenler</div>
+      <a href="#">⧉ Yinelenenler <span class="c">412</span></a>
+      <a href="#"><span class="dot"></span>◫ Benzerler <span class="c">96 / 506</span></a>
+      <a href="#">◌ Kusurlu <span class="c">84</span></a>
+      <div class="sec">Diğer</div>
+      <a href="#">⚠ Okunamayanlar <span class="c">3</span></a>
+      <a href="#">▤ Zaman çizelgesi</a>
+    </nav>
+    <div class="main">
+      <div class="scroll">
+        <div class="tiles">
+          <div class="card tile"><div class="k">Taşınacak</div><div class="v">11.204</div><div class="s">214,6 GB · aylık klasörlere</div></div>
+          <div class="card tile"><div class="k">Zaten yerinde</div><div class="v">930</div><div class="s">dokunulmayacak</div></div>
+          <div class="card tile"><div class="k">Birebir kopya</div><div class="v">1.208</div><div class="s">31,2 GB → _Tekrarlar</div></div>
+          <div class="card tile"><div class="k">Tarih bulunamadı</div><div class="v">46</div><div class="s">→ Tarihsiz klasörü</div></div>
+        </div>
+
+        <div class="card todo">
+          <div class="r"><span class="pill warn">96 grup</span><div class="t"><b>Benzerler'de karar bekleyen seri çekimler</b><div class="muted small">En net kare ◎ ile önerildi; istersen “Bulanıkları ayıkla” ile tek seferde geçebilirsin.</div></div><button class="btn">İncele</button></div>
+          <div class="r"><span class="pill info">412 grup</span><div class="t"><b>Yinelenenlerde korunacak konum</b><div class="muted small">Düzenli klasördeki kopya korunuyor; en büyük grup <span class="path" style="display:inline">18.10.2026 CANON 250D</span> (28,7 GB).</div></div><button class="btn">İncele</button></div>
+          <div class="r"><span class="pill bad">84 kare</span><div class="t"><b>Bulanık ya da çok karanlık</b><div class="muted small">Varsayılan: hepsi kalır. Ayıkladıkların _Kusurlu klasörüne gider.</div></div><button class="btn">İncele</button></div>
+          <div class="r"><span class="pill ok">37 dosya</span><div class="t"><b>İsim çakışması çözüldü</b><div class="muted small">Aynı adlı dosyaların adına tarih eklendi (2024-03-12 IMG_4521.jpg).</div></div><button class="ghost">Göster</button></div>
+        </div>
+
+        <div class="card">
+          <div class="tblhead"><h2>Plan</h2>
+            <div class="seg"><span class="on">Tümü</span><span>Taşı</span><span>Kopya</span><span>Benzer</span><span>Çakışan</span></div>
+            <input class="search" placeholder="Dosya ara…">
+          </div>
+          <table>
+            <colgroup><col style="width:84px"><col><col><col style="width:132px"></colgroup>
+            <thead><tr><th>Eylem</th><th>Kaynak</th><th>Hedef</th><th>Tarih</th></tr></thead>
+            <tbody>
+              <tr><td><span class="pill info">Taşı</span></td><td class="mid"><span>D:\Fotoğraflar\Telefon yedeği\WhatsApp\Media\WhatsApp Images\IMG-20240312-WA0007.jpg</span></td><td class="mid"><span>D:\Arşiv\2024-03\2024-03-Foto\IMG-20240312-WA0007.jpg</span></td><td>2024-03-12 18:04</td></tr>
+              <tr class="sel"><td><span class="pill warn">Kopya</span></td><td class="mid"><span>E:\18.10.2026 CANON 250D\DCIM\100CANON\IMG_4521.CR3</span></td><td class="mid"><span>D:\Arşiv\_Tekrarlar\2024-03\IMG_4521.CR3</span></td><td>2024-03-12 11:20</td></tr>
+              <tr><td><span class="pill info">Taşı</span></td><td class="mid"><span>E:\DCIM\100CANON\IMG_4521.JPG</span></td><td class="mid"><span>D:\Arşiv\2024-03\2024-03-Foto\2024-03-12 IMG_4521.JPG</span></td><td>2024-03-12 11:20</td></tr>
+              <tr><td><span class="pill">Yerinde</span></td><td class="mid"><span>D:\Arşiv\2024-02\2024-02-Video\MVI_3028.MP4</span></td><td class="muted">—</td><td>2024-02-19 23:45</td></tr>
+              <tr><td><span class="pill bad">Kusurlu</span></td><td class="mid"><span>D:\Fotoğraflar\Eski\Kamera\DSC00412.JPG</span></td><td class="mid"><span>D:\Arşiv\_Kusurlu\2019-07\DSC00412.JPG</span></td><td>2019-07-04 21:13</td></tr>
+              <tr><td><span class="pill info">Taşı</span></td><td class="mid"><span>D:\Fotoğraflar\Telefon yedeği\Camera\PXL_20231225_101532771.mp4</span></td><td class="mid"><span>D:\Arşiv\2023-12\2023-12-Video\PXL_20231225_101532771.mp4</span></td><td>2023-12-25 13:15</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="actionbar">
+        <div class="t"><b>Plan hazır: 11.204 dosya taşınacak, 1.208 kopya _Tekrarlar'a ayrılacak.</b>
+          <div class="muted">96 benzer grupta henüz karar yok, onlar olduğu gibi taşınır. Kaynaktaki eski dosyalar Geri Dönüşüm Kutusu'na gider.</div></div>
+        <button class="btn">Planı CSV kaydet</button>
+        <button class="btn primary big">Onay ekranına →</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- EKRAN 3: Onayla -->
+<div class="win" id="s3" hidden>
+  <div class="titlebar"><span class="logo"></span>Foto Düzenleyici — D:\Arşiv<span class="sp"></span><span class="wb">—</span><span class="wb">☐</span><span class="wb">✕</span></div>
+  <div class="top">
+    <div class="steps">
+      <div class="step done"><span class="n">✓</span>Klasörler</div><span class="chev">›</span>
+      <div class="step done"><span class="n">✓</span>Tara ve incele</div><span class="chev">›</span>
+      <div class="step on"><span class="n">3</span>Onayla ve uygula</div>
+    </div>
+    <button class="ghost">↶ Geri Al…</button>
+    <button class="ghost">⚙</button>
+  </div>
+  <div class="welcome"><div class="wcol" style="width:760px">
+    <h1>Uygulamadan önce son bakış</h1>
+    <p class="muted" style="margin:0 0 18px">Aşağıdakiler yapılacak. Hiçbir dosya silinmez; her adım günlüğe yazılır ve Geri Al ile tersine çevrilebilir.</p>
+
+    <div class="card sum">
+      <div class="r"><span class="num">11.204</span><div class="t"><b>Aylık klasörlere taşınacak</b><div class="muted small">214,6 GB · kopyalanır, hash ile doğrulanır, sonra kaynaktaki eski dosya Geri Dönüşüm Kutusu'na gider</div></div><span class="arrow">→ D:\Arşiv\yyyy-MM</span></div>
+      <div class="r"><span class="num">1.208</span><div class="t"><b>Birebir kopya ayrılacak</b><div class="muted small">31,2 GB · her grubun bir kopyası arşivde kalır</div></div><span class="arrow">→ _Tekrarlar</span></div>
+      <div class="r"><span class="num">46</span><div class="t"><b>Tarihi bulunamayanlar</b><div class="muted small">EXIF ya da adında tarih yok</div></div><span class="arrow">→ Tarihsiz</span></div>
+      <div class="r"><span class="num">37</span><div class="t"><b>Adı değişecek</b><div class="muted small">Aynı adlı dosya olduğu için başına tarih eklenir</div></div><button class="ghost" style="color:var(--accent)">Listeyi gör</button></div>
+      <div class="r dim"><span class="num">930</span><div class="t">Zaten yerinde · dokunulmayacak</div></div>
+    </div>
+
+    <div class="warnbox"><span>⚠</span><div class="t"><b>96 benzer grupta karar vermedin.</b> Bunlar ayıklanmadan, olduğu gibi taşınır. Sonra Temizle ile de bakabilirsin.</div><button class="btn">Benzerlere dön</button></div>
+
+    <div class="card checks">
+      <div class="r"><span class="ic ok">✓</span><div><b>Yer yeterli.</b> <span class="muted">D: sürücüsünde 412 GB boş; gereken en fazla 214,6 GB.</span></div></div>
+      <div class="r"><span class="ic info">i</span><div><b>E:\DCIM başka bir diskte.</b> <span class="muted">Bu dosyalar kopyalanıp doğrulanır; E: üzerindeki asılları Geri Dönüşüm Kutusu'na gider. Disk çıkarılırsa işlem güvenle durur.</span></div></div>
+      <div class="r"><span class="ic ok">✓</span><div><b>Yarım kalmış işlem yok.</b> <span class="muted">Önceki düzenleme tamamlanmış.</span></div></div>
+      <div class="r"><span class="ic ok">✓</span><div><b>Günlük dosyası</b> <span class="path" style="display:inline">D:\Arşiv\_Gunluk\duzenleme-20261107-1432.jsonl</span></div></div>
+    </div>
+
+    <div class="cta" style="justify-content:space-between">
+      <button class="btn">← İncelemeye dön</button>
+      <div style="display:flex;gap:10px;align-items:center">
+        <span class="muted small">Tahmini süre ~25 dk</span>
+        <button class="btn primary big">Uygula · 12.458 işlem</button>
+      </div>
+    </div>
+  </div></div>
+</div>
+
+<!-- EKRAN 3a: Uygulanıyor -->
+<div class="win" id="s4" hidden>
+  <div class="titlebar"><span class="logo"></span>Foto Düzenleyici — uygulanıyor %62<span class="sp"></span><span class="wb">—</span><span class="wb">☐</span><span class="wb">✕</span></div>
+  <div class="top">
+    <div class="steps">
+      <div class="step done"><span class="n">✓</span>Klasörler</div><span class="chev">›</span>
+      <div class="step done"><span class="n">✓</span>Tara ve incele</div><span class="chev">›</span>
+      <div class="step on"><span class="n">3</span>Uygulanıyor…</div>
+    </div>
+  </div>
+  <div class="welcome"><div class="wcol" style="width:760px">
+    <h1>Uygulanıyor</h1>
+    <p class="muted" style="margin:0 0 18px">Pencereyi küçültebilirsin. Bilgisayar kapanırsa ya da durdurursan, kaldığı yerden devam edilebilir.</p>
+    <div class="card prog">
+      <div style="display:flex;align-items:baseline;gap:12px;margin-bottom:10px">
+        <span class="big">%62</span><span class="muted">7.724 / 12.458 işlem · 133,1 / 214,6 GB</span>
+        <span style="margin-left:auto" class="muted">~9 dk kaldı · 148 MB/sn</span>
+      </div>
+      <div class="bar"><i style="width:62%"></i></div>
+      <div class="muted small" style="margin-top:10px">Şu an: <span class="path" style="display:inline">E:\DCIM\100CANON\MVI_4602.MP4 → D:\Arşiv\2024-05\2024-05-Video\</span> · doğrulanıyor</div>
+      <div class="kv">
+        <div><span class="muted small">Taşındı</span><b>6.981</b></div>
+        <div><span class="muted small">Kopya ayrıldı</span><b>712</b></div>
+        <div><span class="muted small">Tarihsiz</span><b>29</b></div>
+        <div><span class="muted small">Hata</span><b style="color:var(--bad)">2</b></div>
+      </div>
+    </div>
+    <div class="cta">
+      <button class="btn">⏸ Duraklat</button>
+      <button class="btn">■ Durdur</button>
+      <span class="muted small">Durdur: o anki dosya bitirilir, kalanlar günlükte bekler. Yapılanlar Geri Al ile geri alınabilir.</span>
+    </div>
+  </div></div>
+</div>
+
+<!-- EKRAN 3b: Bitti -->
+<div class="win" id="s5" hidden>
+  <div class="titlebar"><span class="logo"></span>Foto Düzenleyici — D:\Arşiv<span class="sp"></span><span class="wb">—</span><span class="wb">☐</span><span class="wb">✕</span></div>
+  <div class="top">
+    <div class="steps">
+      <div class="step done"><span class="n">✓</span>Klasörler</div><span class="chev">›</span>
+      <div class="step done"><span class="n">✓</span>Tara ve incele</div><span class="chev">›</span>
+      <div class="step done"><span class="n">✓</span>Uygulandı</div>
+    </div>
+    <button class="ghost">↶ Geri Al…</button>
+    <button class="ghost">⚙</button>
+  </div>
+  <div class="welcome"><div class="wcol" style="width:760px">
+    <div class="done-hero"><span class="ok">✓</span><div><h1 style="margin:0">Arşiv düzenlendi</h1>
+      <div class="muted">12.456 işlem tamamlandı · 24 dk · 2 dosya yerinde bırakıldı</div></div></div>
+
+    <div class="tiles" style="grid-template-columns:repeat(4,1fr)">
+      <div class="card tile"><div class="k">Taşındı</div><div class="v">11.202</div><div class="s">hepsi doğrulandı</div></div>
+      <div class="card tile"><div class="k">Kopya ayrıldı</div><div class="v">1.208</div><div class="s">31,2 GB · _Tekrarlar</div></div>
+      <div class="card tile"><div class="k">Tarihsiz</div><div class="v">46</div><div class="s">→ Tarihsiz</div></div>
+      <div class="card tile"><div class="k">Yapılamadı</div><div class="v" style="color:var(--bad)">2</div><div class="s">dosyalar kaynakta duruyor</div></div>
+    </div>
+
+    <div class="card errs">
+      <div class="tblhead"><h2>Yapılamayanlar</h2><span class="muted small">Bu dosyalara dokunulmadı.</span><button class="ghost" style="margin-left:auto;color:var(--accent)">Yeniden dene</button></div>
+      <table>
+        <colgroup><col><col style="width:300px"></colgroup>
+        <tbody>
+          <tr><td class="mid"><span>E:\DCIM\101CANON\IMG_5011.CR3</span></td><td class="muted">Okunamadı (disk hatası olabilir)</td></tr>
+          <tr><td class="mid"><span>D:\Fotoğraflar\Telefon yedeği\Camera\VID_20240601_120455.mp4</span></td><td class="muted">Başka bir program kullanıyor</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="next">
+      <div class="card"><h2>📂 Arşivi aç</h2><p class="muted small">D:\Arşiv Dosya Gezgini'nde açılır.</p><button class="btn">Aç</button></div>
+      <div class="card"><h2>⛁ Yedekle</h2><p class="muted small">Son yedek: henüz yok. Arşivi ikinci diske al.</p><button class="btn primary">Yedekle →</button></div>
+      <div class="card"><h2>↶ Geri Al</h2><p class="muted small">Bu düzenlemenin tamamını geri al.</p><button class="btn">Geri Al…</button></div>
+    </div>
+    <div class="cta"><button class="ghost">Raporu kaydet (CSV)</button><button class="ghost">Ana ekrana dön</button></div>
+  </div></div>
+</div>
+</div>
+
+<div class="note">
+  <b>Taslakla ilgili notlar</b> (gerçek uygulamada görünmez):
+  <ul>
+    <li>Sayılar örnek; teknolojiden bağımsız çizildi. Görünüm Windows 11 / Fluent ölçülerine göre (WPF-UI ile birebir yapılabilir).</li>
+    <li>Her aşamada tek bir mavi ana düğme var: <i>Tara ve incele</i> → <i>Onay ekranına</i> → (3. ekranda) <i>Uygula</i>.</li>
+    <li>Seçenekler artık ekranı kaplamıyor; özet çipler halinde, “Değiştir” ile açılıyor. Klasör ağacı (hariç tutma) “Nereden?” satırında açılır.</li>
+    <li>Uzun yollar ortadan değil baştan kısaltılıyor: dosya adı ve hedef klasör her zaman görünür.</li>
+    <li>Yedekle, Geri Al ve ayarlar sağ üstte, akışın dışında.</li>
+    <li>Onay ekranı (3) dosya listesi göstermez; yalnızca “ne olacak” özeti ve uygulamadan önceki denetimler (yer, yarım işlem, farklı disk). Liste 2. ekranda.</li>
+    <li>Uygularken (3a) <i>Durdur</i> güvenlidir: o anki dosya bitirilir, kalanlar günlükte bekler; uygulama yeniden açılınca “yarım kalan işlem” olarak sunulur.</li>
+    <li>Bitti ekranı (3b) hataları gizlemez; ardından Temizle / Yedekle önerilir ama kendiliğinden başlamaz.</li>
+  </ul>
+</div>
+
+<script>
+document.querySelectorAll('.switcher [data-s]').forEach(b=>b.addEventListener('click',()=>{
+  document.querySelectorAll('.switcher [data-s]').forEach(x=>x.setAttribute('aria-pressed',x===b));
+  ['s0','s1','s2','s3','s4','s5'].forEach(id=>document.getElementById(id).hidden=b.dataset.s!==id);
+}));
+document.getElementById('theme').addEventListener('click',()=>{
+  const r=document.documentElement, dark=r.dataset.theme==='dark'||(!r.dataset.theme&&matchMedia('(prefers-color-scheme: dark)').matches);
+  r.dataset.theme=dark?'light':'dark';
+});
+</script>
+</body>
+</html>

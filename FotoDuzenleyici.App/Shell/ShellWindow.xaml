@@ -1,0 +1,68 @@
+<ui:FluentWindow x:Class="FotoDuzenleyici.App.Shell.ShellWindow"
+                 xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                 xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                 xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+                 xmlns:vm="clr-namespace:FotoDuzenleyici.ViewModels;assembly=FotoDuzenleyici.ViewModels"
+                 xmlns:local="clr-namespace:FotoDuzenleyici.App.Shell"
+                 Title="Foto Düzenleyici" Width="1180" Height="800" MinWidth="900" MinHeight="620"
+                 WindowStartupLocation="CenterScreen"
+                 ExtendsContentIntoTitleBar="True" WindowBackdropType="Mica"
+                 Icon="pack://application:,,,/FotoDuzenleyici;component/app.ico">
+    <ui:FluentWindow.Resources>
+        <ResourceDictionary>
+            <DataTemplate DataType="{x:Type vm:HomeViewModel}"><local:HomePage /></DataTemplate>
+            <DataTemplate DataType="{x:Type vm:OrganizeFlowViewModel}"><local:OrganizeFlowView /></DataTemplate>
+        </ResourceDictionary>
+    </ui:FluentWindow.Resources>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <ui:TitleBar Title="Foto Düzenleyici" Grid.Row="0">
+            <ui:TitleBar.Icon>
+                <ui:ImageIcon Source="pack://application:,,,/FotoDuzenleyici;component/app.ico" />
+            </ui:TitleBar.Icon>
+
+            <ui:TitleBar.TrailingContent>
+                <!-- Sağ üst: akışın dışında kalan işler. TrailingContent içinde olmalı: dışında kalırsa tıklama pencereyi sürükler. -->
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,8,0">
+                    <ui:Button x:Name="HomeButton" Content="Ana ekran" Appearance="Transparent" Command="{Binding GoHomeCommand}"
+                               Icon="{ui:SymbolIcon Home24}" Margin="0,0,4,0" />
+                    <ui:Button x:Name="UndoButton" Content="Geri Al…" Appearance="Transparent" Command="{Binding UndoCommand}"
+                               Icon="{ui:SymbolIcon ArrowUndo24}" Margin="0,0,4,0" />
+                    <ui:Button x:Name="MenuButton" Appearance="Transparent" Icon="{ui:SymbolIcon Settings24}" Click="Menu_Click"
+                               ToolTip="Ayarlar">
+                        <ui:Button.ContextMenu>
+                            <ContextMenu>
+                                <MenuItem Header="Klasik görünüm" Command="{Binding OpenClassicCommand}" />
+                                <Separator />
+                                <MenuItem Header="Tema: sistem" Click="Theme_Click" Tag="Sistem" />
+                                <MenuItem Header="Tema: açık" Click="Theme_Click" Tag="Açık" />
+                                <MenuItem Header="Tema: koyu" Click="Theme_Click" Tag="Koyu" />
+                                <Separator />
+                                <MenuItem x:Name="AboutItem" IsEnabled="False" />
+                            </ContextMenu>
+                        </ui:Button.ContextMenu>
+                    </ui:Button>
+                        </StackPanel>
+            </ui:TitleBar.TrailingContent>
+        </ui:TitleBar>
+
+        <Border Grid.Row="1" Margin="20,0,20,8" Style="{StaticResource Bad}"
+                Visibility="{Binding ErrorMessage, Converter={StaticResource HasVis}}">
+            <DockPanel>
+                <ui:Button DockPanel.Dock="Right" Appearance="Transparent" Icon="{ui:SymbolIcon Dismiss16}"
+                           Command="{Binding DismissErrorCommand}" ToolTip="Kapat" />
+                <ui:SymbolIcon Symbol="ErrorCircle24" Foreground="{DynamicResource SystemFillColorCriticalBrush}" Margin="0,0,10,0" />
+                <TextBlock Text="{Binding ErrorMessage}" TextWrapping="Wrap" VerticalAlignment="Center"
+                           Foreground="{DynamicResource TextFillColorPrimaryBrush}" />
+            </DockPanel>
+        </Border>
+
+        <ContentControl Grid.Row="2" Content="{Binding CurrentPage}" Focusable="False" />
+    </Grid>
+</ui:FluentWindow>

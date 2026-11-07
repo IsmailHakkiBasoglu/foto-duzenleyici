@@ -2,6 +2,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\FotoDuzenleyici.Core\FotoDuzenleyici.Core.csproj" />
+    <ProjectReference Include="..\FotoDuzenleyici.ViewModels\FotoDuzenleyici.ViewModels.csproj" />
   </ItemGroup>
 
   <PropertyGroup>
@@ -11,7 +12,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <UseWPF>true</UseWPF>
     <AssemblyName>FotoDuzenleyici</AssemblyName>
-    <Version>0.1.6</Version>
+    <Version>0.2.0</Version>
     <RuntimeIdentifier>win-x64</RuntimeIdentifier>
     <SelfContained>true</SelfContained>
     <PublishSingleFile>true</PublishSingleFile>
@@ -23,6 +24,10 @@
 
   <ItemGroup>
     <Resource Include="app.ico" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="WPF-UI" Version="4.2.1" />
   </ItemGroup>
 
 </Project>

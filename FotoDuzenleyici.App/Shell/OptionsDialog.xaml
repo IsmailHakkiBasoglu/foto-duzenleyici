@@ -1,0 +1,22 @@
+<ui:FluentWindow x:Class="FotoDuzenleyici.App.Shell.OptionsDialog"
+                 xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                 xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                 xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+                 Title="Düzen seçenekleri" Width="460" SizeToContent="Height" ResizeMode="NoResize"
+                 WindowStartupLocation="CenterOwner" ExtendsContentIntoTitleBar="True" WindowBackdropType="Mica">
+    <StackPanel>
+        <ui:TitleBar Title="Düzen seçenekleri" ShowMinimize="False" ShowMaximize="False" />
+        <StackPanel Margin="20,4,20,20">
+            <TextBlock Text="Klasörler her zaman yyyy-MM › yyyy-MM-Foto / -Video düzeninde açılır." TextWrapping="Wrap"
+                       Foreground="{DynamicResource TextFillColorSecondaryBrush}" Margin="0,0,0,12" />
+            <CheckBox x:Name="SubFolder" Content="Kaynağa göre alt klasör (2026-01-Foto\2026-01-Fuji)" Margin="0,4" />
+            <CheckBox x:Name="RenameWithDate" Content="Dosya adının başına tarih ekle" Margin="0,4" />
+            <CheckBox x:Name="AppendSource" Content="Dosya adına kaynak (kamera) adını ekle" Margin="0,4" />
+            <CheckBox x:Name="RawSeparate" Content="RAW dosyaları ayrı klasörde" Margin="0,4" />
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,18,0,0">
+                <ui:Button Content="Vazgeç" IsCancel="True" Margin="0,0,8,0" />
+                <ui:Button Content="Kaydet" Appearance="Primary" IsDefault="True" Click="Save_Click" />
+            </StackPanel>
+        </StackPanel>
+    </StackPanel>
+</ui:FluentWindow>

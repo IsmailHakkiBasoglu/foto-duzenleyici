@@ -1,0 +1,144 @@
+<UserControl x:Class="FotoDuzenleyici.App.Shell.ConfirmPage"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml">
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <StackPanel MaxWidth="760" Margin="20,4,20,24">
+            <TextBlock Text="Uygulamadan önce son bakış" Style="{StaticResource H1}" />
+            <TextBlock Style="{StaticResource Muted}" Margin="0,0,0,18"
+                       Text="Aşağıdakiler yapılacak. Hiçbir dosya silinmez; her adım günlüğe yazılır ve Geri Al ile tersine çevrilebilir." />
+
+            <Border Style="{StaticResource Panel}">
+                <StackPanel>
+                    <DockPanel Margin="16,11">
+                        <TextBlock DockPanel.Dock="Left" Width="90" TextAlignment="Right" Margin="0,0,14,0" FontSize="20" FontWeight="SemiBold"
+                                   Foreground="{DynamicResource TextFillColorPrimaryBrush}" Text="{Binding Confirm.Summary.MoveCount, StringFormat=N0}" />
+                        <TextBlock DockPanel.Dock="Right" Style="{StaticResource Mono}" VerticalAlignment="Center"
+                                   Text="{Binding Confirm.Archive, StringFormat='→ {0}\\yyyy-MM'}" />
+                        <StackPanel>
+                            <TextBlock Text="Aylık klasörlere taşınacak" FontWeight="SemiBold" Foreground="{DynamicResource TextFillColorPrimaryBrush}" />
+                            <TextBlock Style="{StaticResource Small}" Text="{Binding Confirm.Summary.MoveBytes, Converter={StaticResource Bytes}, StringFormat='{}{0} · kopyalanır, hash ile doğrulanır, sonra kaynaktaki eski dosya kaldırılır'}" />
+                        </StackPanel>
+                    </DockPanel>
+                    <Border Style="{StaticResource Row}">
+                        <DockPanel>
+                            <TextBlock DockPanel.Dock="Left" Width="90" TextAlignment="Right" Margin="0,0,14,0" FontSize="20" FontWeight="SemiBold"
+                                       Foreground="{DynamicResource TextFillColorPrimaryBrush}" Text="{Binding Confirm.Summary.DupCount, StringFormat=N0}" />
+                            <TextBlock DockPanel.Dock="Right" Style="{StaticResource Mono}" VerticalAlignment="Center" Text="→ _Tekrarlar" />
+                            <StackPanel>
+                                <TextBlock Text="Birebir kopya ayrılacak" FontWeight="SemiBold" Foreground="{DynamicResource TextFillColorPrimaryBrush}" />
+                                <TextBlock Style="{StaticResource Small}" Text="{Binding Confirm.Summary.DupBytes, Converter={StaticResource Bytes}, StringFormat='{}{0} · her grubun bir kopyası arşivde kalır'}" />
+                            </StackPanel>
+                        </DockPanel>
+                    </Border>
+                    <Border Style="{StaticResource Row}">
+                        <DockPanel>
+                            <TextBlock DockPanel.Dock="Left" Width="90" TextAlignment="Right" Margin="0,0,14,0" FontSize="20" FontWeight="SemiBold"
+                                       Foreground="{DynamicResource TextFillColorPrimaryBrush}" Text="{Binding Confirm.Summary.Undated, StringFormat=N0}" />
+                            <TextBlock DockPanel.Dock="Right" Style="{StaticResource Mono}" VerticalAlignment="Center" Text="→ Tarihsiz" />
+                            <StackPanel>
+                                <TextBlock Text="Tarihi bulunamayanlar" FontWeight="SemiBold" Foreground="{DynamicResource TextFillColorPrimaryBrush}" />
+                                <TextBlock Style="{StaticResource Small}" Text="EXIF'te ya da adında tarih yok (yukarıdaki taşınacaklara dahil)" />
+                            </StackPanel>
+                        </DockPanel>
+                    </Border>
+                    <Border Style="{StaticResource Row}">
+                        <DockPanel>
+                            <TextBlock DockPanel.Dock="Left" Width="90" TextAlignment="Right" Margin="0,0,14,0" FontSize="20" FontWeight="SemiBold"
+                                       Foreground="{DynamicResource TextFillColorPrimaryBrush}" Text="{Binding Confirm.Summary.Renamed, StringFormat=N0}" />
+                            <StackPanel>
+                                <TextBlock Text="Adı değişecek" FontWeight="SemiBold" Foreground="{DynamicResource TextFillColorPrimaryBrush}" />
+                                <TextBlock Style="{StaticResource Small}" Text="Aynı adlı dosya olduğu için başına tarih eklenir" />
+                            </StackPanel>
+                        </DockPanel>
+                    </Border>
+                    <Border Style="{StaticResource Row}">
+                        <DockPanel>
+                            <TextBlock DockPanel.Dock="Left" Width="90" TextAlignment="Right" Margin="0,0,14,0" FontSize="20"
+                                       Foreground="{DynamicResource TextFillColorSecondaryBrush}" Text="{Binding Confirm.Summary.InPlace, StringFormat=N0}" />
+                            <TextBlock Style="{StaticResource Muted}" VerticalAlignment="Center" Text="Zaten yerinde · dokunulmayacak" />
+                        </DockPanel>
+                    </Border>
+                </StackPanel>
+            </Border>
+
+            <!-- Denetimler -->
+            <Border Style="{StaticResource Panel}" Margin="0,14,0,0">
+                <StackPanel>
+                    <DockPanel Margin="16,10">
+                        <ui:SymbolIcon Margin="0,0,12,0" VerticalAlignment="Top" Symbol="CheckmarkCircle24" Foreground="{DynamicResource SystemFillColorSuccessBrush}"
+                                       Visibility="{Binding Confirm.SpaceOk, Converter={StaticResource BoolVis}}" />
+                        <ui:SymbolIcon Margin="0,0,12,0" VerticalAlignment="Top" Symbol="ErrorCircle24" Foreground="{DynamicResource SystemFillColorCriticalBrush}"
+                                       Visibility="{Binding Confirm.SpaceOk, Converter={StaticResource HasVis}, ConverterParameter=!}" />
+                        <TextBlock TextWrapping="Wrap" Foreground="{DynamicResource TextFillColorPrimaryBrush}"
+                                   Visibility="{Binding Confirm.SpaceKnown, Converter={StaticResource BoolVis}}">
+                            <Run FontWeight="SemiBold" Text="Yer:" />
+                            <Run Text="{Binding Confirm.FreeBytes, Converter={StaticResource Bytes}, Mode=OneWay}" />
+                            <Run Text="boş; gereken en fazla" />
+                            <Run Text="{Binding Confirm.NeedBytes, Converter={StaticResource Bytes}, Mode=OneWay}" /><Run Text="." />
+                        </TextBlock>
+                        <TextBlock TextWrapping="Wrap" Foreground="{DynamicResource TextFillColorPrimaryBrush}"
+                                   Visibility="{Binding Confirm.SpaceKnown, Converter={StaticResource HasVis}, ConverterParameter=!}">
+                            <Run FontWeight="SemiBold" Text="Yer: bilinmiyor." />
+                            <Run Text="Arşivin bulunduğu diskin boş alanı okunamadı (ağ paylaşımı ya da çıkarılmış disk). Gereken en fazla" />
+                            <Run Text="{Binding Confirm.NeedBytes, Converter={StaticResource Bytes}, Mode=OneWay}" /><Run Text="; yer biterse işlem güvenle durur." />
+                        </TextBlock>
+                    </DockPanel>
+                    <Border Style="{StaticResource Row}" Visibility="{Binding Confirm.OtherDriveSources, Converter={StaticResource HasVis}}">
+                        <DockPanel>
+                            <ui:SymbolIcon Margin="0,0,12,0" VerticalAlignment="Top" Symbol="Info24" Foreground="{DynamicResource AccentTextFillColorPrimaryBrush}" />
+                            <StackPanel>
+                                <TextBlock TextWrapping="Wrap" Foreground="{DynamicResource TextFillColorPrimaryBrush}"
+                                           Text="Başka diskteki kaynaklar: dosyalar kopyalanıp doğrulanır, sonra asılları kaldırılır. Disk çıkarılırsa işlem güvenle durur." />
+                                <ItemsControl ItemsSource="{Binding Confirm.OtherDriveSources}">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate><TextBlock Text="{Binding}" Style="{StaticResource Mono}" /></DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </StackPanel>
+                        </DockPanel>
+                    </Border>
+                    <Border Style="{StaticResource Row}" Visibility="{Binding Confirm.Unfinished, Converter={StaticResource HasVis}, ConverterParameter=!}">
+                        <DockPanel>
+                            <ui:SymbolIcon Margin="0,0,12,0" Symbol="CheckmarkCircle24" Foreground="{DynamicResource SystemFillColorSuccessBrush}" />
+                            <TextBlock Foreground="{DynamicResource TextFillColorPrimaryBrush}" Text="Yarım kalmış işlem yok." />
+                        </DockPanel>
+                    </Border>
+                    <Border Style="{StaticResource Row}" Background="{DynamicResource SystemFillColorCautionBackgroundBrush}"
+                            Visibility="{Binding Confirm.Unfinished, Converter={StaticResource HasVis}}">
+                        <DockPanel>
+                            <ui:SymbolIcon Margin="0,0,12,0" VerticalAlignment="Top" Symbol="Warning24" Foreground="{DynamicResource SystemFillColorCautionBrush}" />
+                            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center" Margin="12,0,0,0">
+                                <ui:Button Content="Devam et" Appearance="Primary" Command="{Binding Confirm.ResumeCommand}" Margin="0,0,8,0" />
+                                <ui:Button Content="Vazgeç" Command="{Binding Confirm.AbandonCommand}" />
+                            </StackPanel>
+                            <TextBlock TextWrapping="Wrap" Foreground="{DynamicResource TextFillColorPrimaryBrush}">
+                                <Run FontWeight="SemiBold" Text="Yarım kalmış bir işlem var:" />
+                                <Run Text="{Binding Confirm.UnfinishedRemaining, StringFormat='{}{0:N0} dosya henüz işlenmedi.', Mode=OneWay}" />
+                                <Run Text="Önce devam et ya da vazgeç." Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+                            </TextBlock>
+                        </DockPanel>
+                    </Border>
+                    <Border Style="{StaticResource Row}">
+                        <DockPanel>
+                            <ui:SymbolIcon Margin="0,0,12,0" Symbol="DocumentText24" Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+                            <TextBlock Text="{Binding Confirm.JournalPath, StringFormat='Günlük: {0}'}" Style="{StaticResource Mono}" VerticalAlignment="Center" />
+                        </DockPanel>
+                    </Border>
+                </StackPanel>
+            </Border>
+
+            <CheckBox Margin="0,14,0,0" IsChecked="{Binding Confirm.RecycleSource}"
+                      Content="Kaynaktaki eski dosyalar Geri Dönüşüm Kutusu'na alınsın (önerilir)" />
+
+            <DockPanel Margin="0,18,0,0">
+                <ui:Button DockPanel.Dock="Left" Content="← İncelemeye dön" Command="{Binding BackCommand}" />
+                <ui:Button DockPanel.Dock="Right" Appearance="Primary" FontSize="15" Padding="22,10"
+                           Command="{Binding Confirm.ApplyCommand}">
+                    <TextBlock Text="{Binding Confirm.Summary.ApplyCount, StringFormat='Uygula · {0:N0} işlem'}" />
+                </ui:Button>
+                <TextBlock />
+            </DockPanel>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

@@ -24,6 +24,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\FotoDuzenleyici.Core\FotoDuzenleyici.Core.csproj" />
+    <ProjectReference Include="..\FotoDuzenleyici.ViewModels\FotoDuzenleyici.ViewModels.csproj" />
   </ItemGroup>
 
   <ItemGroup>

@@ -1,0 +1,147 @@
+<UserControl x:Class="FotoDuzenleyici.App.Shell.ReviewPage"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml">
+    <Grid Margin="20,0,20,14">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="220" />
+            <ColumnDefinition Width="*" />
+        </Grid.ColumnDefinitions>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <!-- Yan menü -->
+        <StackPanel Grid.RowSpan="3" Margin="0,0,14,0">
+            <ui:Button Content="‹ Klasörler" Appearance="Transparent" Command="{Binding BackCommand}" Margin="0,0,0,4" />
+            <ui:Button Content="Yeniden tara" Icon="{ui:SymbolIcon ArrowSync24}" Appearance="Transparent" Command="{Binding RescanCommand}" />
+            <TextBlock Text="KARAR BEKLEYENLER" Style="{StaticResource Small}" Margin="10,16,0,6" />
+            <DockPanel Margin="10,4">
+                <TextBlock DockPanel.Dock="Right" Text="{Binding Review.DuplicateGroups, StringFormat=N0}" Style="{StaticResource Small}" />
+                <TextBlock Text="Yinelenenler" Foreground="{DynamicResource TextFillColorPrimaryBrush}" />
+            </DockPanel>
+            <DockPanel Margin="10,4" Opacity="0.55">
+                <TextBlock DockPanel.Dock="Right" Text="klasikte" Style="{StaticResource Small}" />
+                <TextBlock Text="Benzerler" Foreground="{DynamicResource TextFillColorPrimaryBrush}" />
+            </DockPanel>
+            <DockPanel Margin="10,4" Opacity="0.55">
+                <TextBlock DockPanel.Dock="Right" Text="klasikte" Style="{StaticResource Small}" />
+                <TextBlock Text="Kusurlu" Foreground="{DynamicResource TextFillColorPrimaryBrush}" />
+            </DockPanel>
+            <TextBlock Text="DİĞER" Style="{StaticResource Small}" Margin="10,16,0,6" />
+            <DockPanel Margin="10,4">
+                <TextBlock DockPanel.Dock="Right" Text="{Binding Review.ScanErrors.Count, StringFormat=N0}" Style="{StaticResource Small}" />
+                <TextBlock Text="Okunamayanlar" Foreground="{DynamicResource TextFillColorPrimaryBrush}" />
+            </DockPanel>
+            <ui:Button Content="Klasik görünümde incele" Appearance="Transparent" Margin="0,12,0,0"
+                       Command="{Binding DataContext.OpenClassicCommand, RelativeSource={RelativeSource AncestorType=Window}}" />
+        </StackPanel>
+
+        <!-- Özet -->
+        <StackPanel Grid.Column="1">
+            <UniformGrid Columns="4" Margin="0,0,0,12">
+                <Border Style="{StaticResource Panel}" Padding="14,10" Margin="0,0,5,0">
+                    <StackPanel>
+                        <TextBlock Text="Taşınacak" Style="{StaticResource Small}" />
+                        <TextBlock Text="{Binding Review.Summary.MoveCount, StringFormat=N0}" Style="{StaticResource TileValue}" />
+                        <TextBlock Text="{Binding Review.Summary.MoveBytes, Converter={StaticResource Bytes}}" Style="{StaticResource Small}" />
+                    </StackPanel>
+                </Border>
+                <Border Style="{StaticResource Panel}" Padding="14,10" Margin="5,0">
+                    <StackPanel>
+                        <TextBlock Text="Zaten yerinde" Style="{StaticResource Small}" />
+                        <TextBlock Text="{Binding Review.Summary.InPlace, StringFormat=N0}" Style="{StaticResource TileValue}" />
+                        <TextBlock Text="dokunulmayacak" Style="{StaticResource Small}" />
+                    </StackPanel>
+                </Border>
+                <Border Style="{StaticResource Panel}" Padding="14,10" Margin="5,0">
+                    <StackPanel>
+                        <TextBlock Text="Birebir kopya" Style="{StaticResource Small}" />
+                        <TextBlock Text="{Binding Review.Summary.DupCount, StringFormat=N0}" Style="{StaticResource TileValue}" />
+                        <TextBlock Text="{Binding Review.Summary.DupBytes, Converter={StaticResource Bytes}, StringFormat='{}{0} → _Tekrarlar'}" Style="{StaticResource Small}" />
+                    </StackPanel>
+                </Border>
+                <Border Style="{StaticResource Panel}" Padding="14,10" Margin="5,0,0,0">
+                    <StackPanel>
+                        <TextBlock Text="Tarih bulunamadı" Style="{StaticResource Small}" />
+                        <TextBlock Text="{Binding Review.Summary.Undated, StringFormat=N0}" Style="{StaticResource TileValue}" />
+                        <TextBlock Text="→ Tarihsiz klasörü" Style="{StaticResource Small}" />
+                    </StackPanel>
+                </Border>
+            </UniformGrid>
+
+            <Border Style="{StaticResource Panel}" Margin="0,0,0,12">
+                <StackPanel>
+                    <DockPanel Margin="16,10" Visibility="{Binding Review.DuplicateGroups, Converter={StaticResource HasVis}}">
+                        <ui:SymbolIcon Symbol="Copy24" Margin="0,0,12,0" Foreground="{DynamicResource AccentTextFillColorPrimaryBrush}" />
+                        <TextBlock TextWrapping="Wrap" Foreground="{DynamicResource TextFillColorPrimaryBrush}">
+                            <Run FontWeight="SemiBold" Text="{Binding Review.DuplicateGroups, StringFormat='{}{0:N0} yinelenen grup:', Mode=OneWay}" />
+                            <Run Text="düzenli klasördeki ya da en eski kopya korunuyor. Değiştirmek için Klasik görünümü kullan." />
+                        </TextBlock>
+                    </DockPanel>
+                    <Border Style="{StaticResource Row}" Visibility="{Binding Review.Summary.Renamed, Converter={StaticResource HasVis}}">
+                        <DockPanel>
+                            <ui:SymbolIcon Symbol="Rename24" Margin="0,0,12,0" Foreground="{DynamicResource SystemFillColorSuccessBrush}" />
+                            <TextBlock TextWrapping="Wrap" Foreground="{DynamicResource TextFillColorPrimaryBrush}"
+                                       Text="{Binding Review.Summary.Renamed, StringFormat='{}{0:N0} dosyanın adı değişecek: aynı adlı dosya olduğu için başına tarih eklenir.'}" />
+                        </DockPanel>
+                    </Border>
+                    <Border Style="{StaticResource Row}" Visibility="{Binding Review.ScanErrors.Count, Converter={StaticResource HasVis}}">
+                        <DockPanel>
+                            <ui:SymbolIcon Symbol="Warning24" Margin="0,0,12,0" Foreground="{DynamicResource SystemFillColorCautionBrush}" />
+                            <TextBlock TextWrapping="Wrap" Foreground="{DynamicResource TextFillColorPrimaryBrush}"
+                                       Text="{Binding Review.ScanErrors.Count, StringFormat='{}{0:N0} klasör ya da dosya okunamadı; bunlar plana girmedi.'}" />
+                        </DockPanel>
+                    </Border>
+                </StackPanel>
+            </Border>
+        </StackPanel>
+
+        <!-- Plan -->
+        <Border Grid.Column="1" Grid.Row="1" Style="{StaticResource Panel}">
+            <DockPanel>
+                <DockPanel DockPanel.Dock="Top" Margin="16,10">
+                    <TextBlock Text="Plan" Style="{StaticResource H2}" VerticalAlignment="Center" Margin="0,0,14,0" />
+                    <ui:TextBox DockPanel.Dock="Right" Width="220" PlaceholderText="Dosya ara…" Icon="{ui:SymbolIcon Search24}"
+                                Text="{Binding Review.Search, UpdateSourceTrigger=PropertyChanged, Delay=250}" />
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                        <RadioButton Content="Tümü" GroupName="pf" Margin="0,0,10,0" IsChecked="{Binding Review.Filter, Converter={StaticResource EnumBool}, ConverterParameter=All}" />
+                        <RadioButton Content="Taşı" GroupName="pf" Margin="0,0,10,0" IsChecked="{Binding Review.Filter, Converter={StaticResource EnumBool}, ConverterParameter=Move}" />
+                        <RadioButton Content="Kopya" GroupName="pf" Margin="0,0,10,0" IsChecked="{Binding Review.Filter, Converter={StaticResource EnumBool}, ConverterParameter=Duplicate}" />
+                        <RadioButton Content="Yerinde" GroupName="pf" Margin="0,0,10,0" IsChecked="{Binding Review.Filter, Converter={StaticResource EnumBool}, ConverterParameter=InPlace}" />
+                        <RadioButton Content="Adı değişen" GroupName="pf" IsChecked="{Binding Review.Filter, Converter={StaticResource EnumBool}, ConverterParameter=Renamed}" />
+                    </StackPanel>
+                </DockPanel>
+                <DataGrid ItemsSource="{Binding Review.Rows}" AutoGenerateColumns="False" IsReadOnly="True"
+                          EnableRowVirtualization="True" EnableColumnVirtualization="True"
+                          VirtualizingPanel.IsVirtualizing="True" VirtualizingPanel.VirtualizationMode="Recycling"
+                          HeadersVisibility="Column" GridLinesVisibility="None" CanUserAddRows="False"
+                          SelectionMode="Single" BorderThickness="0">
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="Eylem" Width="90" Binding="{Binding Action, Converter={StaticResource ActionName}}" />
+                        <DataGridTextColumn Header="Kaynak" Width="*" Binding="{Binding File.Path, Converter={StaticResource PathTail}, ConverterParameter=60}" />
+                        <DataGridTextColumn Header="Hedef" Width="*" Binding="{Binding TargetPath, Converter={StaticResource PathTail}, ConverterParameter=60}" />
+                        <DataGridTextColumn Header="Tarih" Width="130" Binding="{Binding File.Taken, StringFormat='yyyy-MM-dd HH:mm'}" />
+                    </DataGrid.Columns>
+                </DataGrid>
+            </DockPanel>
+        </Border>
+
+        <!-- Alt çubuk -->
+        <Border Grid.Column="1" Grid.Row="2" Style="{StaticResource Panel}" Padding="16,12" Margin="0,12,0,0">
+            <DockPanel>
+                <ui:Button DockPanel.Dock="Right" Appearance="Primary" Content="Onay ekranına →" FontSize="15" Padding="22,10"
+                           Command="{Binding GoToConfirmCommand}" />
+                <ui:Button DockPanel.Dock="Right" Content="Planı CSV kaydet" Margin="0,0,10,0" Command="{Binding Review.SaveCsvCommand}" />
+                <TextBlock VerticalAlignment="Center" TextWrapping="Wrap" Foreground="{DynamicResource TextFillColorPrimaryBrush}">
+                    <Run FontWeight="SemiBold" Text="{Binding Review.Summary.MoveCount, StringFormat='Plan hazır: {0:N0} dosya taşınacak,', Mode=OneWay}" />
+                    <Run FontWeight="SemiBold" Text="{Binding Review.Summary.DupCount, StringFormat='{}{0:N0} kopya _Tekrarlar’a ayrılacak.', Mode=OneWay}" />
+                    <LineBreak />
+                    <Run Foreground="{DynamicResource TextFillColorSecondaryBrush}" Text="Henüz hiçbir dosya değişmedi." />
+                </TextBlock>
+            </DockPanel>
+        </Border>
+    </Grid>
+</UserControl>

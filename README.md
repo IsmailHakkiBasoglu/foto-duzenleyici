@@ -21,6 +21,11 @@ _Tekrarlar\       (birebir aynı içerikli kopyalar)
 > Windows "bilinmeyen yayıncı" uyarısı verirse: *Ek bilgi → Yine de çalıştır*.
 > (Uygulama henüz dijital olarak imzalı değil.)
 
+Açılışta **Ana ekran** gelir; **Düzenle** dört adımda ilerler: *Klasörler → Tara ve incele → Onayla →
+Uygulanıyor / Bitti*. Benzer ve kusurlu kareleri gözden geçirme, yinelenenlerde korunacak kopyayı seçme
+şimdilik **Klasik görünüm**de (sağ üstteki ⚙ menüsü). Eski pencereyi doğrudan açmak için:
+`FotoDuzenleyici.exe --klasik`.
+
 ## Güvenlik
 
 - Dosyaların içeriği **hiç değiştirilmez**: EXIF/GPS/video metadatası olduğu gibi kalır.
@@ -28,7 +33,7 @@ _Tekrarlar\       (birebir aynı içerikli kopyalar)
   **Geri Dönüşüm Kutusu'na** alınır (kalıcı silme yok).
 - Hedefte var olan hiçbir dosyanın üzerine yazılmaz. İsim çakışmasında tarih eklenir.
 - Her işlem günlüğe yazılır; **Geri Al** ile eski yerine dönülür.
-- Uygulamadan önce mutlaka **Önizleme** gösterilir.
+- Uygulamadan önce mutlaka **Onay** ekranı gösterilir: ne yapılacağı, yer ve yarım kalmış işlem denetimi.
 
 ## Kaynaktan derleme
 
@@ -42,7 +47,8 @@ dotnet test
 ## Proje yapısı
 
 - `FotoDuzenleyici.Core` – tarama, tarih okuma, yinelenen bulma, planlama, güvenli uygulama
-- `FotoDuzenleyici.App` – WPF arayüzü
+- `FotoDuzenleyici.ViewModels` – ekran mantığı (WPF'siz, testli): Ana ekran ve Düzenle akışı
+- `FotoDuzenleyici.App` – WPF arayüzü: yeni kabuk (WPF-UI) ve Klasik görünüm
 - `FotoDuzenleyici.Cli` – rapor aracı; `--apply` verilmedikçe hiçbir dosyaya dokunmaz, `--undo <günlük>` ile geri alır
 - `FotoDuzenleyici.Tests` – birim testleri
 
