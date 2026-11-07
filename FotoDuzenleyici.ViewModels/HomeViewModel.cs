@@ -10,9 +10,12 @@ public sealed partial class HomeViewModel : ObservableObject
     {
         Recent = settings.Recent.ToList();
         LastOrganize = Recent.FirstOrDefault();
+        LastClean = settings.RecentClean.FirstOrDefault();
     }
 
     public RecentPair? LastOrganize { get; }
+    /// <summary>Son temizlenen klasörler (Temizle kartı).</summary>
+    public RecentPair? LastClean { get; }
     public IReadOnlyList<RecentPair> Recent { get; }
 
     /// <summary>null → boş akış; dolu → klasörler önceden seçili.</summary>
@@ -20,4 +23,10 @@ public sealed partial class HomeViewModel : ObservableObject
 
     [RelayCommand]
     void StartOrganize(RecentPair? p) => OrganizeRequested?.Invoke(p);
+
+    /// <summary>null → boş Temizle; dolu → klasörler ve öncelikli klasörler önceden seçili.</summary>
+    public event Action<RecentPair?>? CleanRequested;
+
+    [RelayCommand]
+    void StartClean(RecentPair? p) => CleanRequested?.Invoke(p);
 }

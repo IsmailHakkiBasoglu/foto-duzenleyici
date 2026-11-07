@@ -39,7 +39,15 @@ public sealed partial class ShellViewModel : ObservableObject
     {
         var h = new HomeViewModel(_settings);
         h.OrganizeRequested += StartOrganize;
+        h.CleanRequested += StartClean;
         return h;
+    }
+
+    void StartClean(RecentPair? p)
+    {
+        var f = new OrganizeFlowViewModel(_s, _settings, FlowKind.Clean);
+        if (p is not null) f.Folders.Load(p);
+        CurrentPage = f;
     }
 
     void StartOrganize(RecentPair? p)
@@ -79,7 +87,8 @@ public sealed partial class ShellViewModel : ObservableObject
     {
         if (Locked) { ErrorMessage = "İşlem sürerken Klasik görünüm açılamaz; bitmesini bekle ya da durdur."; return; }
         ClassicStart? start = null;
-        if (Flow?.Folders is { CanScan: true } fo)
+        // Klasik pencerede Temizle yok: Temizle akışından boş açılır.
+        if (Flow?.Folders is { CanScan: true, Kind: FlowKind.Organize } fo)
             start = new ClassicStart(fo.ExistingSources.ToList(), fo.Archive!, _settings.SourceFolder,
                 _settings.RenameWithDate, _settings.AppendSourceToName, _settings.SeparateRawFolder, _settings.RecycleSource);
         // Klasik pencere karar dosyasını açılışta okur: bekleyen kararlar önce yazılsın.
