@@ -33,7 +33,7 @@ taşıma (yeniden kopyalanır, eski yolu da kalır); `_EskiSurumler` / `_Bozuk` 
 - **Yedek kökü:** kullanıcının seçtiği klasör, ör. `F:\Yedek\Arşiv`. Arşiv kökünün içinde ya da
   arşiv kökü yedek kökünün içinde olamaz (iki yönde de reddedilir).
 - **Göreli yol:** dosyanın arşiv köküne göre yolu. Yedekte aynı göreli yolda durur.
-- **Ayrılmış klasörler** (yedek kökünde): `_EskiSurumler`, `_Bozuk`. Arşivde aynı adlı klasör varsa
+- **Ayrılmış klasörler** (yedek kökünde): `_EskiSurumler`, `_Bozuk`, `_Gecici`. Arşivde aynı adlı klasör varsa
   yedeklenirken atlanır; yedek listesi bu klasörlerdeki dosyaları içermez.
 
 ## Bileşenler
@@ -70,10 +70,13 @@ RepairResult Repair(string archiveRoot, string backupRoot, VerifyResult problems
 
 #### Yedekle (`Run`)
 
-1. **Kontroller:** kökler var mı, iç içe değil mi; liste yüklenebiliyor mu. Yedek kökünde artık kalan
-   `*.part` dosyaları silinir. Bunlar yalnızca uygulamanın kendi yarım kopyalarıdır; liste dışıdırlar.
+1. **Kontroller:** kökler var mı, iç içe değil mi (sürücü kökü `E:\` dahil); liste yüklenebiliyor mu.
+   Yedek kökündeki `_Gecici` klasöründe kalmış yarım kopyalar silinir. Bunlar yalnızca uygulamanın
+   kendi geçici dosyalarıdır (GUID adlı); kullanıcının `*.part` dosyalarıyla asla karışmaz.
 2. **Tarama:** arşiv kökündeki tüm dosyalar listelenir. `IncludeDuplicates` kapalıysa
-   `_Tekrarlar\` altı atlanır. Ayrılmış klasör adları da atlanır. Her dosya şunlardan biri olur:
+   `_Tekrarlar\` altı atlanır. Ayrılmış klasör adları (`_EskiSurumler`, `_Bozuk`, `_Gecici`), bağlantı
+   noktaları (junction/symlink) ve gizli+sistem klasörleri (System Volume Information, $RECYCLE.BIN)
+   atlanır. Okunamayan klasör ya da dosya hata olarak kaydedilir, tarama sürer. Her dosya şunlardan biri olur:
    - **yeni:** listede yok;
    - **değişmiş:** listede var ama `Size` ya da `Modified` farklı;
    - **aynı:** ikisi de eşit. Bu dosya okunmaz.
@@ -83,20 +86,21 @@ RepairResult Repair(string archiveRoot, string backupRoot, VerifyResult problems
 3. **Boş alan:** yeni ve değişmiş dosyaların toplam boyutu + %1 pay, yedek diskindeki boş alandan
    büyükse hiçbir şey yapılmaz. Sonuç "yer yetmiyor: X gerekli, Y boş" der.
 4. **Kopyalama** (dosya başına, sırayla):
-   - Değişmişse yedekteki mevcut dosya önce
-     `_EskiSurumler\yyyy-MM-dd\<göreli yol>` yoluna taşınır. Aynı yol varsa sona ` (2)`, ` (3)`… eklenir.
-     Yedekte dosya hiç yoksa taşıma adımı atlanır.
-   - Kaynak okunurken SHA-256 hesaplanır, `<hedef>.part` dosyasına yazılır.
-   - `.part` baştan okunur ve hash'i hesaplanır. Eşleşirse:
-     - son yazılma zamanı kaynağınkine ayarlanır;
-     - dosya gerçek adına çevrilir;
-     - listeye yazılır.
-   - Eşleşmezse `.part` silinir ve bir kez daha denenir. İkinci denemede de eşleşmezse dosya hata
-     olarak raporlanır ve listeye girmez.
+   - Kaynak, başka yazana kapalı açılır (`FileShare.Read`). Boyutu ve zamanı bu tutamaçtan alınır.
+     Okunurken SHA-256 hesaplanır ve `_Gecici\<guid>.part` dosyasına yazılır.
+   - Geçici dosya baştan okunur ve hash'i hesaplanır. Eşleşmezse silinip bir kez daha denenir. İkinci
+     denemede de eşleşmezse dosya hata olarak raporlanır ve listeye girmez.
+   - Eşleşirse hedef yola bakılır:
+     - hedefte **aynı içerik** zaten varsa (ör. önceki çalıştırma listeye yazamadan kesildi) o dosya
+       benimsenir, yeniden kopyalanmaz;
+     - **farklı içerik** varsa önce `_EskiSurumler\yyyy-MM-dd\<göreli yol>` yoluna taşınır. Aynı yol varsa
+       sona ` (2)`, ` (3)`… eklenir.
+   - Son olarak geçici dosyanın zamanı kaynağınkine ayarlanır, gerçek adına taşınır ve listeye yazılır.
+     Kopya başarısız olursa yedekteki mevcut dosya yerinde kalır.
    - Okuma/yazma hatası (dosya kilitli, disk çıkarıldı…) dosyaya özgü hata olur ve sıradakine geçilir.
      Hedef disk yoksa ya da dolduysa yedekleme durur.
-   - Her `SaveEvery` dosyada bir ve sonda liste kaydedilir. İptalde mevcut dosya yarıda bırakılır
-     (`.part` kalır, sonraki çalıştırma temizler), liste kaydedilir.
+   - Her `SaveEvery` dosyada bir ve sonda liste kaydedilir; kaydedilemezse hata olarak raporlanır.
+     İptal büyük bir dosyanın ortasında da çalışır: geçici dosya silinir, liste kaydedilir.
 5. **Sonuç (`BackupResult`):**
    - yeni / değişmiş / aynı / arşivde yok sayıları;
    - kopyalanan bayt;
@@ -163,8 +167,8 @@ bir tane açılır.
 4. Arşivden silinen dosya yedekte ve listede kalır, "arşivde yok" olarak sayılır.
 5. `_Tekrarlar` varsayılan olarak atlanır, `IncludeDuplicates` açıkken kopyalanır.
 6. Hash uyuşmazlığında (test kancasıyla yazım bozulur) dosya iki denemeden sonra hata olur, listeye
-   girmez ve `.part` kalmaz.
-7. Yedek kökünde kalmış `.part` dosyası bir sonraki çalıştırmada silinir.
+   girmez ve `_Gecici` boş kalır.
+7. `_Gecici`'de kalmış yarım kopya bir sonraki çalıştırmada silinir; kullanıcının `*.part` dosyaları yedeklenir ve korunur.
 8. Yer yetmiyorsa (test kancasıyla boş alan küçük verilir) hiçbir dosya kopyalanmaz.
 9. İç içe kökler reddedilir.
 10. İptal: belirli sayıda dosyadan sonra iptal edildiğinde liste o ana kadarki dosyaları içerir.

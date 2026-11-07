@@ -51,30 +51,50 @@ public sealed class RepairResult
 /// <summary>
 /// Arşivi ikinci bir diske artımlı yedekler. Hiçbir şey silinmez: değişen dosyanın eski hali
 /// <c>_EskiSurumler</c>'e taşınır. Her kopya SHA-256 ile doğrulanmadan listeye girmez.
+/// Yarım kopyalar yalnız uygulamanın kendi <c>_Gecici</c> klasöründe durur; kullanıcı dosyalarıyla çakışmaz.
 /// </summary>
 public sealed class ArchiveBackup
 {
     public const string OldVersionsFolder = "_EskiSurumler";
     public const string CorruptFolder = "_Bozuk";
-    const string PartExt = ".part";
+    public const string TempFolder = "_Gecici";
+
+    internal sealed record CopyInfo(string Sha256, long Size, DateTime Modified);
 
     internal Func<string, long> FreeSpace { get; set; } = DefaultFreeSpace;
-    /// <summary>Test kancası: .part yazıldıktan sonra, doğrulamadan önce çağrılır.</summary>
+    /// <summary>Test kancası: geçici kopya yazıldıktan sonra, doğrulamadan önce çağrılır.</summary>
     internal Action<string>? AfterWrite { get; set; }
+    /// <summary>Test kancası: her 1 MB'lık parça yazıldıktan sonra, o ana kadar yazılan baytla çağrılır.</summary>
+    internal Action<long>? OnChunk { get; set; }
     internal Func<DateTime> Today { get; set; } = () => DateTime.Today;
 
     static long DefaultFreeSpace(string root)
     {
-        try { return new DriveInfo(Path.GetPathRoot(Path.GetFullPath(root))!).AvailableFreeSpace; }
-        catch (ArgumentException) { return long.MaxValue; } // UNC vb.: ölçülemiyorsa engelleme
+        try { return new DriveInfo(Path.GetPathRoot(root)!).AvailableFreeSpace; }
+        catch (Exception ex) when (ex is ArgumentException or IOException) { return long.MaxValue; } // UNC vb.: ölçülemiyorsa engelleme
     }
+
+    /// <summary>Tam yol; sondaki ayıracı atar ama sürücü kökünü (<c>E:\</c>) korur.</summary>
+    internal static string Norm(string p) => Path.TrimEndingDirectorySeparator(Path.GetFullPath(p));
+
+    static string WithSep(string p) => p.EndsWith('\\') ? p : p + "\\";
+
+    internal static bool Nested(string a, string b) =>
+        a.Equals(b, StringComparison.OrdinalIgnoreCase) ||
+        b.StartsWith(WithSep(a), StringComparison.OrdinalIgnoreCase) ||
+        a.StartsWith(WithSep(b), StringComparison.OrdinalIgnoreCase);
+
+    static bool IsReserved(string topName) =>
+        topName.Equals(OldVersionsFolder, StringComparison.OrdinalIgnoreCase) ||
+        topName.Equals(CorruptFolder, StringComparison.OrdinalIgnoreCase) ||
+        topName.Equals(TempFolder, StringComparison.OrdinalIgnoreCase);
 
     public BackupResult Run(string archiveRoot, string backupRoot, BackupOptions opt,
         IProgress<BackupProgress>? progress = null, CancellationToken ct = default)
     {
         var res = new BackupResult();
-        var arc = Path.GetFullPath(archiveRoot).TrimEnd('\\');
-        var bak = Path.GetFullPath(backupRoot).TrimEnd('\\');
+        var arc = Norm(archiveRoot);
+        var bak = Norm(backupRoot);
         if (!Directory.Exists(arc)) { res.Blocked = $"Arşiv klasörü bulunamadı: {arc}"; return res; }
         if (Nested(arc, bak)) { res.Blocked = "Yedek klasörü arşiv klasörüyle iç içe olamaz."; return res; }
 
@@ -90,22 +110,27 @@ public sealed class ArchiveBackup
 
         CleanLeftovers(bak);
 
-        var work = new List<(string Rel, string Src, long Size, DateTime Modified, bool Changed)>();
+        var work = new List<(string Rel, string Src, long Size, bool Changed)>();
         var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-        foreach (var src in Directory.EnumerateFiles(arc, "*", SearchOption.AllDirectories)
-                     .OrderBy(p => p, StringComparer.OrdinalIgnoreCase))
+        bool SkipTop(string top) => IsReserved(top) ||
+            (!opt.IncludeDuplicates && top.Equals(opt.DuplicatesFolderName, StringComparison.OrdinalIgnoreCase));
+        foreach (var src in Walk(arc, SkipTop, res.Errors))
         {
             var rel = Path.GetRelativePath(arc, src);
-            if (Skip(rel, opt)) continue;
+            if (rel.Equals(BackupManifest.FileName, StringComparison.OrdinalIgnoreCase)) continue;
+            FileInfo fi;
+            try { fi = new FileInfo(src); _ = fi.Length; }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+            { res.Errors.Add($"{rel}: {ex.Message}"); continue; }
             seen.Add(rel);
-            var fi = new FileInfo(src);
             if (manifest.TryGet(rel, out var e))
             {
                 if (e.Size == fi.Length && e.Modified == fi.LastWriteTimeUtc) { res.Unchanged++; continue; }
-                work.Add((rel, src, fi.Length, fi.LastWriteTimeUtc, true));
+                work.Add((rel, src, fi.Length, true));
             }
-            else work.Add((rel, src, fi.Length, fi.LastWriteTimeUtc, false));
+            else work.Add((rel, src, fi.Length, false));
         }
+        work.Sort((x, y) => StringComparer.OrdinalIgnoreCase.Compare(x.Rel, y.Rel));
         res.MissingInArchive = manifest.Entries.Count(e => !seen.Contains(e.Path));
 
         long need = work.Sum(w => w.Size);
@@ -124,30 +149,31 @@ public sealed class ArchiveBackup
         {
             if (ct.IsCancellationRequested) { res.Cancelled = true; break; }
             var w = work[i];
-            var dst = Path.Combine(bak, w.Rel);
             try
             {
-                // Hedefte dosya varsa (değişmiş ya da liste dışı) üzerine yazılmaz, eski sürüm olarak saklanır.
-                if (File.Exists(dst)) MoveAside(dst, Path.Combine(bak, OldVersionsFolder, Stamp(), w.Rel));
-                if (CopyVerified(w.Src, dst, out var sha, out var err))
+                // Hedefte farklı içerikli bir dosya varsa üzerine yazılmaz, eski sürüm olarak saklanır
+                // (yeni kopya doğrulandıktan sonra; kopya başarısızsa yedekteki mevcut dosya yerinde kalır).
+                var aside = Path.Combine(bak, OldVersionsFolder, Stamp(), w.Rel);
+                if (CopyVerified(w.Src, Path.Combine(bak, w.Rel), aside, bak, ct, out var info, out var err))
                 {
-                    manifest.Set(new BackupEntry(w.Rel, w.Size, w.Modified, sha, DateTime.UtcNow));
+                    manifest.Set(new BackupEntry(w.Rel, info.Size, info.Modified, info.Sha256, DateTime.UtcNow));
                     if (w.Changed) res.Changed++; else res.New++;
-                    res.BytesCopied += w.Size;
+                    res.BytesCopied += info.Size;
                 }
                 else res.Errors.Add($"{w.Rel}: {err}");
             }
+            catch (OperationCanceledException) { res.Cancelled = true; break; }
             catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
             {
                 res.Errors.Add($"{w.Rel}: {ex.Message}");
                 if (Fatal(ex, bak)) { res.Errors.Add("Yedekleme durdu: yedek diski dolu ya da erişilemiyor."); break; }
             }
             bytesDone += w.Size;
-            if ((i + 1) % Math.Max(1, opt.SaveEvery) == 0) manifest.Save();
+            if ((i + 1) % Math.Max(1, opt.SaveEvery) == 0) TrySave(manifest, res.Errors);
             progress?.Report(new BackupProgress(i + 1, work.Count, bytesDone, need, w.Rel));
         }
         if (ct.IsCancellationRequested) res.Cancelled = true;
-        TrySave(manifest, res);
+        TrySave(manifest, res.Errors);
         return res;
     }
 
@@ -155,11 +181,13 @@ public sealed class ArchiveBackup
     public VerifyResult Verify(string backupRoot, IProgress<BackupProgress>? progress = null, CancellationToken ct = default)
     {
         var res = new VerifyResult();
-        var bak = Path.GetFullPath(backupRoot).TrimEnd('\\');
+        var bak = Norm(backupRoot);
         if (!Directory.Exists(bak)) { res.Blocked = $"Yedek klasörü bulunamadı: {bak}"; return res; }
         BackupManifest manifest;
         try { manifest = BackupManifest.Load(bak); }
         catch (InvalidDataException ex) { res.Blocked = ex.Message; return res; }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        { res.Blocked = $"Yedek listesi okunamadı: {ex.Message}"; return res; }
 
         var entries = manifest.Entries.OrderBy(e => e.Path, StringComparer.OrdinalIgnoreCase).ToList();
         long total = entries.Sum(e => e.Size), done = 0;
@@ -186,14 +214,10 @@ public sealed class ArchiveBackup
         }
 
         var known = new HashSet<string>(entries.Select(e => e.Path), StringComparer.OrdinalIgnoreCase);
-        foreach (var f in Directory.EnumerateFiles(bak, "*", SearchOption.AllDirectories))
+        foreach (var f in Walk(bak, IsReserved, res.Errors))
         {
             var rel = Path.GetRelativePath(bak, f);
-            var first = rel.Split('\\')[0];
-            if (first.Equals(OldVersionsFolder, StringComparison.OrdinalIgnoreCase) ||
-                first.Equals(CorruptFolder, StringComparison.OrdinalIgnoreCase) ||
-                rel.Equals(BackupManifest.FileName, StringComparison.OrdinalIgnoreCase) ||
-                rel.EndsWith(PartExt, StringComparison.OrdinalIgnoreCase)) continue;
+            if (rel.Equals(BackupManifest.FileName, StringComparison.OrdinalIgnoreCase)) continue;
             if (!known.Contains(rel)) res.NotInManifest++;
         }
         return res;
@@ -207,8 +231,8 @@ public sealed class ArchiveBackup
         IProgress<BackupProgress>? progress = null, CancellationToken ct = default)
     {
         var res = new RepairResult();
-        var arc = Path.GetFullPath(archiveRoot).TrimEnd('\\');
-        var bak = Path.GetFullPath(backupRoot).TrimEnd('\\');
+        var arc = Norm(archiveRoot);
+        var bak = Norm(backupRoot);
         if (Nested(arc, bak)) { res.Errors.Add("Yedek klasörü arşiv klasörüyle iç içe olamaz."); return res; }
         BackupManifest manifest;
         try { manifest = BackupManifest.Load(bak); }
@@ -220,24 +244,24 @@ public sealed class ArchiveBackup
         for (int i = 0; i < list.Count; i++)
         {
             if (ct.IsCancellationRequested) break;
-            var (e, status) = list[i];
+            var (e, _) = list[i];
             var src = Path.Combine(arc, e.Path);
-            var dst = Path.Combine(bak, e.Path);
             try
             {
                 if (!File.Exists(src)) res.NotRepaired.Add($"{e.Path}: arşivde artık yok");
                 else if (HashFile(src) != e.Sha256) res.NotRepaired.Add($"{e.Path}: arşivdeki dosya yedeklendikten sonra değişmiş");
                 else
                 {
-                    if (File.Exists(dst)) MoveAside(dst, Path.Combine(bak, CorruptFolder, Stamp(), e.Path));
-                    if (CopyVerified(src, dst, out var sha, out var err))
+                    var aside = Path.Combine(bak, CorruptFolder, Stamp(), e.Path);
+                    if (CopyVerified(src, Path.Combine(bak, e.Path), aside, bak, ct, out var info, out var err))
                     {
-                        manifest.Set(e with { Sha256 = sha, Modified = File.GetLastWriteTimeUtc(src), BackedUp = DateTime.UtcNow });
+                        manifest.Set(e with { Sha256 = info.Sha256, Size = info.Size, Modified = info.Modified, BackedUp = DateTime.UtcNow });
                         res.Repaired++;
                     }
                     else res.Errors.Add($"{e.Path}: {err}");
                 }
             }
+            catch (OperationCanceledException) { break; }
             catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
             {
                 res.Errors.Add($"{e.Path}: {ex.Message}");
@@ -245,55 +269,73 @@ public sealed class ArchiveBackup
             done += e.Size;
             progress?.Report(new BackupProgress(i + 1, list.Count, done, total, e.Path));
         }
-        try { manifest.Save(); }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
-        { res.Errors.Add($"Yedek listesi kaydedilemedi: {ex.Message}"); }
+        TrySave(manifest, res.Errors);
         return res;
     }
 
     /// <summary>
-    /// <paramref name="src"/>'yi <c>dst.part</c>'a kopyalar, yazılanı yeniden okuyup hash'ini karşılaştırır;
-    /// eşleşirse zamanını kaynağınkine ayarlayıp gerçek adına çevirir. İki denemede de eşleşmezse false.
+    /// <paramref name="src"/>'yi <c>_Gecici</c> altına kopyalar, yazılanı yeniden okuyup hash'ini karşılaştırır.
+    /// Eşleşirse: hedefte aynı içerik zaten varsa onu benimser; farklı içerik varsa onu <paramref name="aside"/>'a
+    /// taşır; sonra kopyayı hedefe koyar. Boyut ve zaman, okunan dosya tutamacından alınır (okuma sırasında
+    /// başka yazan olamaz). İki denemede de hash eşleşmezse false.
     /// </summary>
-    internal bool CopyVerified(string src, string dst, out string sha, out string? error)
+    internal bool CopyVerified(string src, string dst, string aside, string bak, CancellationToken ct,
+        out CopyInfo info, out string? error)
     {
-        sha = ""; error = null;
-        Directory.CreateDirectory(Path.GetDirectoryName(dst)!);
-        var part = dst + PartExt;
+        info = null!; error = null;
+        var tmpDir = Path.Combine(bak, TempFolder);
+        Directory.CreateDirectory(tmpDir);
+        var tmp = Path.Combine(tmpDir, Guid.NewGuid().ToString("N") + ".part");
         try
         {
             for (int attempt = 0; attempt < 2; attempt++)
             {
                 string srcHash;
+                long size;
+                DateTime modified;
                 using (var input = new FileStream(src, FileMode.Open, FileAccess.Read, FileShare.Read, 1 << 20, FileOptions.SequentialScan))
-                using (var output = new FileStream(part, FileMode.Create, FileAccess.Write, FileShare.None, 1 << 20))
-                using (var h = IncrementalHash.CreateHash(HashAlgorithmName.SHA256))
                 {
+                    size = input.Length;
+                    modified = File.GetLastWriteTimeUtc(input.SafeFileHandle);
+                    using var output = new FileStream(tmp, FileMode.Create, FileAccess.Write, FileShare.None, 1 << 20);
+                    using var h = IncrementalHash.CreateHash(HashAlgorithmName.SHA256);
                     var buf = new byte[1 << 20];
+                    long written = 0;
                     int n;
                     while ((n = input.Read(buf, 0, buf.Length)) > 0)
                     {
+                        ct.ThrowIfCancellationRequested();
                         h.AppendData(buf, 0, n);
                         output.Write(buf, 0, n);
+                        written += n;
+                        OnChunk?.Invoke(written);
                     }
+                    ct.ThrowIfCancellationRequested();
                     srcHash = Hex(h.GetHashAndReset());
                 }
-                AfterWrite?.Invoke(part);
-                if (HashFile(part) == srcHash)
+                AfterWrite?.Invoke(tmp);
+                if (HashFile(tmp) == srcHash)
                 {
-                    File.SetLastWriteTimeUtc(part, File.GetLastWriteTimeUtc(src));
-                    File.Move(part, dst, overwrite: false);
-                    sha = srcHash;
+                    info = new CopyInfo(srcHash, size, modified);
+                    Directory.CreateDirectory(Path.GetDirectoryName(dst)!);
+                    if (File.Exists(dst))
+                    {
+                        // Önceki bir çalıştırma kopyalayıp listeye yazamadan kesildiyse aynı içerik zaten orada.
+                        if (HashFile(dst) == srcHash) return true;
+                        MoveAside(dst, aside);
+                    }
+                    File.SetLastWriteTimeUtc(tmp, modified);
+                    File.Move(tmp, dst, overwrite: false);
                     return true;
                 }
-                File.Delete(part);
+                File.Delete(tmp);
             }
             error = "kopya doğrulanamadı (hash iki denemede de uyuşmadı)";
             return false;
         }
         finally
         {
-            try { if (File.Exists(part)) File.Delete(part); } catch (IOException) { } catch (UnauthorizedAccessException) { }
+            TryDelete(tmp);
         }
     }
 
@@ -321,27 +363,65 @@ public sealed class ArchiveBackup
         return target;
     }
 
-    bool Skip(string rel, BackupOptions opt)
+    /// <summary>
+    /// Klasör ağacını gezer. Okunamayan klasör hata olarak kaydedilir ve atlanır; bağlantı noktaları
+    /// (junction/symlink) ile gizli+sistem klasörleri (System Volume Information, $RECYCLE.BIN) gezilmez.
+    /// <paramref name="skipTop"/> kökün hemen altındaki klasör adları için çağrılır.
+    /// </summary>
+    static IEnumerable<string> Walk(string root, Func<string, bool> skipTop, List<string> errors)
     {
-        var first = rel.Split('\\')[0];
-        if (first.Equals(OldVersionsFolder, StringComparison.OrdinalIgnoreCase) ||
-            first.Equals(CorruptFolder, StringComparison.OrdinalIgnoreCase)) return true;
-        if (!opt.IncludeDuplicates && first.Equals(opt.DuplicatesFolderName, StringComparison.OrdinalIgnoreCase)) return true;
-        return rel.Equals(BackupManifest.FileName, StringComparison.OrdinalIgnoreCase);
+        var stack = new Stack<string>();
+        stack.Push(root);
+        while (stack.Count > 0)
+        {
+            var dir = stack.Pop();
+            string[] files, dirs;
+            try
+            {
+                files = Directory.GetFiles(dir);
+                dirs = Directory.GetDirectories(dir);
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+            {
+                errors.Add($"{Path.GetRelativePath(root, dir)}: klasör okunamadı: {ex.Message}");
+                continue;
+            }
+            foreach (var f in files) yield return f;
+            bool atRoot = dir.Equals(root, StringComparison.OrdinalIgnoreCase);
+            foreach (var d in dirs)
+            {
+                if (atRoot && skipTop(Path.GetFileName(d))) continue;
+                FileAttributes a;
+                try { a = File.GetAttributes(d); }
+                catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+                {
+                    errors.Add($"{Path.GetRelativePath(root, d)}: klasör okunamadı: {ex.Message}");
+                    continue;
+                }
+                if (a.HasFlag(FileAttributes.ReparsePoint)) continue;
+                if (a.HasFlag(FileAttributes.Hidden) && a.HasFlag(FileAttributes.System)) continue;
+                stack.Push(d);
+            }
+        }
     }
 
-    internal static bool Nested(string a, string b) =>
-        a.Equals(b, StringComparison.OrdinalIgnoreCase) ||
-        b.StartsWith(a + "\\", StringComparison.OrdinalIgnoreCase) ||
-        a.StartsWith(b + "\\", StringComparison.OrdinalIgnoreCase);
-
-    /// <summary>Uygulamanın kendi yarım kopyaları (.part) ve yarım kalmış liste kaydı (.tmp).</summary>
+    /// <summary>Uygulamanın kendi yarım kopyaları (<c>_Gecici</c>) ve yarım kalmış liste kaydı (.tmp).</summary>
     static void CleanLeftovers(string bak)
     {
-        foreach (var p in Directory.EnumerateFiles(bak, "*" + PartExt, SearchOption.AllDirectories))
-            try { File.Delete(p); } catch (IOException) { } catch (UnauthorizedAccessException) { }
-        var tmp = Path.Combine(bak, BackupManifest.FileName + ".tmp");
-        try { if (File.Exists(tmp)) File.Delete(tmp); } catch (IOException) { }
+        var tmpDir = Path.Combine(bak, TempFolder);
+        try
+        {
+            if (Directory.Exists(tmpDir))
+                foreach (var p in Directory.GetFiles(tmpDir)) TryDelete(p);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { }
+        TryDelete(Path.Combine(bak, BackupManifest.FileName + ".tmp"));
+    }
+
+    static void TryDelete(string path)
+    {
+        try { if (File.Exists(path)) File.Delete(path); }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { }
     }
 
     static bool Fatal(Exception ex, string bak)
@@ -351,11 +431,11 @@ public sealed class ArchiveBackup
         return code is 112 or 39 or 21 || !Directory.Exists(bak);
     }
 
-    static void TrySave(BackupManifest m, BackupResult res)
+    static void TrySave(BackupManifest m, List<string> errors)
     {
         try { m.Save(); }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
-        { res.Errors.Add($"Yedek listesi kaydedilemedi: {ex.Message}"); }
+        { errors.Add($"Yedek listesi kaydedilemedi: {ex.Message}"); }
     }
 
     static string Gb(long b) => b >= 1L << 30 ? $"{b / (double)(1L << 30):0.0} GB" : $"{b / (double)(1L << 20):0.0} MB";

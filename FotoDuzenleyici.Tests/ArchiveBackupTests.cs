@@ -147,7 +147,7 @@ public class ArchiveBackupTests : IDisposable
         var b = New();
         b.AfterWrite = part =>
         {
-            if (!part.EndsWith("a.jpg.part")) return;
+            if (File.ReadAllText(part) != "aaaa") return;
             calls++;
             File.AppendAllText(part, "X");
         };
@@ -158,20 +158,23 @@ public class ArchiveBackupTests : IDisposable
         Assert.Single(r.Errors);
         Assert.Contains("a.jpg", r.Errors[0]);
         Assert.False(File.Exists(Bak("a.jpg")));
-        Assert.Empty(Directory.GetFiles(_bak, "*.part", SearchOption.AllDirectories));
+        Assert.Empty(Directory.GetFiles(Bak(ArchiveBackup.TempFolder)));
         var m = BackupManifest.Load(_bak);
         Assert.False(m.TryGet("a.jpg", out _));
         Assert.True(m.TryGet("b.jpg", out _));
     }
 
     [Fact]
-    public void LeftoverPart_IsDeletedOnNextRun()
+    public void LeftoverTemp_IsDeletedOnNextRun_UserPartFileUntouched()
     {
         Arc("a.jpg", "a");
+        Directory.CreateDirectory(Bak(ArchiveBackup.TempFolder));
+        File.WriteAllText(Bak(@"_Gecici\0123.part"), "yarım");
         Directory.CreateDirectory(Bak("eski"));
-        File.WriteAllText(Bak(@"eski\x.jpg.part"), "yarım");
+        File.WriteAllText(Bak(@"eski\x.jpg.part"), "kullanicinin");
         Run();
-        Assert.False(File.Exists(Bak(@"eski\x.jpg.part")));
+        Assert.False(File.Exists(Bak(@"_Gecici\0123.part")));
+        Assert.True(File.Exists(Bak(@"eski\x.jpg.part")));
     }
 
     [Fact]
@@ -289,6 +292,150 @@ public class ArchiveBackupTests : IDisposable
         Assert.Single(r.NotRepaired);
         Assert.Equal("aaXa", File.ReadAllText(Bak("a.jpg")));
         Assert.False(Directory.Exists(Bak("_Bozuk")));
+    }
+
+    // ---- Gözden geçirme bulguları ----
+
+    [Fact]
+    public void UserPartFiles_AreBackedUpAndKept()
+    {
+        Arc("video.mp4.part", "indirilen");
+        Arc("x.jpg", "foto");
+        Arc("x.jpg.part", "kullanicinin");
+        Run();
+        var r = Run();
+        Assert.Empty(r.Errors);
+        Assert.Equal(3, r.Unchanged);
+        Assert.Equal("indirilen", File.ReadAllText(Bak("video.mp4.part")));
+        Assert.Equal("foto", File.ReadAllText(Bak("x.jpg")));
+        Assert.Equal("kullanicinin", File.ReadAllText(Bak("x.jpg.part")));
+    }
+
+    [Fact]
+    public void DriveRoot_IsNormalized_AndNestingDetected()
+    {
+        Assert.Equal(@"E:\", ArchiveBackup.Norm(@"E:\"));
+        Assert.Equal(@"D:\Arsiv", ArchiveBackup.Norm(@"D:\Arsiv\"));
+        Assert.True(ArchiveBackup.Nested(ArchiveBackup.Norm(@"E:\"), ArchiveBackup.Norm(@"E:\Yedek")));
+        Assert.False(ArchiveBackup.Nested(@"D:\Arsiv", @"D:\Arsiv2"));
+    }
+
+    [Fact]
+    public void LockedSource_ChangedFile_ErrorButCurrentBackupStays()
+    {
+        Arc("a.jpg", "v1");
+        Arc("b.jpg", "b1");
+        Run();
+        var a = Arc("a.jpg", "v2-uzun");
+        Arc("b.jpg", "b2-uzun");
+        BackupResult r;
+        using (new FileStream(a, FileMode.Open, FileAccess.ReadWrite, FileShare.None))
+            r = Run();
+        Assert.Single(r.Errors);
+        Assert.Equal("v1", File.ReadAllText(Bak("a.jpg")));
+        Assert.False(File.Exists(Bak(@"_EskiSurumler\2026-11-07\a.jpg")));
+        Assert.Equal("b2-uzun", File.ReadAllText(Bak("b.jpg")));
+
+        var again = Run();
+        Assert.Empty(again.Errors);
+        Assert.Equal("v2-uzun", File.ReadAllText(Bak("a.jpg")));
+    }
+
+    [Fact]
+    public void ReadOnlySource_IsBackedUp_AndChangesFollow()
+    {
+        var a = Arc("a.jpg", "v1");
+        File.SetAttributes(a, FileAttributes.ReadOnly);
+        Assert.Empty(Run().Errors);
+        Arc("a.jpg", "v2-uzun");
+        File.SetAttributes(a, FileAttributes.ReadOnly);
+        var r = Run();
+        Assert.Empty(r.Errors);
+        Assert.Equal("v2-uzun", File.ReadAllText(Bak("a.jpg")));
+    }
+
+    [Fact]
+    public void LongPaths_NoCrash()
+    {
+        var rel = Path.Combine(new string('k', 90), new string('l', 90), new string('m', 60) + ".jpg");
+        Arc(rel, "v1");
+        Assert.Empty(Run().Errors);
+        Arc(rel, "v2-uzun");
+        var r = Run();
+        Assert.Empty(r.Errors);
+        Assert.True(Path.Combine(_bak, @"_EskiSurumler\2026-11-07", rel).Length > 260);
+        Assert.Equal("v1", File.ReadAllText(Path.Combine(_bak, @"_EskiSurumler\2026-11-07", rel)));
+    }
+
+    [Fact]
+    public void Cancel_DuringLargeFileCopy_LeavesNothingHalfDone()
+    {
+        Arc("buyuk.mp4", new string('v', 3 << 20));
+        using var cts = new CancellationTokenSource();
+        var b = New();
+        b.OnChunk = _ => cts.Cancel();
+        var r = b.Run(_arc, _bak, new BackupOptions(), null, cts.Token);
+        Assert.True(r.Cancelled);
+        Assert.False(File.Exists(Bak("buyuk.mp4")));
+        Assert.Empty(Directory.GetFiles(_bak, "*", SearchOption.AllDirectories)
+            .Where(f => !f.EndsWith(BackupManifest.FileName)));
+        Assert.False(BackupManifest.Load(_bak).TryGet("buyuk.mp4", out _));
+    }
+
+    [Fact]
+    public void IdenticalFileAlreadyInBackup_IsAdopted_NotDuplicated()
+    {
+        Arc(@"x\a.jpg", "aynisi");
+        Directory.CreateDirectory(Bak("x"));
+        File.WriteAllText(Bak(@"x\a.jpg"), "aynisi");
+        var r = Run();
+        Assert.Equal(1, r.New);
+        Assert.False(Directory.Exists(Bak("_EskiSurumler")));
+        Assert.True(BackupManifest.Load(_bak).TryGet(@"x\a.jpg", out _));
+    }
+
+    [Fact]
+    public void HiddenSystemFolder_IsSkipped()
+    {
+        Arc(@"System Volume Information\x.dat", "sistem");
+        File.SetAttributes(Path.Combine(_arc, "System Volume Information"), FileAttributes.Directory | FileAttributes.Hidden | FileAttributes.System);
+        Arc("a.jpg", "a");
+        var r = Run();
+        Assert.Empty(r.Errors);
+        Assert.Equal(1, r.New);
+        Assert.False(File.Exists(Bak(@"System Volume Information\x.dat")));
+    }
+
+    [Fact]
+    public void Repair_UpdatesSize_NoEndlessCorruptLoop()
+    {
+        Arc("a.jpg", "aaaa");
+        Run();
+        var m = BackupManifest.Load(_bak);
+        m.TryGet("a.jpg", out var e);
+        m.Set(e with { Size = e.Size + 1 });
+        m.Save();
+        var b = New();
+        var v = b.Verify(_bak);
+        Assert.Single(v.Problems);
+        Assert.Equal(1, b.Repair(_arc, _bak, v).Repaired);
+        Assert.Empty(b.Verify(_bak).Problems);
+    }
+
+    [Fact]
+    public void ManifestLockedMidRun_RecordedAsError_NoCrash()
+    {
+        for (int i = 0; i < 3; i++) Arc($"f{i}.jpg", "x" + i);
+        FileStream? hold = null;
+        var p = new SyncProgress(v =>
+        {
+            if (v.Done == 1) hold = new FileStream(Bak(BackupManifest.FileName), FileMode.Open, FileAccess.Read, FileShare.None);
+        });
+        BackupResult r;
+        try { r = New().Run(_arc, _bak, new BackupOptions { SaveEvery = 1 }, p); }
+        finally { hold?.Dispose(); }
+        Assert.Contains(r.Errors, e => e.Contains("kaydedilemedi"));
+        Assert.Equal(3, Directory.GetFiles(_bak, "f*.jpg").Length);
     }
 
     [Fact]
