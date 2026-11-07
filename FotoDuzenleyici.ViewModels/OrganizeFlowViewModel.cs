@@ -62,6 +62,20 @@ public sealed partial class OrganizeFlowViewModel : ObservableObject
         finally { IsBusy = false; _cts = null; }
     }
 
+    [ObservableProperty] private ConfirmStepViewModel? confirm;
+
+    [RelayCommand]
+    void GoToConfirm()
+    {
+        if (IsBusy || Review is null) return;
+        Confirm = new ConfirmStepViewModel(Review.Plan, Review.Session.PlanOptions, Review.Session.Sources, _s, _settings, DateTime.Now);
+        OnConfirmCreated(Confirm);
+        Step = FlowStep.Confirm;
+    }
+
+    /// <summary>Uygulama adımı (Görev 5) olaylara buradan bağlanır.</summary>
+    partial void OnConfirmCreated(ConfirmStepViewModel c);
+
     [RelayCommand]
     void Cancel() => _cts?.Cancel();
 

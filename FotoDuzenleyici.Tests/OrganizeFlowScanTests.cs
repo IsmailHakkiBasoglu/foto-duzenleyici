@@ -109,6 +109,22 @@ public class OrganizeFlowScanTests : IDisposable
     }
 
     [Fact]
+    public async Task GoToConfirm_ThenBack_ToReview()
+    {
+        Make(@"kaynak\a.pdf", "A");
+        var vm = Flow(new[] { "kaynak" }, "arsiv");
+        await vm.ScanCommand.ExecuteAsync(null);
+
+        vm.GoToConfirmCommand.Execute(null);
+        Assert.Equal(FlowStep.Confirm, vm.Step);
+        Assert.NotNull(vm.Confirm);
+        Assert.Equal(1, vm.Confirm!.Summary.MoveCount);
+
+        vm.BackCommand.Execute(null);
+        Assert.Equal(FlowStep.Review, vm.Step);
+    }
+
+    [Fact]
     public async Task Review_SaveCsv_WritesToPickedPath()
     {
         Make(@"kaynak\a.pdf", "A");
