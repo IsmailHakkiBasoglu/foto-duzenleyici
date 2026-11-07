@@ -147,6 +147,8 @@ public sealed partial class ReviewStepViewModel : ObservableObject
     [RelayCommand]
     void SaveCsv()
     {
+        // Plan eskiyse önce kararlarla kurulur: CSV ekrandaki seçimleri yansıtsın.
+        if (!PrepareForConfirm()) return;
         var path = _s.Files.SaveCsv("plan.csv");
         if (path is null) return;
         try { PlanCsv.Write(Plan, path); }

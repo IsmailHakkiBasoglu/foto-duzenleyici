@@ -82,6 +82,8 @@ public sealed partial class ShellViewModel : ObservableObject
         if (Flow?.Folders is { CanScan: true } fo)
             start = new ClassicStart(fo.ExistingSources.ToList(), fo.Archive!, _settings.SourceFolder,
                 _settings.RenameWithDate, _settings.AppendSourceToName, _settings.SeparateRawFolder, _settings.RecycleSource);
+        // Klasik pencere karar dosyasını açılışta okur: bekleyen kararlar önce yazılsın.
+        Flow?.FlushReviews();
         _s.Shell.OpenClassic(start);
     }
 

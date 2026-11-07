@@ -91,7 +91,7 @@ public class FlawedReviewTests : IDisposable
     public void Compare_ChangedCallback_MarksStale()
     {
         var vm = Vm();
-        _compare.During = (_, _, changed) => changed();
+        _compare.During = (groups, _, changed) => { groups[2].Rows[0].Keep = false; changed(); };
         _compare.Finished = true;
         vm.OpenCompareCommand.Execute(vm.Groups[2]);
         Assert.Equal(2, _compare.Start);

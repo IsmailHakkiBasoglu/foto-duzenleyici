@@ -17,7 +17,7 @@ public sealed partial class SimilarReviewViewModel : FrameReviewViewModel
     public int ReviewedCount => Groups.Count(g => g.Reviewed);
     public string CounterText => $"İncelenen: {ReviewedCount:N0} / {Total:N0}";
 
-    public override IReadOnlyList<SimilarGroupState> Visible =>
+    protected override IReadOnlyList<SimilarGroupState> BuildVisible() =>
         OnlyUnreviewed ? Groups.Where(g => !g.Reviewed).ToList() : Groups;
 
     protected override void Counters(bool listChanged = true)

@@ -24,7 +24,7 @@
                                Visibility="{Binding Done, Converter={StaticResource HasVis}, ConverterParameter=!}"
                                Command="{Binding DataContext.BackCommand, RelativeSource={RelativeSource AncestorType=local:ReviewPage}}" />
                 </StackPanel>
-                <ListBox ItemsSource="{Binding Visible}" BorderThickness="0" Background="Transparent" Margin="8"
+                <ListBox x:Name="List" ItemsSource="{Binding Visible}" SelectedItem="{Binding Selected}" BorderThickness="0" Background="Transparent" Margin="8"
                          VirtualizingPanel.IsVirtualizing="True" VirtualizingPanel.VirtualizationMode="Recycling"
                          ScrollViewer.CanContentScroll="True" ScrollViewer.HorizontalScrollBarVisibility="Disabled">
                     <ListBox.ItemsPanel>

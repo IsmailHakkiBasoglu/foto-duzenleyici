@@ -106,14 +106,14 @@ public class SimilarReviewTests : IDisposable
     public void Compare_ChangedCallback_MarksStale()
     {
         var vm = Vm();
-        _compare.During = (_, _, changed) => changed();
+        _compare.During = (groups, _, changed) => { groups[1].Rows[1].Keep = false; changed(); };
 
         vm.OpenCompareCommand.Execute(vm.Groups[1]);
 
         Assert.Equal(1, _compare.Opened);
         Assert.Equal(1, _compare.Start);
         Assert.Equal(1, _changed);
-        Assert.Equal(1, _clock.Scheduled);
+        Assert.True(_clock.Scheduled >= 1); // satır olayı ve geri çağrı; gecikmeli kayıt tek yazmaya indirir
     }
 
     [Fact]

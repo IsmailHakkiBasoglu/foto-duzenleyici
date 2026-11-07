@@ -39,7 +39,11 @@ public abstract partial class FrameReviewViewModel : ObservableObject
     public abstract string EmptyText { get; }
     public int Total => Groups.Count;
     public int ReleasedCount => Groups.Sum(g => g.Rows.Count(r => !r.Keep));
-    public abstract IReadOnlyList<SimilarGroupState> Visible { get; }
+    IReadOnlyList<SimilarGroupState>? _visible;
+    /// <summary>Süzgeçten geçen gruplar. Süzgeç ya da incelendi değişmedikçe aynı nesne: liste baştan kurulmaz,
+    /// kaydırma yeri korunur.</summary>
+    public IReadOnlyList<SimilarGroupState> Visible => _visible ??= BuildVisible();
+    protected abstract IReadOnlyList<SimilarGroupState> BuildVisible();
     protected abstract string FinishedText { get; }
 
     [ObservableProperty] private SimilarGroupState? selected;
@@ -64,7 +68,9 @@ public abstract partial class FrameReviewViewModel : ObservableObject
     protected virtual void Counters(bool listChanged = true)
     {
         OnPropertyChanged(nameof(ReleasedCount));
-        if (listChanged) OnPropertyChanged(nameof(Visible));
+        if (!listChanged) return;
+        _visible = null;
+        OnPropertyChanged(nameof(Visible));
     }
 
     [RelayCommand]
@@ -82,8 +88,9 @@ public abstract partial class FrameReviewViewModel : ObservableObject
         int start = visible.IndexOf(g);
         if (start < 0) { visible = Groups; start = Groups.IndexOf(g); }
         if (start < 0) return;
-        var (current, finished) = _s.Compare.Open(visible, start, _saver.Store, () => { _saver.Changed(); Counters(listChanged: false); _changed(); });
-        Counters();
+        var (current, finished) = _s.Compare.Open(visible, start, _saver.Store, () => { _saver.Changed(); Counters(listChanged: false); });
+        // Kalsın / ayıkla kararları satırın kendi olayından plana yansır; yalnız "incelendi" planı eskitmez.
+        Counters(listChanged: false);
         Selected = current;
         if (finished) Warn(FinishedText);
     }

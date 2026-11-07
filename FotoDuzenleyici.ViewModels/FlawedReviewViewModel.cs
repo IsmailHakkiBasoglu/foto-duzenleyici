@@ -18,7 +18,7 @@ public sealed partial class FlawedReviewViewModel : FrameReviewViewModel
 
     static string FlawOf(SimilarGroupState g) => g.Rows[0].Flaw ?? "";
 
-    public override IReadOnlyList<SimilarGroupState> Visible =>
+    protected override IReadOnlyList<SimilarGroupState> BuildVisible() =>
         Groups.Where(g => ShowBlurry && FlawOf(g).Contains("BULANIK") || ShowDark && FlawOf(g).Contains("KARANLIK")).ToList();
 
     public string CounterText
