@@ -32,6 +32,8 @@ sealed class FakeShell : IShell
     public List<ClassicStart?> Starts { get; } = new();
     public void OpenFolder(string path) => Opened.Add(path);
     public void OpenClassic(ClassicStart? start) { Classic++; Starts.Add(start); }
+    public List<string> Files { get; } = new();
+    public void OpenFile(string path) => Files.Add(path);
 }
 
 sealed class MemorySettings : ISettingsStore
@@ -57,7 +59,7 @@ sealed class Fakes
     public Func<string, long>? FreeFn;
     /// <summary>Her Fakes kendi geçici klasöründe: testler kullanıcının karar ve önbellek dosyalarına dokunmaz.</summary>
     public CachePaths Caches = Temp();
-    public Func<TimeSpan, Action, IDisposable>? Schedule;
+    public Func<TimeSpan, Action, IDisposable>? Schedule = null;
 
     static CachePaths Temp()
     {

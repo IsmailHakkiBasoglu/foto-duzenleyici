@@ -21,6 +21,8 @@ public interface IDialogs
 public interface IShell
 {
     void OpenFolder(string path);
+    /// <summary>Dosyayı Windows'un varsayılan uygulamasında açar; dosyaya dokunmaz.</summary>
+    void OpenFile(string path);
     /// <summary><paramref name="start"/>: yeni akışta seçili klasörler ve seçenekler; null → boş açılır.</summary>
     void OpenClassic(ClassicStart? start);
 }

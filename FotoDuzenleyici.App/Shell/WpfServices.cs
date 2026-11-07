@@ -47,6 +47,12 @@ sealed class WpfServices : IFolderPicker, IFilePicker, IDialogs, IShell
         else MessageBox.Show(o, message, title);
     }
 
+    public void OpenFile(string path)
+    {
+        try { Process.Start(new ProcessStartInfo(path) { UseShellExecute = true }); }
+        catch (Exception ex) { Info("Dosya açılamadı", ex.Message); }
+    }
+
     public void OpenFolder(string path)
     {
         if (Directory.Exists(path)) Process.Start(new ProcessStartInfo("explorer.exe", $"\"{path}\"") { UseShellExecute = true });

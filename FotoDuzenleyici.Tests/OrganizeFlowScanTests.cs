@@ -90,7 +90,7 @@ public class OrganizeFlowScanTests : IDisposable
         Assert.Equal(PlanAction.Duplicate, r.Rows[0].Action);
 
         r.Filter = PlanFilter.All;
-        r.Search = "BBB";
+        r.Search = "BBB.PDF"; // klasör adındaki GUID "bbb" içerebilir: dosya adıyla ara
         Assert.Single(r.Rows);
         Assert.EndsWith("bbb.pdf", r.Rows[0].File.Path);
     }
