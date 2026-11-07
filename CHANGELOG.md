@@ -6,6 +6,8 @@ Biçim [Keep a Changelog](https://keepachangelog.com/tr-TR/1.1.0/), sürüm numa
 
 ## [Yayınlanmamış]
 
+## [0.3.0] - 2026-11-08
+
 ### Eklendi
 - **Yeni arayüz (2. parça): inceleme ekranları.** "Tara ve incele" adımının sol menüsünde Özet ve Plan,
   Yinelenenler, Benzerler, Kusurlu ve Okunamayanlar bölümleri. Klasikteki davranış aynen:
