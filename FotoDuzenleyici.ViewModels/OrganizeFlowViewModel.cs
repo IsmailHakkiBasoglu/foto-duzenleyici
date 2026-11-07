@@ -88,15 +88,22 @@ public sealed partial class OrganizeFlowViewModel : ObservableObject
     {
         var c = Confirm!;
         var items = c.Plan.Items.Where(i => i.Action != PlanAction.AlreadyInPlace).ToList();
-        ApplyTask = RunApply(a => a.RunAsync(items, c.JournalPath, c.RecycleSource));
+        ApplyTask = RunApply(c.Archive, a => a.RunAsync(items, c.JournalPath, c.RecycleSource));
     }
 
-    void StartResume(string journal) => ApplyTask = RunApply(a => a.ResumeAsync(journal));
+    void StartResume(string journal) => ApplyTask = RunApply(Confirm!.Archive, a => a.ResumeAsync(journal));
+
+    /// <summary>Kabuktaki Geri Al: seçilen günlük, Uygulama adımında geri alınır. Arşiv: günlüğün <c>_Gunluk</c> klasörünün üstü.</summary>
+    public Task StartUndo(string journal)
+    {
+        var archive = Path.GetDirectoryName(Path.GetDirectoryName(Path.GetFullPath(journal)))!;
+        return ApplyTask = RunApply(archive, a => a.UndoAsync(journal));
+    }
 
     /// <summary>Plan uygulandıktan (ya da devam ettirildikten) sonra geçersizdir: İnceleme ve Onayla kapanır.</summary>
-    Task RunApply(Func<ApplyStepViewModel, Task> work)
+    Task RunApply(string archive, Func<ApplyStepViewModel, Task> work)
     {
-        var a = new ApplyStepViewModel(_s, Confirm!.Archive);
+        var a = new ApplyStepViewModel(_s, archive);
         a.PropertyChanged += (_, e) => { if (e.PropertyName == nameof(ApplyStepViewModel.IsRunning)) OnPropertyChanged(nameof(NavigationLocked)); };
         Apply = a;
         Confirm = null;
