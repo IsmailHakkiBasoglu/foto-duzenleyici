@@ -185,6 +185,10 @@
 
         <local:DuplicatesSection Grid.Column="1" DataContext="{Binding Review.Duplicates}"
                                  Visibility="{Binding DataContext.Review.Section, RelativeSource={RelativeSource AncestorType=local:ReviewPage}, Converter={StaticResource EqVis}, ConverterParameter=Duplicates}" />
+        <local:SimilarSection Grid.Column="1" DataContext="{Binding Review.Similar}"
+                              Visibility="{Binding DataContext.Review.Section, RelativeSource={RelativeSource AncestorType=local:ReviewPage}, Converter={StaticResource EqVis}, ConverterParameter=Similar}" />
+        <local:FlawedSection Grid.Column="1" DataContext="{Binding Review.Flawed}"
+                             Visibility="{Binding DataContext.Review.Section, RelativeSource={RelativeSource AncestorType=local:ReviewPage}, Converter={StaticResource EqVis}, ConverterParameter=Flawed}" />
         <local:ErrorsSection Grid.Column="1" DataContext="{Binding Review}"
                              Visibility="{Binding Section, Converter={StaticResource EqVis}, ConverterParameter=Errors}" />
 

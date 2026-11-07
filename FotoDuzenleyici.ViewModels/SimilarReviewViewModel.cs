@@ -20,9 +20,9 @@ public sealed partial class SimilarReviewViewModel : FrameReviewViewModel
     public override IReadOnlyList<SimilarGroupState> Visible =>
         OnlyUnreviewed ? Groups.Where(g => !g.Reviewed).ToList() : Groups;
 
-    protected override void Counters()
+    protected override void Counters(bool listChanged = true)
     {
-        base.Counters();
+        base.Counters(listChanged);
         OnPropertyChanged(nameof(ReviewedCount));
         OnPropertyChanged(nameof(CounterText));
     }

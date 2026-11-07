@@ -48,7 +48,7 @@ public abstract partial class FrameReviewViewModel : ObservableObject
     {
         if (row.StoreKey is { } k) _saver.Store.SetKeep(k, row.Keep);
         _saver.Changed();
-        Counters();
+        Counters(listChanged: false);
         _changed();
     }
 
@@ -59,10 +59,12 @@ public abstract partial class FrameReviewViewModel : ObservableObject
         Counters();
     }
 
-    protected virtual void Counters()
+    /// <param name="listChanged">Görünen liste değişti (süzgeç, incelendi). Yalnız işaret değiştiyse false: liste
+    /// baştan kurulmaz, kaydırma yeri korunur.</param>
+    protected virtual void Counters(bool listChanged = true)
     {
         OnPropertyChanged(nameof(ReleasedCount));
-        OnPropertyChanged(nameof(Visible));
+        if (listChanged) OnPropertyChanged(nameof(Visible));
     }
 
     [RelayCommand]
@@ -80,7 +82,7 @@ public abstract partial class FrameReviewViewModel : ObservableObject
         int start = visible.IndexOf(g);
         if (start < 0) { visible = Groups; start = Groups.IndexOf(g); }
         if (start < 0) return;
-        var (current, finished) = _s.Compare.Open(visible, start, _saver.Store, () => { _saver.Changed(); Counters(); _changed(); });
+        var (current, finished) = _s.Compare.Open(visible, start, _saver.Store, () => { _saver.Changed(); Counters(listChanged: false); _changed(); });
         Counters();
         Selected = current;
         if (finished) Warn(FinishedText);

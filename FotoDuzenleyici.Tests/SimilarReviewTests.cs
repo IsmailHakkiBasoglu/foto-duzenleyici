@@ -133,6 +133,18 @@ public class SimilarReviewTests : IDisposable
     }
 
     [Fact]
+    public void Toggle_DoesNotRebuildVisibleList()
+    {
+        var vm = Vm();
+        vm.OnlyUnreviewed = true; // her okumada yeni liste: değişiklik bildirimi listeyi baştan kurar, kaydırma başa döner
+        var raised = new List<string?>();
+        vm.PropertyChanged += (_, e) => raised.Add(e.PropertyName);
+        vm.ToggleCommand.Execute(vm.Groups[0].Rows[1]);
+        Assert.DoesNotContain(nameof(vm.Visible), raised);
+        Assert.Contains(nameof(vm.ReleasedCount), raised);
+    }
+
+    [Fact]
     public void Detach_StopsCallbacks()
     {
         var vm = Vm();

@@ -55,6 +55,17 @@ public class FlawedReviewTests : IDisposable
     }
 
     [Fact]
+    public void Toggle_DoesNotRebuildVisibleList()
+    {
+        var vm = Vm();
+        var raised = new List<string?>();
+        vm.PropertyChanged += (_, e) => raised.Add(e.PropertyName);
+        vm.ToggleCommand.Execute(vm.Groups[0].Rows[0]);
+        Assert.DoesNotContain(nameof(vm.Visible), raised);
+        Assert.Contains(nameof(vm.CounterText), raised);
+    }
+
+    [Fact]
     public void Filters_BlurryDark()
     {
         var vm = Vm();

@@ -31,9 +31,9 @@ public sealed partial class FlawedReviewViewModel : FrameReviewViewModel
         }
     }
 
-    protected override void Counters()
+    protected override void Counters(bool listChanged = true)
     {
-        base.Counters();
+        base.Counters(listChanged);
         OnPropertyChanged(nameof(CounterText));
     }
 }
