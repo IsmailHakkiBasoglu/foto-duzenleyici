@@ -8,9 +8,13 @@ using FotoDuzenleyici.Core;
 //           --quality: netlik ve karanlık ölçer (ölçümler önbelleğe yazılır); --csv ile …-kalite.csv
 //           Cli --undo <günlük.jsonl>
 //           Cli --resume <günlük.jsonl>   (yarıda kalan --apply işlemini kaldığı yerden sürdürür)
+//           Cli --root <arşiv> --backup <yedek> [--include-duplicates] [--csv <dosya>]
+//               arşivi yedeğe artımlı, hash doğrulamalı kopyalar; hiçbir şey silinmez (hata varsa çıkış 2)
+//           Cli --verify-backup <yedek> [--csv <dosya>]   (yedeği tam okur; sorun varsa çıkış 1)
 var roots = new List<string>(); var excl = new List<string>();
-string? dest = null, csv = null, undo = null, resume = null;
-bool srcFolder = false, renameDate = false, appendSrc = false, noHash = false, apply = false, keepSource = false, similar = false, quality = false;
+string? dest = null, csv = null, undo = null, resume = null, backup = null, verifyBackup = null;
+bool srcFolder = false, renameDate = false, appendSrc = false, noHash = false, apply = false, keepSource = false, similar = false, quality = false,
+    includeDups = false;
 for (int i = 0; i < args.Length; i++)
     switch (args[i])
     {
@@ -28,7 +32,63 @@ for (int i = 0; i < args.Length; i++)
         case "--quality": quality = true; break;
         case "--undo": undo = args[++i]; break;
         case "--resume": resume = args[++i]; break;
+        case "--backup": backup = args[++i]; break;
+        case "--verify-backup": verifyBackup = args[++i]; break;
+        case "--include-duplicates": includeDups = true; break;
     }
+
+IProgress<BackupProgress> BackupBar(string label)
+{
+    int last = -1;
+    return new Progress<BackupProgress>(p =>
+    {
+        int pct = p.BytesTotal == 0 ? 100 : (int)(p.BytesDone * 100 / p.BytesTotal);
+        if (pct != last && pct % 10 == 0) { last = pct; Console.Error.WriteLine($"  {label} %{pct}  ({p.Done}/{p.Total})"); }
+    });
+}
+string Size(long b) => b >= 1L << 30 ? $"{b / (double)(1L << 30):N1} GB" : $"{b / (double)(1L << 20):N1} MB";
+
+if (verifyBackup != null)
+{
+    var v = new ArchiveBackup().Verify(verifyBackup, BackupBar("doğrulama"));
+    if (v.Blocked != null) { Console.WriteLine(v.Blocked); return 2; }
+    int missing = v.Problems.Count(p => p.Status == VerifyStatus.Missing), corrupt = v.Problems.Count - missing;
+    Console.WriteLine($"{v.Ok:N0} tamam · {missing:N0} eksik · {corrupt:N0} bozuk · listede olmayan: {v.NotInManifest:N0}" +
+                      (v.Cancelled ? " (iptal edildi)" : ""));
+    foreach (var (e, s) in v.Problems) Console.WriteLine($"  {(s == VerifyStatus.Missing ? "EKSİK" : "BOZUK")}  {e.Path}");
+    v.Errors.ForEach(e => Console.WriteLine("  " + e));
+    if (csv != null)
+    {
+        var vCsv = Path.ChangeExtension(csv, null) + "-dogrulama.csv";
+        var sb = new StringBuilder("Durum;Dosya\n");
+        foreach (var (e, s) in v.Problems) sb.AppendLine($"{(s == VerifyStatus.Missing ? "Eksik" : "Bozuk")};{e.Path}");
+        File.WriteAllText(vCsv, sb.ToString(), new UTF8Encoding(true));
+        Console.WriteLine($"CSV: {vCsv}");
+    }
+    return v.Problems.Count == 0 ? 0 : 1;
+}
+if (backup != null)
+{
+    if (roots.Count == 0) { Console.WriteLine("--backup için --root <arşiv> gerekli"); return 1; }
+    var r = new ArchiveBackup().Run(roots[0], backup, new BackupOptions { IncludeDuplicates = includeDups }, BackupBar("yedek"));
+    if (r.Blocked != null) { Console.WriteLine(r.Blocked); return 2; }
+    Console.WriteLine($"{r.New:N0} yeni · {r.Changed:N0} değişmiş · {r.Unchanged:N0} aynı · {r.MissingInArchive:N0} arşivde yok · " +
+                      $"{r.Errors.Count:N0} hata · {Size(r.BytesCopied)} kopyalandı" + (r.Cancelled ? " (iptal edildi)" : ""));
+    r.Errors.ForEach(e => Console.WriteLine("  " + e));
+    if (csv != null)
+    {
+        var bCsv = Path.ChangeExtension(csv, null) + "-yedek.csv";
+        var sb = new StringBuilder("Durum;Dosya;Neden\n");
+        foreach (var e in r.Errors)
+        {
+            int k = e.IndexOf(": ", StringComparison.Ordinal);
+            sb.AppendLine(k < 0 ? $"Hata;;{e}" : $"Hata;{e[..k]};{e[(k + 2)..]}");
+        }
+        File.WriteAllText(bCsv, sb.ToString(), new UTF8Encoding(true));
+        Console.WriteLine($"CSV: {bCsv}");
+    }
+    return r.Errors.Count == 0 ? 0 : 2;
+}
 if (undo != null)
 {
     var u = Executor.Undo(undo);
