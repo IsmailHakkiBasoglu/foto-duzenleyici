@@ -26,30 +26,31 @@
             <ui:TitleBar.Icon>
                 <ui:ImageIcon Source="pack://application:,,,/FotoDuzenleyici;component/app.ico" />
             </ui:TitleBar.Icon>
-        </ui:TitleBar>
 
-        <!-- Sağ üst: akışın dışında kalan işler -->
-        <StackPanel Grid.Row="0" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,4,150,0"
-                    VerticalAlignment="Top" WindowChrome.IsHitTestVisibleInChrome="True">
-            <ui:Button Content="Ana ekran" Appearance="Transparent" Command="{Binding GoHomeCommand}"
-                       Icon="{ui:SymbolIcon Home24}" Margin="0,0,4,0" />
-            <ui:Button Content="Geri Al…" Appearance="Transparent" Command="{Binding UndoCommand}"
-                       Icon="{ui:SymbolIcon ArrowUndo24}" Margin="0,0,4,0" />
-            <ui:Button x:Name="MenuButton" Appearance="Transparent" Icon="{ui:SymbolIcon Settings24}" Click="Menu_Click"
-                       ToolTip="Ayarlar">
-                <ui:Button.ContextMenu>
-                    <ContextMenu>
-                        <MenuItem Header="Klasik görünüm" Command="{Binding OpenClassicCommand}" />
-                        <Separator />
-                        <MenuItem Header="Tema: sistem" Click="Theme_Click" Tag="Sistem" />
-                        <MenuItem Header="Tema: açık" Click="Theme_Click" Tag="Açık" />
-                        <MenuItem Header="Tema: koyu" Click="Theme_Click" Tag="Koyu" />
-                        <Separator />
-                        <MenuItem x:Name="AboutItem" IsEnabled="False" />
-                    </ContextMenu>
-                </ui:Button.ContextMenu>
-            </ui:Button>
-        </StackPanel>
+            <ui:TitleBar.TrailingContent>
+                <!-- Sağ üst: akışın dışında kalan işler. TrailingContent içinde olmalı: dışında kalırsa tıklama pencereyi sürükler. -->
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,8,0">
+                    <ui:Button x:Name="HomeButton" Content="Ana ekran" Appearance="Transparent" Command="{Binding GoHomeCommand}"
+                               Icon="{ui:SymbolIcon Home24}" Margin="0,0,4,0" />
+                    <ui:Button x:Name="UndoButton" Content="Geri Al…" Appearance="Transparent" Command="{Binding UndoCommand}"
+                               Icon="{ui:SymbolIcon ArrowUndo24}" Margin="0,0,4,0" />
+                    <ui:Button x:Name="MenuButton" Appearance="Transparent" Icon="{ui:SymbolIcon Settings24}" Click="Menu_Click"
+                               ToolTip="Ayarlar">
+                        <ui:Button.ContextMenu>
+                            <ContextMenu>
+                                <MenuItem Header="Klasik görünüm" Command="{Binding OpenClassicCommand}" />
+                                <Separator />
+                                <MenuItem Header="Tema: sistem" Click="Theme_Click" Tag="Sistem" />
+                                <MenuItem Header="Tema: açık" Click="Theme_Click" Tag="Açık" />
+                                <MenuItem Header="Tema: koyu" Click="Theme_Click" Tag="Koyu" />
+                                <Separator />
+                                <MenuItem x:Name="AboutItem" IsEnabled="False" />
+                            </ContextMenu>
+                        </ui:Button.ContextMenu>
+                    </ui:Button>
+                        </StackPanel>
+            </ui:TitleBar.TrailingContent>
+        </ui:TitleBar>
 
         <Border Grid.Row="1" Margin="20,0,20,8" Style="{StaticResource Bad}"
                 Visibility="{Binding ErrorMessage, Converter={StaticResource HasVis}}">

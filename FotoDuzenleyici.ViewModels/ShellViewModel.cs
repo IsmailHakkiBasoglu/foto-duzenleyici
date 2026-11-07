@@ -77,7 +77,11 @@ public sealed partial class ShellViewModel : ObservableObject
     void OpenClassic()
     {
         if (Locked) { ErrorMessage = "İşlem sürerken Klasik görünüm açılamaz; bitmesini bekle ya da durdur."; return; }
-        _s.Shell.OpenClassic();
+        ClassicStart? start = null;
+        if (Flow?.Folders is { CanScan: true } fo)
+            start = new ClassicStart(fo.ExistingSources.ToList(), fo.Archive!, _settings.SourceFolder,
+                _settings.RenameWithDate, _settings.AppendSourceToName, _settings.SeparateRawFolder, _settings.RecycleSource);
+        _s.Shell.OpenClassic(start);
     }
 
     [RelayCommand]

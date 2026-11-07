@@ -19,6 +19,8 @@ Biçim [Keep a Changelog](https://keepachangelog.com/tr-TR/1.1.0/), sürüm numa
   - **Uygulanıyor / Bitti:** ilerleme, kalan süre, güvenli Durdur; sonuç, yapılamayanlar, bu işlemi Geri Al.
 - Eski pencere **Klasik görünüm** olarak ayarlar menüsünden açılır (benzerler, kusurlu ve yinelenenlerde
   korunacak konum seçimi şimdilik orada). `FotoDuzenleyici.exe --klasik` doğrudan eski pencereyi açar.
+- "Klasik görünümde incele" ve ayarlar menüsündeki Klasik görünüm, yeni akışta seçili kaynakları, arşivi ve
+  düzen seçeneklerini eski pencereye taşır ve taramayı kendiliğinden başlatır (önceden boş açılıyordu).
 - Ekran mantığı test edilebilen ayrı bir katmanda (`FotoDuzenleyici.ViewModels`); Düzenle akışı uçtan uca
   testli.
 - **Yedekleme (çekirdek ve komut satırı):** `--root <arşiv> --backup <yedek>` arşivi ikinci bir diske

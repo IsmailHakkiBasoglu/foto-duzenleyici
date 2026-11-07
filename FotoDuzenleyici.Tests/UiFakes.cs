@@ -29,8 +29,9 @@ sealed class FakeShell : IShell
 {
     public List<string> Opened { get; } = new();
     public int Classic;
+    public List<ClassicStart?> Starts { get; } = new();
     public void OpenFolder(string path) => Opened.Add(path);
-    public void OpenClassic() => Classic++;
+    public void OpenClassic(ClassicStart? start) { Classic++; Starts.Add(start); }
 }
 
 sealed class MemorySettings : ISettingsStore

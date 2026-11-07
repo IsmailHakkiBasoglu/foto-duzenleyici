@@ -21,7 +21,8 @@ public interface IDialogs
 public interface IShell
 {
     void OpenFolder(string path);
-    void OpenClassic();
+    /// <summary><paramref name="start"/>: yeni akışta seçili klasörler ve seçenekler; null → boş açılır.</summary>
+    void OpenClassic(ClassicStart? start);
 }
 
 public interface ISettingsStore
@@ -48,3 +49,7 @@ public static class SettingsStoreExtensions
         catch (Exception) { return false; }
     }
 }
+
+/// <summary>Klasik pencerenin, yeni akışta seçilenlerle dolu açılması için.</summary>
+public sealed record ClassicStart(IReadOnlyList<string> Sources, string Archive, SourceFolderMode SourceFolder,
+    bool RenameWithDate, bool AppendSourceToName, bool SeparateRawFolder, bool RecycleSource);

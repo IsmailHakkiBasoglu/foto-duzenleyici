@@ -52,7 +52,12 @@ sealed class WpfServices : IFolderPicker, IFilePicker, IDialogs, IShell
         if (Directory.Exists(path)) Process.Start(new ProcessStartInfo("explorer.exe", $"\"{path}\"") { UseShellExecute = true });
     }
 
-    public void OpenClassic() => new MainWindow().Show();
+    public void OpenClassic(ClassicStart? start)
+    {
+        var w = new MainWindow();
+        w.Show();
+        if (start is not null) w.StartFrom(start);
+    }
 
     public static long FreeSpace(string path)
     {
