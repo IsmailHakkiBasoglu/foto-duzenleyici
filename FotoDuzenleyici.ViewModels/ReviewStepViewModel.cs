@@ -67,7 +67,12 @@ public sealed partial class ReviewStepViewModel : ObservableObject
     /// <summary>Alt çubuğun ilk satırı; plan eskidiyse bunu söyler.</summary>
     public string BarTitle => PlanStale
         ? "Plan güncellenecek: onay ekranına geçerken seçimlerinle yeniden kurulur."
-        : $"Plan hazır: {Summary.MoveCount:N0} dosya taşınacak, {Summary.DupCount:N0} kopya _Tekrarlar'a ayrılacak.";
+        : Kind == FlowKind.Clean
+            ? $"Plan hazır: {Plan.Items.Count:N0} dosya _Ayiklananlar'a taşınacak ({Sizes.Text(RejectBytes)})."
+            : $"Plan hazır: {Summary.MoveCount:N0} dosya taşınacak, {Summary.DupCount:N0} kopya _Tekrarlar'a ayrılacak.";
+
+    /// <summary>Temizle: ayıklanacakların toplam boyutu (kazanılacak alan).</summary>
+    public long RejectBytes => Plan.Items.Where(i => i.Action != PlanAction.AlreadyInPlace).Sum(i => i.File.Size);
 
     void MarkStale() => PlanStale = true;
 
@@ -78,6 +83,7 @@ public sealed partial class ReviewStepViewModel : ObservableObject
         _all = p.Items.OrderBy(i => i.File.Path, StringComparer.OrdinalIgnoreCase).ToList();
         OnPropertyChanged(nameof(Rows));
         OnPropertyChanged(nameof(BarTitle));
+        OnPropertyChanged(nameof(RejectBytes));
     }
 
     /// <summary>

@@ -12,11 +12,14 @@ public sealed partial class OrganizeFlowViewModel : ObservableObject
     readonly AppSettings _settings;
     CancellationTokenSource? _cts;
 
-    public OrganizeFlowViewModel(Services s, AppSettings settings)
+    public OrganizeFlowViewModel(Services s, AppSettings settings, FlowKind kind = FlowKind.Organize)
     {
-        _s = s; _settings = settings;
-        Folders = new FoldersStepViewModel(s, settings);
+        _s = s; _settings = settings; Kind = kind;
+        Folders = new FoldersStepViewModel(s, settings, kind);
     }
+
+    /// <summary>Düzenle ya da Temizle.</summary>
+    public FlowKind Kind { get; }
 
     public FoldersStepViewModel Folders { get; }
 
@@ -84,7 +87,12 @@ public sealed partial class OrganizeFlowViewModel : ObservableObject
     /// açılır; hesaplananlar önbellekte kalır. Not: hata şeridine gidecek metin.
     /// </summary>
     /// <summary>Taranacak iş: klasör adımındaki seçimlerden.</summary>
-    IScanJob CreateJob() => new OrganizeJob(new OrganizeSession(Folders.ExistingSources, Folders.BuildPlanOptions()));
+    IScanJob CreateJob() => Kind == FlowKind.Clean
+        ? new CleanJob(new CleanSession(Folders.ExistingSources, Folders.ExistingPriority))
+        : new OrganizeJob(new OrganizeSession(Folders.ExistingSources, Folders.BuildPlanOptions()));
+
+    /// <summary>Test kancası: uygulamada her ilerleme bildiriminde (yapılan sayı), arka plan iş parçacığında.</summary>
+    internal Action<int>? OnApplyProgressForTest { get; set; }
 
     (ReviewData Data, string? Note) ScanReview(IScanJob session, bool findSimilar, bool markFlawed,
         IProgress<(int, int, int)> simProg, IProgress<(int, int, int)> qualProg, CancellationToken ct)
@@ -184,7 +192,7 @@ public sealed partial class OrganizeFlowViewModel : ObservableObject
     /// <summary>Plan uygulandıktan (ya da devam ettirildikten) sonra geçersizdir: İnceleme ve Onayla kapanır.</summary>
     Task RunApply(string archive, Func<ApplyStepViewModel, Task> work)
     {
-        var a = new ApplyStepViewModel(_s, archive);
+        var a = new ApplyStepViewModel(_s, archive) { OnProgressForTest = OnApplyProgressForTest };
         a.PropertyChanged += (_, e) => { if (e.PropertyName == nameof(ApplyStepViewModel.IsRunning)) OnPropertyChanged(nameof(NavigationLocked)); };
         Apply = a;
         Confirm = null;

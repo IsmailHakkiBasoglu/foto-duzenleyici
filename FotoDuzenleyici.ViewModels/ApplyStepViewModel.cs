@@ -43,6 +43,9 @@ public sealed partial class ApplyStepViewModel : ObservableObject
     [ObservableProperty] private int pendingAfterStop;
     [ObservableProperty] private string? errorMessage;
 
+    /// <summary>Test kancası: her ilerleme bildiriminde (yapılan sayı), arka plan iş parçacığında.</summary>
+    internal Action<int>? OnProgressForTest { get; set; }
+
     /// <summary>Test kancası: işlem, iptal edilmiş bir belirteçle başlar.</summary>
     internal bool CancelBeforeStartForTest { get; set; }
 
@@ -75,7 +78,9 @@ public sealed partial class ApplyStepViewModel : ObservableObject
         });
         try
         {
-            Result = await Task.Run(() => work(prog, ct));
+            var hook = OnProgressForTest;
+            IProgress<(int, int, string)> report = hook is null ? prog : new Tap(prog, hook);
+            Result = await Task.Run(() => work(report, ct));
             Done = Total;
         }
         catch (OperationCanceledException)
@@ -113,6 +118,11 @@ public sealed partial class ApplyStepViewModel : ObservableObject
     /// <summary>İlk <see cref="EtaAfter"/> işlemden sonra: geçen süre / yapılan × kalan.</summary>
     public static TimeSpan? Eta(int done, int total, TimeSpan elapsed) =>
         done < EtaAfter || total <= done ? null : TimeSpan.FromTicks(elapsed.Ticks / done * (total - done));
+
+    sealed class Tap(IProgress<(int, int, string)> inner, Action<int> hook) : IProgress<(int, int, string)>
+    {
+        public void Report((int, int, string) v) { hook(v.Item1); inner.Report(v); }
+    }
 
     [RelayCommand]
     void Cancel() => _cts?.Cancel();
