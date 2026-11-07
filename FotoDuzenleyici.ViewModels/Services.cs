@@ -27,6 +27,14 @@ public interface IShell
     void OpenClassic(ClassicStart? start);
 }
 
+/// <summary>Tam ekran karşılaştırma penceresi (klasikteki CompareWindow). Kararlar doğrudan grupların satırlarına yazılır.</summary>
+public interface ICompare
+{
+    /// <param name="changed">Pencerede bir karar verildikçe çağrılır.</param>
+    /// <returns>Kapanırken gösterilen grup; son grupta Enter ile bitirildiyse FinishedAll.</returns>
+    (SimilarGroupState Current, bool FinishedAll) Open(IReadOnlyList<SimilarGroupState> groups, int start, ReviewStore store, Action changed);
+}
+
 public interface ISettingsStore
 {
     AppSettings Load();
@@ -41,7 +49,7 @@ public interface ISettingsStore
 /// </summary>
 public sealed record Services(IFolderPicker Folders, IFilePicker Files, IDialogs Dialogs, IShell Shell,
     ISettingsStore Settings, Func<string, long> FreeSpace, Action<string>? Recycle = null,
-    CachePaths? Caches = null, Func<TimeSpan, Action, IDisposable>? Schedule = null)
+    CachePaths? Caches = null, Func<TimeSpan, Action, IDisposable>? Schedule = null, ICompare? Compare = null)
 {
     public CachePaths CacheFiles => Caches ?? CachePaths.Default;
 

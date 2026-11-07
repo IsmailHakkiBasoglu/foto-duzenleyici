@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.IO;
 using System.Windows;
+using FotoDuzenleyici.Core;
 using FotoDuzenleyici.ViewModels;
 using Microsoft.Win32;
 
@@ -75,7 +76,7 @@ sealed class WpfServices : IFolderPicker, IFilePicker, IDialogs, IShell
     {
         var w = new WpfServices();
         return new Services(w, w, w, w, new JsonSettingsStore(JsonSettingsStore.DefaultPath), FreeSpace,
-            Schedule: Later);
+            Schedule: Later, Compare: new WpfCompare());
     }
 
     /// <summary>Arayüz iş parçacığında, gecikmeyle tek sefer. Dispose bekleyeni iptal eder.</summary>
@@ -88,4 +89,15 @@ sealed class WpfServices : IFolderPicker, IFilePicker, IDialogs, IShell
     }
 
     sealed class Stopper(System.Windows.Threading.DispatcherTimer t) : IDisposable { public void Dispose() => t.Stop(); }
+}
+
+/// <summary>Klasikteki karşılaştırma penceresi, yeni kabuğun üstünde kalıcı (modal).</summary>
+sealed class WpfCompare : ICompare
+{
+    public (SimilarGroupState Current, bool FinishedAll) Open(IReadOnlyList<SimilarGroupState> groups, int start, ReviewStore store, Action changed)
+    {
+        var w = new CompareWindow(groups, start, store, changed) { Owner = Application.Current?.MainWindow };
+        w.ShowDialog();
+        return (w.Current, w.FinishedAll);
+    }
 }
