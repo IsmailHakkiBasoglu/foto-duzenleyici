@@ -124,7 +124,11 @@ SHA-256'sı listedeki ile aynıysa:
 
 Arşivdeki dosya yoksa ya da içeriği değişmişse kayıt **onarılamadı** olarak raporlanır ve dokunulmaz.
 
-### Arayüz: `BackupWindow` (App, yeni)
+### Arayüz: `BackupWindow` (App, yeni) — ertelendi
+
+**2026-11-07 kararı:** Arayüz baştan tasarlanacak (bkz. yeni yol haritası). Pencere aynı ekranı iki kez
+yapmamak için yeni arayüze bırakıldı. Bu turda yalnız Core (`BackupManifest`, `ArchiveBackup`) ve
+komut satırı yapılır. Aşağıdaki maddeler yeni arayüzdeki yedek ekranının içerik listesidir.
 
 Ana penceredeki **"Yedekle…"** düğmesi bu pencereyi açar. Pencere modal değildir ama aynı anda yalnız
 bir tane açılır.
@@ -143,8 +147,8 @@ bir tane açılır.
 
 ### Komut satırı (Cli)
 
-- `--backup <yedek kökü>`: arşiv kökü olarak mevcut `<kök>` argümanını kullanır ve `Run` çalıştırır.
-  `--include-duplicates` seçeneği alır.
+- `--backup <yedek kökü>`: arşiv kökü olarak `--root` ile verilen ilk klasörü kullanır, `Run` çalıştırır
+  ve taramayı / planı hiç yapmaz. `--include-duplicates` seçeneği alır. Hata varsa çıkış kodu 2 olur.
 - `--verify-backup <yedek kökü>`: `Verify` çalıştırır, sorunlu dosyaları yazar. Sorun varsa çıkış
   kodu 1 olur.
 - `--csv` verilmişse sonuçlar `…-yedek.csv` ya da `…-dogrulama.csv` dosyasına da yazılır.
