@@ -6,7 +6,21 @@ Biçim [Keep a Changelog](https://keepachangelog.com/tr-TR/1.1.0/), sürüm numa
 
 ## [Yayınlanmamış]
 
+## [0.2.0] - 2026-11-07
+
 ### Eklendi
+- **Yeni arayüz (1. parça):** Windows 11 görünümünde (WPF-UI, koyu / açık / sistem teması) yeni bir pencere.
+  Ana ekranda modüller: Düzenle hazır; Temizle ve Yedekle ekranları sonraki parçalarda. Düzenle dört adımlı:
+  - **Klasörler:** birden çok kaynak + arşiv; var olmayan klasör uyarıyla gösterilir, taranmaz. Düzen
+    seçenekleri ve son kullanılan klasör çiftleri hatırlanır.
+  - **Tara ve incele:** özet kutucukları, dikkat listesi, süzülebilir ve aranabilir plan tablosu, CSV.
+  - **Onayla:** ne yapılacağının özeti; yer, başka disk ve yarım kalmış işlem denetimleri. Yer yetmezse ya
+    da yarım işlem çözülmeden Uygula açılmaz; yarım işlem buradan devam ettirilir ya da bırakılır.
+  - **Uygulanıyor / Bitti:** ilerleme, kalan süre, güvenli Durdur; sonuç, yapılamayanlar, bu işlemi Geri Al.
+- Eski pencere **Klasik görünüm** olarak ayarlar menüsünden açılır (benzerler, kusurlu ve yinelenenlerde
+  korunacak konum seçimi şimdilik orada). `FotoDuzenleyici.exe --klasik` doğrudan eski pencereyi açar.
+- Ekran mantığı test edilebilen ayrı bir katmanda (`FotoDuzenleyici.ViewModels`); Düzenle akışı uçtan uca
+  testli.
 - **Yedekleme (çekirdek ve komut satırı):** `--root <arşiv> --backup <yedek>` arşivi ikinci bir diske
   artımlı kopyalar. Her dosya kopyalanırken SHA-256 ile doğrulanır; doğrulanmayan dosya yedeklendi
   sayılmaz. Hiçbir şey silinmez: arşivden silinen dosya yedekte kalır, değişen dosyanın eski hali
