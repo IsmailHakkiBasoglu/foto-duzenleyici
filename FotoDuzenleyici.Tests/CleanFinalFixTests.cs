@@ -101,7 +101,8 @@ public class CleanFinalFixTests : IDisposable
 
         await shell.UndoCommand.ExecuteAsync(null);
 
-        Assert.Empty(Executor.Pending(journal));
+        // Her şey yerine döndüğü için günlük de kaldırılır; klasörde yarım işlem kalmaz.
+        Assert.Empty(Executor.FindUnfinishedIn(Path.GetDirectoryName(journal)!));
         Assert.True(File.Exists(copy));
     }
 
