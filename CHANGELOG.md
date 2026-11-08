@@ -6,6 +6,8 @@ Biçim [Keep a Changelog](https://keepachangelog.com/tr-TR/1.1.0/), sürüm numa
 
 ## [Yayınlanmamış]
 
+## [0.4.0] - 2026-11-08
+
 ### Eklendi
 - Yeni arayüzde Benzerler'e klasikteki toplu düğmeler: **Önerileri uygula (yalnız ★ kalsın)**, **Bulanıkları
   ayıkla** (seri çekimlerde; en net kareye ve incelenmiş gruplara dokunmaz) ve **Hepsini koru**.
@@ -266,7 +268,8 @@ Biçim [Keep a Changelog](https://keepachangelog.com/tr-TR/1.1.0/), sürüm numa
   SHA-256 ile birebir kopya tespiti, kopyala → doğrula → Geri Dönüşüm Kutusu ile güvenli
   taşıma, işlem günlüğü ve Geri Al, WPF arayüzü.
 
-[Yayınlanmamış]: https://github.com/IsmailHakkiBasoglu/foto-duzenleyici/compare/v0.3.0...HEAD
+[Yayınlanmamış]: https://github.com/IsmailHakkiBasoglu/foto-duzenleyici/compare/v0.4.0...HEAD
+[0.4.0]: https://github.com/IsmailHakkiBasoglu/foto-duzenleyici/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/IsmailHakkiBasoglu/foto-duzenleyici/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/IsmailHakkiBasoglu/foto-duzenleyici/compare/v0.1.6...v0.2.0
 [0.1.6]: https://github.com/IsmailHakkiBasoglu/foto-duzenleyici/compare/v0.1.5...v0.1.6
