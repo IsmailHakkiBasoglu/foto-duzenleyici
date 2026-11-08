@@ -79,6 +79,7 @@ public class CleanFlowTests : IDisposable
         c.ApplyCommand.Execute(null);
         await vm.ApplyTask!;
         Assert.Equal(3, vm.Apply!.DoneCount);
+        Assert.True(vm.Apply.IsClean);
         Assert.False(File.Exists(DupNew));
         Assert.False(File.Exists(Small));
         Assert.False(File.Exists(Night));

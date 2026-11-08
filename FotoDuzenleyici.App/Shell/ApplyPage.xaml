@@ -50,6 +50,7 @@
                                 <MultiBinding Converter="{StaticResource DoneTitle}">
                                     <Binding Path="Apply.Mode" />
                                     <Binding Path="Apply.Stopped" />
+                                    <Binding Path="Apply.IsClean" />
                                 </MultiBinding>
                             </TextBlock.Text>
                         </TextBlock>

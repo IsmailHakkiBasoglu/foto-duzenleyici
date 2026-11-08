@@ -135,7 +135,8 @@ sealed class DoneTitleConverter : IMultiValueConverter
     public object Convert(object[] v, Type t, object p, CultureInfo c)
     {
         if (v.Length > 1 && v[1] is true) return "Durduruldu";
-        return v.Length > 0 && v[0] is ViewModels.ApplyMode.Undo ? "Geri alındı" : "Arşiv düzenlendi";
+        if (v.Length > 0 && v[0] is ViewModels.ApplyMode.Undo) return "Geri alındı";
+        return v.Length > 2 && v[2] is true ? "Temizlik bitti" : "Arşiv düzenlendi";
     }
     public object[] ConvertBack(object v, Type[] t, object p, CultureInfo c) => throw new NotSupportedException();
 }

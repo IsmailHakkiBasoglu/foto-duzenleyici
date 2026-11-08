@@ -23,8 +23,11 @@ public sealed partial class ApplyStepViewModel : ObservableObject
     public string Archive { get; }
 
     /// <summary>Bitti ekranındaki düğme: Temizle'de (ya da temizlik günlüğünün Geri Al'ında) _Ayiklananlar açılır.</summary>
-    public string OpenTitle => Path.GetFileName(Path.TrimEndingDirectorySeparator(Archive))
-        .Equals(CleanSession.RejectsFolder, StringComparison.OrdinalIgnoreCase) ? "Ayıklananları aç" : "Arşivi aç";
+    public string OpenTitle => IsClean ? "Ayıklananları aç" : "Arşivi aç";
+
+    /// <summary>Temizle işi (ya da temizlik günlüğünün Geri Al'ı): klasör _Ayiklananlar.</summary>
+    public bool IsClean => Path.GetFileName(Path.TrimEndingDirectorySeparator(Archive))
+        .Equals(CleanSession.RejectsFolder, StringComparison.OrdinalIgnoreCase);
 
     [ObservableProperty] private ApplyMode mode;
     [ObservableProperty] private bool isRunning;
