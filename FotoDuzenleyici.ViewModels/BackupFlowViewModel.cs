@@ -8,8 +8,11 @@ namespace FotoDuzenleyici.ViewModels;
 public enum BackupStep { Select, Preview, Running, Finished }
 public enum BackupActivity { Backup, Verify, Repair }
 
+/// <summary>Doğrulamada sorunlu dosya: göreli yol ve "eksik" / "bozuk".</summary>
+public sealed record BackupProblemRow(string Path, string Reason);
+
 /// <summary>Yedekle sayfası: klasör seçimi → özet → kopyalama → sonuç. Hiçbir adım arşive yazmaz.</summary>
-public sealed partial class BackupFlowViewModel : ObservableObject
+public sealed partial class BackupFlowViewModel : ObservableObject, ILongRunningPage
 {
     const long EtaAfterBytes = 16L << 20;
 
@@ -43,6 +46,40 @@ public sealed partial class BackupFlowViewModel : ObservableObject
     [ObservableProperty] private string? current;
     [ObservableProperty] private TimeSpan? remaining;
     [ObservableProperty] private string? errorMessage;
+    [ObservableProperty] private VerifyResult? verification;
+    [ObservableProperty] private bool verifyPartial;
+    [ObservableProperty] private RepairResult? repairs;
+    [ObservableProperty] private IReadOnlyList<BackupProblemRow> problemRows = Array.Empty<BackupProblemRow>();
+
+    partial void OnVerificationChanged(VerifyResult? value) => ProblemRows = value is null
+        ? Array.Empty<BackupProblemRow>()
+        : value.Problems.Select(p => new BackupProblemRow(p.Entry.Path, p.Status == VerifyStatus.Missing ? "eksik" : "bozuk")).ToList();
+
+    public bool CanVerify => !IsScanning && Step != BackupStep.Running
+        && !string.IsNullOrWhiteSpace(Backup) && Directory.Exists(Backup);
+
+    public bool CanRepair => Step == BackupStep.Finished && Verification is { Blocked: null, Problems.Count: > 0 }
+        && !string.IsNullOrWhiteSpace(Archive) && Directory.Exists(Archive);
+
+    public string VerifySummary
+    {
+        get
+        {
+            if (Verification is not { } v) return "";
+            if (v.Blocked is { } b) return b;
+            if (!v.Cancelled && v.Ok == 0 && v.Problems.Count == 0)
+                return "Bu klasörde bu uygulamayla alınmış bir yedek bulunamadı.";
+            int missing = v.Problems.Count(p => p.Status == VerifyStatus.Missing);
+            var text = $"{v.Ok:N0} sağlam · {missing:N0} eksik · {v.Problems.Count - missing:N0} bozuk";
+            if (v.NotInManifest > 0) text += $" · {v.NotInManifest:N0} listede yok";
+            return VerifyPartial ? text + " (yarım: doğrulama durduruldu)" : text;
+        }
+    }
+
+    public string RepairSummary => Repairs is not { } r ? ""
+        : $"{r.Repaired:N0} onarıldı · {r.NotRepaired.Count:N0} onarılamadı · {r.Errors.Count:N0} hata" + (r.Cancelled ? " (durduruldu)" : "");
+
+    public IReadOnlyList<string> RepairIssues => Repairs is { } r ? r.NotRepaired.Concat(r.Errors).ToList() : Array.Empty<string>();
 
     /// <summary>Sürmekte olan kopyalama / doğrulama / onarım; pencere kapanışı bunu bekler.</summary>
     public Task? RunningTask { get; private set; }
@@ -52,6 +89,9 @@ public sealed partial class BackupFlowViewModel : ObservableObject
 
     /// <summary>Test kancası: tarama iptal edilmiş belirteçle başlar.</summary>
     internal bool CancelBeforeStartForTest { get; set; }
+
+    /// <summary>Test kancası: tarama başlamadan önce, arka plan iş parçacığında.</summary>
+    internal Action? BeforeScanForTest { get; set; }
 
     public bool CanScan => !IsScanning && Step != BackupStep.Running
         && !string.IsNullOrWhiteSpace(Backup) && !string.IsNullOrWhiteSpace(Archive) && Directory.Exists(Archive);
@@ -90,6 +130,7 @@ public sealed partial class BackupFlowViewModel : ObservableObject
     {
         nameof(CanScan), nameof(NothingToCopy), nameof(CanStart), nameof(CanResume), nameof(NeededText), nameof(FreeText),
         nameof(Percent), nameof(ProgressText), nameof(RemainingText), nameof(FinishedSummary), nameof(FinishedErrors),
+        nameof(CanVerify), nameof(CanRepair), nameof(VerifySummary), nameof(RepairSummary), nameof(RepairIssues),
     };
 
     protected override void OnPropertyChanged(PropertyChangedEventArgs e)
@@ -107,7 +148,38 @@ public sealed partial class BackupFlowViewModel : ObservableObject
     void FoldersChanged()
     {
         Preview = null;
+        Verification = null; VerifyPartial = false; Repairs = null;
         if (Step == BackupStep.Preview) Step = BackupStep.Select;
+    }
+
+    [RelayCommand]
+    Task Verify()
+    {
+        if (!CanVerify) return Task.CompletedTask;
+        var bak = Backup!;
+        Result = null; Repairs = null; Verification = null; VerifyPartial = false;
+        return Launch(BackupActivity.Verify, (prog, ct) => Engine().Verify(bak, prog, ct), r =>
+        {
+            VerifyPartial = r.Cancelled;
+            Verification = r;
+            Stopped = r.Cancelled;
+        });
+    }
+
+    /// <summary>Yalnız son doğrulamanın sonucuyla; bitince doğrulama geçersizdir, istenirse yeniden yapılır.</summary>
+    [RelayCommand]
+    Task Repair()
+    {
+        if (!CanRepair) return Task.CompletedTask;
+        string arc = Archive!, bak = Backup!;
+        var problems = Verification!;
+        Repairs = null;
+        return Launch(BackupActivity.Repair, (prog, ct) => Engine().Repair(arc, bak, problems, prog, ct), r =>
+        {
+            Repairs = r;
+            Verification = null; VerifyPartial = false;
+            Stopped = r.Cancelled;
+        });
     }
 
     [RelayCommand]
@@ -139,7 +211,8 @@ public sealed partial class BackupFlowViewModel : ObservableObject
         var opt = Options();
         try
         {
-            var p = await Task.Run(() => Engine().Preview(arc, bak, opt, ct));
+            var before = BeforeScanForTest;
+            var p = await Task.Run(() => { before?.Invoke(); return Engine().Preview(arc, bak, opt, ct); });
             if (p.Cancelled) { Preview = null; Step = BackupStep.Select; return; }
             Preview = p;
             Step = BackupStep.Preview;
@@ -216,6 +289,17 @@ public sealed partial class BackupFlowViewModel : ObservableObject
     [RelayCommand]
     void Stop() => _cts?.Cancel();
 
+    bool ILongRunningPage.IsLocked => Step == BackupStep.Running || IsScanning;
+    bool ILongRunningPage.MustConfirmClose => Step == BackupStep.Running;
+    void ILongRunningPage.RequestStop() => _cts?.Cancel();
+
+    string ILongRunningPage.CloseQuestion => Activity switch
+    {
+        BackupActivity.Verify => "Doğrulama sürüyor. Durdurulsun mu?",
+        BackupActivity.Repair => "Onarım sürüyor. Durdurulsun mu? Onarılanlar korunur, kalanlar sonra yeniden doğrulanıp onarılabilir.",
+        _ => "Yedekleme sürüyor. Durdurulsun mu? O anki dosya yarıda kesilir, yedek tutarlı kalır; kalanlar sonra devam ettirilebilir.",
+    };
+
     [RelayCommand]
     void Back()
     {
@@ -239,6 +323,7 @@ public sealed partial class BackupFlowViewModel : ObservableObject
     {
         if (Step == BackupStep.Running || IsScanning) return;
         Preview = null; Result = null; Stopped = false; ErrorMessage = null;
+        Verification = null; VerifyPartial = false; Repairs = null;
         Step = BackupStep.Select;
     }
 }
