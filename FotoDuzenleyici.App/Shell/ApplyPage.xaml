@@ -115,10 +115,12 @@
                             <ui:Button Content="Geri Al…" Command="{Binding Apply.UndoCommand}" />
                         </StackPanel>
                     </Border>
-                    <Border Style="{StaticResource Panel}" Padding="14" Margin="5,0,0,0" Opacity="0.6">
+                    <Border Style="{StaticResource Panel}" Padding="14" Margin="5,0,0,0"
+                            Visibility="{Binding Apply.IsClean, Converter={StaticResource HasVis}, ConverterParameter=!}">
                         <StackPanel>
                             <TextBlock Text="Yedekle" Style="{StaticResource H2}" />
-                            <TextBlock Style="{StaticResource Small}" Text="Arşivi ikinci diske al. Yakında." Margin="0,4,0,10" />
+                            <TextBlock Style="{StaticResource Small}" Text="Arşivi ikinci diske al." Margin="0,4,0,10" />
+                            <ui:Button Content="Yedekle…" Command="{Binding BackupFromDoneCommand}" />
                         </StackPanel>
                     </Border>
                 </UniformGrid>

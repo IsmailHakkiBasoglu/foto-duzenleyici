@@ -6,6 +6,13 @@ Biçim [Keep a Changelog](https://keepachangelog.com/tr-TR/1.1.0/), sürüm numa
 
 ## [Yayınlanmamış]
 
+### Eklendi
+- **Yedekle ekranı** (yeni arayüz, ana ekrandaki Yedekle kartı ve Düzenle'nin Bitti ekranı): arşiv ikinci bir
+  diske artımlı kopyalanır. Kopyalama başlamadan önce özet gösterilir (yeni, değişmiş, aynı, arşivde yok,
+  gereken ve boş alan); onaylamadan hiçbir şey kopyalanmaz. Durdurulan yedek kaldığı yerden sürer. **Yedeği
+  doğrula** yedeği baştan okuyup eksik ve bozuk dosyaları bulur, **Onar** bunları arşivden yeniden kopyalar.
+  Son arşiv ve yedek klasörü hatırlanır.
+
 ## [0.4.0] - 2026-11-08
 
 ### Eklendi
