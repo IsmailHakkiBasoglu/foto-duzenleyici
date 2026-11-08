@@ -12,7 +12,7 @@
             <StackPanel Margin="0,0,14,0">
                 <TextBlock Text="Kusurlu" Style="{StaticResource H2}" />
                 <TextBlock Style="{StaticResource Small}"
-                           Text="Bulanık ya da çok karanlık kareler. Öntanımlı: hepsi kalır. Kareye tıkla: kalsın ↔ ayıkla; ayıkladıkların _Kusurlu'ya gider. Çift tıkla: tam ekran." />
+                           Text="Bulanık ya da çok karanlık kareler. Öntanımlı: hepsi kalır. Kareye tıkla: kalsın ↔ ayıkla; ayıkladıkların ayrı klasöre gider, silinmez. Çift tıkla: tam ekran." />
                 <TextBlock Style="{StaticResource Small}" Margin="0,6,0,0" Text="{Binding CounterText}" />
             </StackPanel>
         </DockPanel>

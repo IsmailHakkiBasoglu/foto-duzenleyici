@@ -23,6 +23,10 @@ public sealed partial class DuplicatesReviewViewModel : ObservableObject
     public IReadOnlyList<DuplicateGroupState> Groups { get; }
     public string PreferredLabel { get; }
 
+    public string Description => PreferredLabel == "öncelikli"
+        ? "Aynı içerikli dosyalar. Her grupta seçili konum korunur, ötekiler _Ayiklananlar\\Tekrarlar'a taşınır. Önerilen: öncelikli klasördeki kopya, yoksa en eskisi. Çift tıkla: dosyayı aç."
+        : "Aynı içerikli dosyalar. Her grupta seçili konum korunur, ötekiler _Tekrarlar'a ayrılır. Önerilen: düzenli arşivdeki kopya, yoksa en eskisi. Çift tıkla: dosyayı aç.";
+
     public string CounterText
     {
         get

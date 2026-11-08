@@ -29,14 +29,22 @@
                     </DockPanel>
                 </Border>
                 <!-- Temizle -->
-                <Border Style="{StaticResource Panel}" Margin="6,0" Padding="18" Opacity="0.6">
-                    <StackPanel>
-                        <ui:SymbolIcon Symbol="Broom24" FontSize="28" HorizontalAlignment="Left" />
-                        <TextBlock Text="Temizle" Style="{StaticResource H2}" Margin="0,8,0,4" />
-                        <TextBlock Style="{StaticResource Small}"
-                                   Text="Bir klasördeki birebir kopyaları, benzer kareleri ve bulanık fotoğrafları yerinde ayıklar." />
-                        <TextBlock Style="{StaticResource Small}" Text="Yakında · şimdilik komut satırında (--clean)" Margin="0,10,0,0" />
-                    </StackPanel>
+                <Border Style="{StaticResource Panel}" Margin="6,0" Padding="18">
+                    <DockPanel>
+                        <ui:Button DockPanel.Dock="Bottom" HorizontalAlignment="Left" Margin="0,10,0,0"
+                                   Content="Başla →" Command="{Binding StartCleanCommand}" CommandParameter="{Binding LastClean}" />
+                        <StackPanel DockPanel.Dock="Bottom" Visibility="{Binding LastClean, Converter={StaticResource HasVis}}">
+                            <TextBlock Style="{StaticResource Small}" Text="Son temizlenen:" Margin="0,8,0,0" />
+                            <TextBlock Style="{StaticResource Mono}" Text="{Binding LastClean.Sources[0]}" />
+                        </StackPanel>
+                        <StackPanel>
+                            <ui:SymbolIcon Symbol="Broom24" FontSize="28" HorizontalAlignment="Left"
+                                           Foreground="{DynamicResource AccentTextFillColorPrimaryBrush}" />
+                            <TextBlock Text="Temizle" Style="{StaticResource H2}" Margin="0,8,0,4" />
+                            <TextBlock Style="{StaticResource Small}"
+                                       Text="Bir klasördeki birebir kopyaları, benzer kareleri ve bulanık fotoğrafları yerinde ayıklar; düzen olduğu gibi kalır." />
+                        </StackPanel>
+                    </DockPanel>
                 </Border>
                 <!-- Yedekle -->
                 <Border Style="{StaticResource Panel}" Margin="6,0,0,0" Padding="18" Opacity="0.6">

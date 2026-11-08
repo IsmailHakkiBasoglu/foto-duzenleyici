@@ -94,5 +94,7 @@ public class CleanShellTests : IDisposable
         Assert.True(File.Exists(copy));
         var undo = (OrganizeFlowViewModel)shell.CurrentPage;
         Assert.Equal(Path.Combine(D("klasor"), "_Ayiklananlar"), undo.Apply!.Archive);
+        Assert.Equal("Ayıklananları aç", undo.Apply.OpenTitle);
+        Assert.Equal("Arşivi aç", new ApplyStepViewModel(_f.Services, D("arsiv")).OpenTitle);
     }
 }

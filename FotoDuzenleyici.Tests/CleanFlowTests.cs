@@ -71,6 +71,10 @@ public class CleanFlowTests : IDisposable
         Assert.True(c.CanApply);
         Assert.Equal(Path.Combine(D("klasor"), "_Ayiklananlar"), c.Archive);
         Assert.StartsWith(Path.Combine(D("klasor"), "_Ayiklananlar", "_Gunluk", "temizlik-"), c.JournalPath);
+        Assert.Equal(@"→ _Ayiklananlar\Tekrarlar", c.DupTarget);
+        Assert.Equal(@"→ _Ayiklananlar\Benzerler", c.SimilarTarget);
+        Assert.Equal(@"→ _Ayiklananlar\Kusurlu", c.FlawedTarget);
+        Assert.Equal(c.Plan.Items.Sum(i => i.File.Size), c.RejectBytes);
 
         c.ApplyCommand.Execute(null);
         await vm.ApplyTask!;

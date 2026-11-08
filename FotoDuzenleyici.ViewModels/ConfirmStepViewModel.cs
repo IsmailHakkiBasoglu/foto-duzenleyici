@@ -44,6 +44,13 @@ public sealed partial class ConfirmStepViewModel : ObservableObject
     /// <summary>Temizle: taşıma; yer denetimi, başka disk uyarısı ve Geri Dönüşüm kutusu yok.</summary>
     public bool MoveOnly { get; }
     public bool ShowSpace => !MoveOnly;
+
+    // Özet satırlarının hedefleri: Düzenle arşivin _Tekrarlar / _Benzerler / _Kusurlu'su, Temizle _Ayiklananlar altı.
+    public string DupTarget => MoveOnly ? @"→ _Ayiklananlar\Tekrarlar" : "→ _Tekrarlar";
+    public string SimilarTarget => MoveOnly ? @"→ _Ayiklananlar\Benzerler" : "→ _Benzerler";
+    public string FlawedTarget => MoveOnly ? @"→ _Ayiklananlar\Kusurlu" : "→ _Kusurlu";
+    /// <summary>Temizle: ayıklananların toplam boyutu (kazanılacak alan).</summary>
+    public long RejectBytes => Plan.Items.Where(i => i.Action != PlanAction.AlreadyInPlace).Sum(i => i.File.Size);
     public PlanSummary Summary { get; }
     public long NeedBytes { get; }
     public long FreeBytes { get; }

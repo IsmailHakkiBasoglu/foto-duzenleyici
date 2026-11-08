@@ -7,8 +7,7 @@
             <ui:Button DockPanel.Dock="Right" Content="Öneriye dön" Command="{Binding ResetCommand}" VerticalAlignment="Top" />
             <StackPanel Margin="0,0,14,0">
                 <TextBlock Text="Yinelenenler" Style="{StaticResource H2}" />
-                <TextBlock Style="{StaticResource Small}"
-                           Text="Aynı içerikli dosyalar. Her grupta seçili konum korunur, ötekiler _Tekrarlar'a ayrılır. Önerilen: düzenli arşivdeki kopya, yoksa en eskisi. Çift tıkla: dosyayı aç." />
+                <TextBlock Style="{StaticResource Small}" Text="{Binding Description}" />
                 <TextBlock Style="{StaticResource Small}" Margin="0,6,0,0" Text="{Binding CounterText}" />
             </StackPanel>
         </DockPanel>
@@ -57,7 +56,7 @@
                                                     <Border DockPanel.Dock="Right" CornerRadius="9" Padding="8,1" Margin="8,0,0,0"
                                                             Background="{DynamicResource SystemFillColorSuccessBackgroundBrush}"
                                                             Visibility="{Binding Organized, Converter={StaticResource BoolVis}}">
-                                                        <TextBlock Text="düzenli" FontSize="11" FontWeight="SemiBold"
+                                                        <TextBlock Text="{Binding DataContext.PreferredLabel, RelativeSource={RelativeSource AncestorType=UserControl}}" FontSize="11" FontWeight="SemiBold"
                                                                    Foreground="{DynamicResource SystemFillColorSuccessBrush}" />
                                                     </Border>
                                                     <RadioButton IsChecked="{Binding IsKeeper, Mode=TwoWay}" GroupName="{Binding Owner.Number}"
