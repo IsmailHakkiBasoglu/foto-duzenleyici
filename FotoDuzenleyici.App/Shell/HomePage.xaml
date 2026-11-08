@@ -47,14 +47,22 @@
                     </DockPanel>
                 </Border>
                 <!-- Yedekle -->
-                <Border Style="{StaticResource Panel}" Margin="6,0,0,0" Padding="18" Opacity="0.6">
-                    <StackPanel>
-                        <ui:SymbolIcon Symbol="HardDrive20" FontSize="28" HorizontalAlignment="Left" />
-                        <TextBlock Text="Yedekle" Style="{StaticResource H2}" Margin="0,8,0,4" />
-                        <TextBlock Style="{StaticResource Small}"
-                                   Text="Arşivi ikinci bir diske kopyalar, her dosyayı hash ile doğrular, bozulanı onarır." />
-                        <TextBlock Style="{StaticResource Small}" Text="Yakında · şimdilik komut satırında (--backup)" Margin="0,10,0,0" />
-                    </StackPanel>
+                <Border Style="{StaticResource Panel}" Margin="6,0,0,0" Padding="18">
+                    <DockPanel>
+                        <ui:Button DockPanel.Dock="Bottom" HorizontalAlignment="Left" Margin="0,10,0,0"
+                                   Content="Başla →" Command="{Binding StartBackupCommand}" />
+                        <StackPanel DockPanel.Dock="Bottom" Visibility="{Binding LastBackup, Converter={StaticResource HasVis}}">
+                            <TextBlock Style="{StaticResource Small}" Text="Son yedek:" Margin="0,8,0,0" />
+                            <TextBlock Style="{StaticResource Mono}" Text="{Binding LastBackup.Backup}" />
+                        </StackPanel>
+                        <StackPanel>
+                            <ui:SymbolIcon Symbol="HardDrive20" FontSize="28" HorizontalAlignment="Left"
+                                           Foreground="{DynamicResource AccentTextFillColorPrimaryBrush}" />
+                            <TextBlock Text="Yedekle" Style="{StaticResource H2}" Margin="0,8,0,4" />
+                            <TextBlock Style="{StaticResource Small}"
+                                       Text="Arşivi ikinci bir diske kopyalar, her dosyayı hash ile doğrular, bozulanı onarır." />
+                        </StackPanel>
+                    </DockPanel>
                 </Border>
             </UniformGrid>
 

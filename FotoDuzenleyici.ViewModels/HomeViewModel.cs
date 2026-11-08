@@ -11,6 +11,7 @@ public sealed partial class HomeViewModel : ObservableObject
         Recent = settings.Recent.ToList();
         LastOrganize = Recent.FirstOrDefault();
         LastClean = settings.RecentClean.FirstOrDefault();
+        LastBackup = settings.LastBackup;
     }
 
     public RecentPair? LastOrganize { get; }
@@ -29,4 +30,12 @@ public sealed partial class HomeViewModel : ObservableObject
 
     [RelayCommand]
     void StartClean(RecentPair? p) => CleanRequested?.Invoke(p);
+
+    /// <summary>Son yedekleme (Yedekle kartı).</summary>
+    public BackupPair? LastBackup { get; }
+
+    public event Action? BackupRequested;
+
+    [RelayCommand]
+    void StartBackup() => BackupRequested?.Invoke();
 }

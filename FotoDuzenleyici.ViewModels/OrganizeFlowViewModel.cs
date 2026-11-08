@@ -6,7 +6,7 @@ namespace FotoDuzenleyici.ViewModels;
 public enum FlowStep { Folders, Review, Confirm, Apply }
 
 /// <summary>Düzenle sihirbazı: Klasörler → Tara ve incele → Onayla → Uygulanıyor/Bitti.</summary>
-public sealed partial class OrganizeFlowViewModel : ObservableObject
+public sealed partial class OrganizeFlowViewModel : ObservableObject, ILongRunningPage
 {
     readonly Services _s;
     readonly AppSettings _settings;
@@ -171,6 +171,22 @@ public sealed partial class OrganizeFlowViewModel : ObservableObject
 
     /// <summary>Uygulama sürerken adım değiştirilemez, Ana ekrana dönülemez.</summary>
     public bool NavigationLocked => Apply?.IsRunning == true;
+
+    bool ILongRunningPage.IsLocked => NavigationLocked || IsBusy;
+    bool ILongRunningPage.MustConfirmClose => NavigationLocked;
+    Task? ILongRunningPage.RunningTask => ApplyTask;
+    string ILongRunningPage.CloseQuestion => "Dosyalar hâlâ işleniyor. Durdurulsun mu? O anki dosya bitirilir, kalanlar sonra devam ettirilebilir.";
+    void ILongRunningPage.RequestStop() => Apply?.CancelCommand.Execute(null);
+
+    /// <summary>Bitti ekranındaki Yedekle: bu işin arşiviyle Yedekle sayfası açılır. Temizle'de yok.</summary>
+    public event Action<string>? BackupRequested;
+
+    [RelayCommand]
+    void BackupFromDone()
+    {
+        if (NavigationLocked || Apply is not { IsClean: false } a) return;
+        BackupRequested?.Invoke(a.Archive);
+    }
 
     void StartApply()
     {

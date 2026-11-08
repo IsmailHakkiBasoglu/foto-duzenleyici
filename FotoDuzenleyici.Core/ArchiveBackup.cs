@@ -28,6 +28,20 @@ public sealed class BackupResult
     public string? Blocked { get; set; }
 }
 
+/// <summary>Kopyalamadan önceki özet; <see cref="ArchiveBackup.Preview"/> üretir.</summary>
+public sealed class BackupPreview
+{
+    public int New { get; set; }
+    public int Changed { get; set; }
+    public int Unchanged { get; set; }
+    public int MissingInArchive { get; set; }
+    public long BytesNeeded { get; set; }
+    public long FreeBytes { get; set; }
+    public List<string> Errors { get; } = new();
+    public bool Cancelled { get; set; }
+    public string? Blocked { get; set; }
+}
+
 public enum VerifyStatus { Ok, Missing, Corrupt }
 
 public sealed class VerifyResult
@@ -46,6 +60,7 @@ public sealed class RepairResult
     public int Repaired { get; set; }
     public List<string> NotRepaired { get; } = new();
     public List<string> Errors { get; } = new();
+    public bool Cancelled { get; set; }
 }
 
 /// <summary>
@@ -61,7 +76,7 @@ public sealed class ArchiveBackup
 
     internal sealed record CopyInfo(string Sha256, long Size, DateTime Modified);
 
-    internal Func<string, long> FreeSpace { get; set; } = DefaultFreeSpace;
+    public Func<string, long> FreeSpace { get; set; } = DefaultFreeSpace;
     /// <summary>Test kancası: geçici kopya yazıldıktan sonra, doğrulamadan önce çağrılır.</summary>
     internal Action<string>? AfterWrite { get; set; }
     /// <summary>Test kancası: her 1 MB'lık parça yazıldıktan sonra, o ana kadar yazılan baytla çağrılır.</summary>
@@ -93,56 +108,19 @@ public sealed class ArchiveBackup
         IProgress<BackupProgress>? progress = null, CancellationToken ct = default)
     {
         var res = new BackupResult();
-        var arc = Norm(archiveRoot);
         var bak = Norm(backupRoot);
-        if (!Directory.Exists(arc)) { res.Blocked = $"Arşiv klasörü bulunamadı: {arc}"; return res; }
-        if (Nested(arc, bak)) { res.Blocked = "Yedek klasörü arşiv klasörüyle iç içe olamaz."; return res; }
-
-        BackupManifest manifest;
-        try
-        {
-            Directory.CreateDirectory(bak);
-            manifest = BackupManifest.Load(bak);
-        }
-        catch (InvalidDataException ex) { res.Blocked = ex.Message; return res; }
+        var survey = Inspect(Norm(archiveRoot), bak, opt, res.Errors, ct);
+        res.Unchanged = survey.Unchanged; res.MissingInArchive = survey.Missing;
+        if (survey.Blocked is not null) { res.Blocked = survey.Blocked; return res; }
+        if (survey.Cancelled) { res.Cancelled = true; return res; }
+        try { Directory.CreateDirectory(bak); }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         { res.Blocked = $"Yedek klasörüne erişilemiyor: {ex.Message}"; return res; }
-
         CleanLeftovers(bak);
 
-        var work = new List<(string Rel, string Src, long Size, bool Changed)>();
-        var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-        bool SkipTop(string top) => IsReserved(top) ||
-            (!opt.IncludeDuplicates && top.Equals(opt.DuplicatesFolderName, StringComparison.OrdinalIgnoreCase));
-        foreach (var src in Walk(arc, SkipTop, res.Errors))
-        {
-            var rel = Path.GetRelativePath(arc, src);
-            if (rel.Equals(BackupManifest.FileName, StringComparison.OrdinalIgnoreCase)) continue;
-            FileInfo fi;
-            try { fi = new FileInfo(src); _ = fi.Length; }
-            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
-            { res.Errors.Add($"{rel}: {ex.Message}"); continue; }
-            seen.Add(rel);
-            if (manifest.TryGet(rel, out var e))
-            {
-                if (e.Size == fi.Length && e.Modified == fi.LastWriteTimeUtc) { res.Unchanged++; continue; }
-                work.Add((rel, src, fi.Length, true));
-            }
-            else work.Add((rel, src, fi.Length, false));
-        }
-        work.Sort((x, y) => StringComparer.OrdinalIgnoreCase.Compare(x.Rel, y.Rel));
-        res.MissingInArchive = manifest.Entries.Count(e => !seen.Contains(e.Path));
-
-        long need = work.Sum(w => w.Size);
-        if (need > 0)
-        {
-            long free = FreeSpace(bak);
-            if (need + need / 100 > free)
-            {
-                res.Blocked = $"Yedek diskinde yer yetmiyor: {Gb(need)} gerekli, {Gb(free)} boş.";
-                return res;
-            }
-        }
+        var manifest = survey.Manifest!;
+        var work = survey.Work;
+        long need = survey.Need;
 
         long bytesDone = 0;
         for (int i = 0; i < work.Count; i++)
@@ -175,6 +153,73 @@ public sealed class ArchiveBackup
         if (ct.IsCancellationRequested) res.Cancelled = true;
         TrySave(manifest, res.Errors);
         return res;
+    }
+
+    /// <summary>Kopyalamadan önceki özet: <see cref="Run"/> ile aynı denetim ve tarama. Hiçbir yere yazmaz.</summary>
+    public BackupPreview Preview(string archiveRoot, string backupRoot, BackupOptions opt, CancellationToken ct = default)
+    {
+        var p = new BackupPreview();
+        var s = Inspect(Norm(archiveRoot), Norm(backupRoot), opt, p.Errors, ct);
+        p.New = s.Work.Count(w => !w.Changed);
+        p.Changed = s.Work.Count(w => w.Changed);
+        p.Unchanged = s.Unchanged;
+        p.MissingInArchive = s.Missing;
+        p.BytesNeeded = s.Need;
+        p.FreeBytes = s.Free;
+        p.Cancelled = s.Cancelled;
+        p.Blocked = s.Blocked;
+        return p;
+    }
+
+    sealed class Survey
+    {
+        public BackupManifest? Manifest;
+        public List<(string Rel, string Src, long Size, bool Changed)> Work = new();
+        public int Unchanged, Missing;
+        public long Need, Free;
+        public bool Cancelled;
+        public string? Blocked;
+    }
+
+    /// <summary>Kök denetimleri, liste, tarama ve yer hesabı; özet ile yedekleme bunu paylaşır. Yazmaz.</summary>
+    Survey Inspect(string arc, string bak, BackupOptions opt, List<string> errors, CancellationToken ct)
+    {
+        var s = new Survey();
+        if (!Directory.Exists(arc)) { s.Blocked = $"Arşiv klasörü bulunamadı: {arc}"; return s; }
+        if (Nested(arc, bak)) { s.Blocked = "Yedek klasörü arşiv klasörüyle iç içe olamaz."; return s; }
+        try { s.Manifest = BackupManifest.Load(bak); }
+        catch (InvalidDataException ex) { s.Blocked = ex.Message; return s; }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        { s.Blocked = $"Yedek klasörüne erişilemiyor: {ex.Message}"; return s; }
+
+        var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        bool SkipTop(string top) => IsReserved(top) ||
+            (!opt.IncludeDuplicates && top.Equals(opt.DuplicatesFolderName, StringComparison.OrdinalIgnoreCase));
+        foreach (var src in Walk(arc, SkipTop, errors))
+        {
+            if (ct.IsCancellationRequested) { s.Cancelled = true; return s; }
+            var rel = Path.GetRelativePath(arc, src);
+            if (rel.Equals(BackupManifest.FileName, StringComparison.OrdinalIgnoreCase)) continue;
+            FileInfo fi;
+            try { fi = new FileInfo(src); _ = fi.Length; }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+            { errors.Add($"{rel}: {ex.Message}"); continue; }
+            seen.Add(rel);
+            if (s.Manifest.TryGet(rel, out var e))
+            {
+                if (e.Size == fi.Length && e.Modified == fi.LastWriteTimeUtc) { s.Unchanged++; continue; }
+                s.Work.Add((rel, src, fi.Length, true));
+            }
+            else s.Work.Add((rel, src, fi.Length, false));
+        }
+        if (ct.IsCancellationRequested) { s.Cancelled = true; return s; }
+        s.Work.Sort((x, y) => StringComparer.OrdinalIgnoreCase.Compare(x.Rel, y.Rel));
+        s.Missing = s.Manifest.Entries.Count(e => !seen.Contains(e.Path));
+        s.Need = s.Work.Sum(w => w.Size);
+        s.Free = FreeSpace(bak);
+        if (s.Need > 0 && s.Need + s.Need / 100 > s.Free)
+            s.Blocked = $"Yedek diskinde yer yetmiyor: {Gb(s.Need)} gerekli, {Gb(s.Free)} boş.";
+        return s;
     }
 
     /// <summary>Yedek listesindeki her dosyayı yedek diskinden okuyup hash'ini karşılaştırır. Arşive dokunmaz.</summary>
@@ -243,7 +288,7 @@ public sealed class ArchiveBackup
         long total = list.Sum(p => p.Entry.Size), done = 0;
         for (int i = 0; i < list.Count; i++)
         {
-            if (ct.IsCancellationRequested) break;
+            if (ct.IsCancellationRequested) { res.Cancelled = true; break; }
             var (e, _) = list[i];
             var src = Path.Combine(arc, e.Path);
             try
@@ -261,7 +306,7 @@ public sealed class ArchiveBackup
                     else res.Errors.Add($"{e.Path}: {err}");
                 }
             }
-            catch (OperationCanceledException) { break; }
+            catch (OperationCanceledException) { res.Cancelled = true; break; }
             catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
             {
                 res.Errors.Add($"{e.Path}: {ex.Message}");

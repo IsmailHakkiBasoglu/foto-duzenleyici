@@ -33,13 +33,16 @@ public sealed partial class ShellViewModel : ObservableObject
 
     OrganizeFlowViewModel? Flow => CurrentPage as OrganizeFlowViewModel;
 
-    bool Locked => Flow is { } f && (f.NavigationLocked || f.IsBusy);
+    ILongRunningPage? Long => CurrentPage as ILongRunningPage;
+
+    bool Locked => Long is { IsLocked: true };
 
     HomeViewModel NewHome()
     {
         var h = new HomeViewModel(_settings);
         h.OrganizeRequested += StartOrganize;
         h.CleanRequested += StartClean;
+        h.BackupRequested += () => StartBackup(null);
         return h;
     }
 
@@ -53,8 +56,17 @@ public sealed partial class ShellViewModel : ObservableObject
     void StartOrganize(RecentPair? p)
     {
         var f = new OrganizeFlowViewModel(_s, _settings);
+        f.BackupRequested += StartBackup;
         if (p is not null) f.Folders.Load(p);
         CurrentPage = f;
+    }
+
+    /// <param name="archive">Düzenle'nin Bitti ekranından: o işin arşivi; null → son kullanılan.</param>
+    public void StartBackup(string? archive)
+    {
+        if (Locked) return;
+        Flow?.FlushReviews();
+        CurrentPage = new BackupFlowViewModel(_s, _settings, archive);
     }
 
     [RelayCommand]
@@ -110,18 +122,23 @@ public sealed partial class ShellViewModel : ObservableObject
     /// </summary>
     public CloseDecision RequestClose()
     {
-        if (Flow is not { NavigationLocked: true } f) { _waitingToClose = false; Flow?.FlushReviews(); return CloseDecision.Close; }
+        if (Long is not { MustConfirmClose: true } p)
+        {
+            _waitingToClose = false;
+            Flow?.FlushReviews();
+            Long?.RequestStop(); // Yalnız tarama sürüyor olabilir: yazılan bir şey yok, sormadan durur.
+            return CloseDecision.Close;
+        }
         if (_waitingToClose) return CloseDecision.Stay;
-        if (!_s.Dialogs.Confirm("İşlem sürüyor",
-                "Dosyalar hâlâ işleniyor. Durdurulsun mu? O anki dosya bitirilir, kalanlar sonra devam ettirilebilir."))
+        if (!_s.Dialogs.Confirm("İşlem sürüyor", p.CloseQuestion))
             return CloseDecision.Stay;
-        f.Apply?.CancelCommand.Execute(null);
+        p.RequestStop();
         _waitingToClose = true;
         return CloseDecision.WaitThenClose;
     }
 
-    /// <summary>Sürmekte olan uygulama / geri alma işi; yoksa null.</summary>
-    public Task? RunningTask => Flow is { NavigationLocked: true } f ? f.ApplyTask : null;
+    /// <summary>Sürmekte olan uygulama / geri alma / yedekleme işi; yoksa null.</summary>
+    public Task? RunningTask => Long is { MustConfirmClose: true } p ? p.RunningTask : null;
 }
 
 public enum CloseDecision { Close, Stay, WaitThenClose }

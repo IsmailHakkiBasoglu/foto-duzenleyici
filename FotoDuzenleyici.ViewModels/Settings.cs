@@ -5,6 +5,9 @@ namespace FotoDuzenleyici.ViewModels;
 /// <param name="Priority">Temizle: kopyalarda öncelikli klasörler. Düzenle'de null.</param>
 public sealed record RecentPair(List<string> Sources, string Archive, DateTime Used, List<string>? Priority = null);
 
+/// <summary>Son yedekleme: hangi arşiv hangi klasöre, tekrarlar dahil mi.</summary>
+public sealed record BackupPair(string Archive, string Backup, bool IncludeDuplicates, DateTime Used);
+
 /// <summary>Uygulama ayarları: son kullanılan klasörler, düzen seçenekleri, tema, Geri Dönüşüm seçimi.</summary>
 public sealed class AppSettings
 {
@@ -13,6 +16,7 @@ public sealed class AppSettings
     public List<RecentPair> Recent { get; set; } = new();
     /// <summary>Son temizlenen klasörler (Archive boş, öncelikli klasörler Priority'de).</summary>
     public List<RecentPair> RecentClean { get; set; } = new();
+    public BackupPair? LastBackup { get; set; }
     public SourceFolderMode SourceFolder { get; set; } = SourceFolderMode.None;
     public bool RenameWithDate { get; set; }
     public bool AppendSourceToName { get; set; }
@@ -74,6 +78,7 @@ public sealed class JsonSettingsStore : ISettingsStore
             s.Recent.RemoveAll(r => r is null || r.Sources is null || r.Archive is null);
             s.RecentClean ??= new();
             s.RecentClean.RemoveAll(r => r is null || r.Sources is null);
+            if (s.LastBackup is not null && (s.LastBackup.Archive is null || s.LastBackup.Backup is null)) s.LastBackup = null;
             s.Theme ??= "Sistem";
             return s;
         }

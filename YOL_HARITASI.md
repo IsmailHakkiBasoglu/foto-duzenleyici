@@ -36,7 +36,7 @@ Durum işaretleri: ✅ bitti · 🔄 sürüyor · ⬜ planlandı
   grup kartları ve korunacak konumu seçme, 0.1.6)
 - ⬜ Ay ay zaman çizelgesi; ay başına dosya sayısı ve boyut grafiği
 - 🔄 Koyu tema, modern görünüm (WPF-UI / Fluent): 1. parça kabuk + Düzenle akışı (0.2.0); 2. parça
-  inceleme ekranları (Yinelenenler, Benzerler, Kusurlu, 0.3.0); Temizle ekranı (0.4.0); Yedekle ekranı sonraki parçada
+  inceleme ekranları (Yinelenenler, Benzerler, Kusurlu, 0.3.0); Temizle ekranı (0.4.0); Yedekle ekranı (yayınlanmamış)
 
 ## Aşama 4 — Otomatik içe aktarma ve yedek
 
