@@ -214,6 +214,82 @@ public class BackupFlowTests : IDisposable
     }
 
     [Fact]
+    public async Task ChangeDuringScan_DiscardsResult()
+    {
+        Arc("a.jpg"); Arc(@"_Tekrarlar\a.jpg");
+        var vm = Vm();
+        vm.BeforeScanForTest = () => vm.IncludeDuplicates = true;
+
+        await vm.ScanCommand.ExecuteAsync(null);
+
+        Assert.Null(vm.Preview);
+        Assert.Equal(BackupStep.Select, vm.Step);
+    }
+
+    [Fact]
+    public async Task Pick_WhileScanning_Ignored()
+    {
+        Arc("a.jpg");
+        var vm = Vm();
+        _f.Folders.Next.Enqueue(Path.Combine(_tmp, "baska"));
+        _f.Folders.Next.Enqueue(Path.Combine(_tmp, "baska2"));
+        vm.BeforeScanForTest = () => { vm.PickArchiveCommand.Execute(null); vm.PickBackupCommand.Execute(null); };
+
+        await vm.ScanCommand.ExecuteAsync(null);
+
+        Assert.Equal(_arc, vm.Archive);
+        Assert.Equal(_bak, vm.Backup);
+        Assert.Equal(BackupStep.Preview, vm.Step);
+    }
+
+    [Theory]
+    [InlineData("arg")]
+    [InlineData("io")]
+    public async Task FreeSpace_Throws_ShowsUnmeasurable(string kind)
+    {
+        Arc("a.jpg");
+        _f.FreeFn = _ => throw (kind == "arg" ? new ArgumentException("UNC") : new IOException("hazir degil"));
+        var vm = Vm();
+
+        await vm.ScanCommand.ExecuteAsync(null);
+
+        Assert.Equal(BackupStep.Preview, vm.Step);
+        Assert.Equal("ölçülemedi", vm.FreeText);
+        Assert.Null(vm.Preview!.Blocked);
+    }
+
+    [Fact]
+    public async Task Resume_ScansOnSelectPage()
+    {
+        Arc("a.jpg"); Arc("b.jpg");
+        var vm = Vm();
+        vm.OnProgressForTest = d => { if (d >= 1) vm.StopCommand.Execute(null); };
+        await vm.ScanCommand.ExecuteAsync(null);
+        await vm.StartCommand.ExecuteAsync(null);
+        BackupStep? during = null;
+        vm.BeforeScanForTest = () => during = vm.Step;
+
+        await vm.ResumeCommand.ExecuteAsync(null);
+
+        Assert.Equal(BackupStep.Select, during);
+    }
+
+    [Fact]
+    public async Task UnreadableFiles_NotReportedAsUpToDate()
+    {
+        Arc("a.jpg");
+        var first = Vm();
+        await first.ScanCommand.ExecuteAsync(null);
+        await first.StartCommand.ExecuteAsync(null);
+        var vm = Vm();
+        await vm.ScanCommand.ExecuteAsync(null);
+        Assert.True(vm.UpToDate);
+
+        vm.Preview!.Errors.Add("x: okunamadi");
+        Assert.False(vm.UpToDate);
+    }
+
+    [Fact]
     public void Eta_Rules()
     {
         const long Mb = 1L << 20;

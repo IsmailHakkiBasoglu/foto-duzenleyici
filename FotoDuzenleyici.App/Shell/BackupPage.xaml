@@ -14,17 +14,17 @@
                     <StackPanel>
                         <TextBlock Text="Arşiv klasörü" FontWeight="SemiBold" Foreground="{DynamicResource TextFillColorPrimaryBrush}" />
                         <DockPanel Margin="0,4,0,14">
-                            <ui:Button DockPanel.Dock="Right" Content="Gözat…" Command="{Binding PickArchiveCommand}" Margin="10,0,0,0" />
+                            <ui:Button DockPanel.Dock="Right" Content="Gözat…" Command="{Binding PickArchiveCommand}" IsEnabled="{Binding IsScanning, Converter={StaticResource Not}}" Margin="10,0,0,0" />
                             <TextBlock Style="{StaticResource Mono}" VerticalAlignment="Center" TextWrapping="Wrap"
                                        Text="{Binding Archive, TargetNullValue='Seçilmedi'}" />
                         </DockPanel>
                         <TextBlock Text="Yedek klasörü" FontWeight="SemiBold" Foreground="{DynamicResource TextFillColorPrimaryBrush}" />
                         <DockPanel Margin="0,4,0,14">
-                            <ui:Button DockPanel.Dock="Right" Content="Gözat…" Command="{Binding PickBackupCommand}" Margin="10,0,0,0" />
+                            <ui:Button DockPanel.Dock="Right" Content="Gözat…" Command="{Binding PickBackupCommand}" IsEnabled="{Binding IsScanning, Converter={StaticResource Not}}" Margin="10,0,0,0" />
                             <TextBlock Style="{StaticResource Mono}" VerticalAlignment="Center" TextWrapping="Wrap"
                                        Text="{Binding Backup, TargetNullValue='Seçilmedi'}" />
                         </DockPanel>
-                        <CheckBox Content="Tekrarları da yedekle (_Tekrarlar)" IsChecked="{Binding IncludeDuplicates}" />
+                        <CheckBox Content="Tekrarları da yedekle (_Tekrarlar)" IsChecked="{Binding IncludeDuplicates}" IsEnabled="{Binding IsScanning, Converter={StaticResource Not}}" />
                     </StackPanel>
                 </Border>
                 <Border Style="{StaticResource Bad}" Margin="0,12,0,0" Padding="12"
@@ -69,7 +69,7 @@
                     <TextBlock Text="{Binding Preview.Blocked}" TextWrapping="Wrap" />
                 </Border>
                 <Border Style="{StaticResource Safe}" Margin="0,12,0,0" Padding="12"
-                        Visibility="{Binding NothingToCopy, Converter={StaticResource BoolVis}}">
+                        Visibility="{Binding UpToDate, Converter={StaticResource BoolVis}}">
                     <TextBlock Text="Yedek güncel, kopyalanacak dosya yok." TextWrapping="Wrap" />
                 </Border>
                 <StackPanel Margin="0,12,0,0" Visibility="{Binding Preview.Errors.Count, Converter={StaticResource HasVis}}">

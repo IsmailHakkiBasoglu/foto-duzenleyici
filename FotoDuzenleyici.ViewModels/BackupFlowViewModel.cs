@@ -96,6 +96,8 @@ public sealed partial class BackupFlowViewModel : ObservableObject, ILongRunning
     public bool CanScan => !IsScanning && Step != BackupStep.Running
         && !string.IsNullOrWhiteSpace(Backup) && !string.IsNullOrWhiteSpace(Archive) && Directory.Exists(Archive);
 
+    public bool UpToDate => NothingToCopy && Preview!.Errors.Count == 0;
+
     public bool NothingToCopy => Preview is { Blocked: null, New: 0, Changed: 0 };
 
     public bool CanStart => Step == BackupStep.Preview && Preview is { Blocked: null } && !NothingToCopy;
@@ -130,7 +132,7 @@ public sealed partial class BackupFlowViewModel : ObservableObject, ILongRunning
     {
         nameof(CanScan), nameof(NothingToCopy), nameof(CanStart), nameof(CanResume), nameof(NeededText), nameof(FreeText),
         nameof(Percent), nameof(ProgressText), nameof(RemainingText), nameof(FinishedSummary), nameof(FinishedErrors),
-        nameof(CanVerify), nameof(CanRepair), nameof(VerifySummary), nameof(RepairSummary), nameof(RepairIssues),
+        nameof(UpToDate), nameof(CanVerify), nameof(CanRepair), nameof(VerifySummary), nameof(RepairSummary), nameof(RepairIssues),
     };
 
     protected override void OnPropertyChanged(PropertyChangedEventArgs e)
@@ -185,16 +187,23 @@ public sealed partial class BackupFlowViewModel : ObservableObject, ILongRunning
     [RelayCommand]
     void PickArchive()
     {
-        if (_s.Folders.PickFolder("Arşiv klasörünü seç", Archive) is { } p) Archive = p;
+        if (!IsScanning && _s.Folders.PickFolder("Arşiv klasörünü seç", Archive) is { } p) Archive = p;
     }
 
     [RelayCommand]
     void PickBackup()
     {
-        if (_s.Folders.PickFolder("Yedek klasörünü seç", Backup) is { } p) Backup = p;
+        if (!IsScanning && _s.Folders.PickFolder("Yedek klasörünü seç", Backup) is { } p) Backup = p;
     }
 
-    ArchiveBackup Engine() => new() { FreeSpace = _s.FreeSpace };
+    ArchiveBackup Engine() => new() { FreeSpace = MeasureFree };
+
+    /// <summary>Ölçülemeyen hedef (ağ yolu, hazır olmayan sürücü) engellenmez; motorun kendi kuralıyla aynı.</summary>
+    long MeasureFree(string root)
+    {
+        try { return _s.FreeSpace(root); }
+        catch (Exception ex) when (ex is ArgumentException or IOException or UnauthorizedAccessException) { return long.MaxValue; }
+    }
 
     BackupOptions Options() => new() { IncludeDuplicates = IncludeDuplicates };
 
@@ -213,7 +222,9 @@ public sealed partial class BackupFlowViewModel : ObservableObject, ILongRunning
         {
             var before = BeforeScanForTest;
             var p = await Task.Run(() => { before?.Invoke(); return Engine().Preview(arc, bak, opt, ct); });
-            if (p.Cancelled) { Preview = null; Step = BackupStep.Select; return; }
+            // Tarama sürerken seçim değiştiyse özet artık başka bir işe aittir.
+            bool changed = arc != Archive || bak != Backup || opt.IncludeDuplicates != IncludeDuplicates;
+            if (p.Cancelled || changed) { Preview = null; Step = BackupStep.Select; return; }
             Preview = p;
             Step = BackupStep.Preview;
         }
@@ -310,7 +321,14 @@ public sealed partial class BackupFlowViewModel : ObservableObject, ILongRunning
 
     /// <summary>Özeti atlamaz: arşiv arada değişmiş olabilir, yeniden taranır.</summary>
     [RelayCommand]
-    Task Resume() => CanResume ? Scan() : Task.CompletedTask;
+    Task Resume()
+    {
+        if (!CanResume) return Task.CompletedTask;
+        // Tarama göstergesi ve Durdur seçim adımında.
+        Result = null; Stopped = false;
+        Step = BackupStep.Select;
+        return Scan();
+    }
 
     [RelayCommand]
     void OpenBackup()
