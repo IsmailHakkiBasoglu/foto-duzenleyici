@@ -2,7 +2,8 @@ using System.Text.Json;
 
 namespace FotoDuzenleyici.ViewModels;
 
-public sealed record RecentPair(List<string> Sources, string Archive, DateTime Used);
+/// <param name="Priority">Temizle: kopyalarda öncelikli klasörler. Düzenle'de null.</param>
+public sealed record RecentPair(List<string> Sources, string Archive, DateTime Used, List<string>? Priority = null);
 
 /// <summary>Uygulama ayarları: son kullanılan klasörler, düzen seçenekleri, tema, Geri Dönüşüm seçimi.</summary>
 public sealed class AppSettings
@@ -10,6 +11,8 @@ public sealed class AppSettings
     public const int MaxRecent = 5;
 
     public List<RecentPair> Recent { get; set; } = new();
+    /// <summary>Son temizlenen klasörler (Archive boş, öncelikli klasörler Priority'de).</summary>
+    public List<RecentPair> RecentClean { get; set; } = new();
     public SourceFolderMode SourceFolder { get; set; } = SourceFolderMode.None;
     public bool RenameWithDate { get; set; }
     public bool AppendSourceToName { get; set; }
@@ -30,6 +33,17 @@ public sealed class AppSettings
         Recent.RemoveAll(r => Key(r.Sources, r.Archive) == key);
         Recent.Insert(0, new RecentPair(list, archive, now));
         if (Recent.Count > MaxRecent) Recent.RemoveRange(MaxRecent, Recent.Count - MaxRecent);
+    }
+
+    /// <summary>Temizle: klasör kümesi + öncelikli klasörler başa eklenir; aynı küme tek kayıttır.</summary>
+    public void AddRecentClean(IEnumerable<string> sources, IEnumerable<string> priority, DateTime now)
+    {
+        var list = sources.ToList();
+        var pri = priority.ToList();
+        var key = Key(list, "");
+        RecentClean.RemoveAll(r => Key(r.Sources, "") == key);
+        RecentClean.Insert(0, new RecentPair(list, "", now, pri));
+        if (RecentClean.Count > MaxRecent) RecentClean.RemoveRange(MaxRecent, RecentClean.Count - MaxRecent);
     }
 
     static string Key(IEnumerable<string> sources, string archive) =>
@@ -58,6 +72,8 @@ public sealed class JsonSettingsStore : ISettingsStore
             var s = JsonSerializer.Deserialize<AppSettings>(File.ReadAllText(_path)) ?? throw new JsonException("boş");
             s.Recent ??= new();
             s.Recent.RemoveAll(r => r is null || r.Sources is null || r.Archive is null);
+            s.RecentClean ??= new();
+            s.RecentClean.RemoveAll(r => r is null || r.Sources is null);
             s.Theme ??= "Sistem";
             return s;
         }

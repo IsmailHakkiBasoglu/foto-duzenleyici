@@ -10,9 +10,13 @@ public partial class OptionsDialog : FluentWindow
 {
     readonly AppSettings _s;
 
-    public OptionsDialog(AppSettings s)
+    /// <param name="kind">Temizle: yalnız tarama seçenekleri (tarih düzeni yok).</param>
+    public OptionsDialog(AppSettings s, FlowKind kind = FlowKind.Organize)
     {
         InitializeComponent();
+        if (kind == FlowKind.Clean)
+            foreach (var c in new FrameworkElement[] { LayoutNote, SubFolder, RenameWithDate, AppendSource, RawSeparate })
+                c.Visibility = Visibility.Collapsed;
         _s = s;
         SubFolder.IsChecked = s.SourceFolder == SourceFolderMode.SubFolder;
         RenameWithDate.IsChecked = s.RenameWithDate;

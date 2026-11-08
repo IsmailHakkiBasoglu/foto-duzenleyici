@@ -67,7 +67,37 @@
                 <RowDefinition Height="*" />
             </Grid.RowDefinitions>
             <StackPanel>
-                <UniformGrid Columns="4" Margin="0,0,0,12">
+                <UniformGrid Columns="4" Margin="0,0,0,12" Visibility="{Binding Review.Kind, Converter={StaticResource EqVis}, ConverterParameter=Clean}">
+                    <Border Style="{StaticResource Panel}" Padding="14,10" Margin="0,0,5,0">
+                        <StackPanel>
+                            <TextBlock Text="Ayıklanacak kopya" Style="{StaticResource Small}" />
+                            <TextBlock Text="{Binding Review.Summary.DupCount, StringFormat=N0}" Style="{StaticResource TileValue}" />
+                            <TextBlock Text="{Binding Review.Summary.DupBytes, Converter={StaticResource Bytes}, StringFormat='{}{0} → Tekrarlar'}" Style="{StaticResource Small}" />
+                        </StackPanel>
+                    </Border>
+                    <Border Style="{StaticResource Panel}" Padding="14,10" Margin="5,0">
+                        <StackPanel>
+                            <TextBlock Text="Benzer" Style="{StaticResource Small}" />
+                            <TextBlock Text="{Binding Review.Summary.SimilarCount, StringFormat=N0}" Style="{StaticResource TileValue}" />
+                            <TextBlock Text="{Binding Review.Summary.SimilarBytes, Converter={StaticResource Bytes}, StringFormat='{}{0} → Benzerler'}" Style="{StaticResource Small}" />
+                        </StackPanel>
+                    </Border>
+                    <Border Style="{StaticResource Panel}" Padding="14,10" Margin="5,0">
+                        <StackPanel>
+                            <TextBlock Text="Kusurlu" Style="{StaticResource Small}" />
+                            <TextBlock Text="{Binding Review.Summary.FlawedCount, StringFormat=N0}" Style="{StaticResource TileValue}" />
+                            <TextBlock Text="{Binding Review.Summary.FlawedBytes, Converter={StaticResource Bytes}, StringFormat='{}{0} → Kusurlu'}" Style="{StaticResource Small}" />
+                        </StackPanel>
+                    </Border>
+                    <Border Style="{StaticResource Panel}" Padding="14,10" Margin="5,0,0,0">
+                        <StackPanel>
+                            <TextBlock Text="Kazanılacak alan" Style="{StaticResource Small}" />
+                            <TextBlock Text="{Binding Review.RejectBytes, Converter={StaticResource Bytes}}" Style="{StaticResource TileValue}" />
+                            <TextBlock Text="_Ayiklananlar'a taşınacak" Style="{StaticResource Small}" />
+                        </StackPanel>
+                    </Border>
+                </UniformGrid>
+                <UniformGrid Columns="4" Margin="0,0,0,12" Visibility="{Binding Review.Kind, Converter={StaticResource EqVis}, ConverterParameter=Organize}">
                     <Border Style="{StaticResource Panel}" Padding="14,10" Margin="0,0,5,0">
                         <StackPanel>
                             <TextBlock Text="Taşınacak" Style="{StaticResource Small}" />
@@ -119,7 +149,7 @@
                                 <ui:SymbolIcon Symbol="Copy24" Margin="0,0,12,0" Foreground="{DynamicResource AccentTextFillColorPrimaryBrush}" />
                                 <TextBlock TextWrapping="Wrap" VerticalAlignment="Center" Foreground="{DynamicResource TextFillColorPrimaryBrush}">
                                     <Run FontWeight="SemiBold" Text="{Binding Review.DuplicateGroups, StringFormat='{}{0:N0} yinelenen grup:', Mode=OneWay}" />
-                                    <Run Text="düzenli klasördeki ya da en eski kopya korunuyor." />
+                                    <Run Text="{Binding Review.Duplicates.PreferredLabel, StringFormat='{}{0} klasördeki ya da en eski kopya korunuyor.', Mode=OneWay}" />
                                 </TextBlock>
                             </DockPanel>
                         </Border>
@@ -130,7 +160,7 @@
                                 <ui:SymbolIcon Symbol="EyeOff24" Margin="0,0,12,0" Foreground="{DynamicResource SystemFillColorCriticalBrush}" />
                                 <TextBlock TextWrapping="Wrap" VerticalAlignment="Center" Foreground="{DynamicResource TextFillColorPrimaryBrush}">
                                     <Run FontWeight="SemiBold" Text="{Binding Review.Flawed.Total, StringFormat='{}{0:N0} bulanık ya da çok karanlık kare.', Mode=OneWay}" />
-                                    <Run Text="Öntanımlı: hepsi kalır. Ayıkladıkların _Kusurlu klasörüne gider." />
+                                    <Run Text="Öntanımlı: hepsi kalır. Ayıkladıkların ayrı klasöre gider, silinmez." />
                                 </TextBlock>
                             </DockPanel>
                         </Border>

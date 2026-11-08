@@ -30,7 +30,7 @@ public class ReviewFinalFixTests : IDisposable
         plan.Items.Add(Item(PlanAction.Similar, 1000));
         plan.Items.Add(Item(PlanAction.Flawed, 5000));
         var opt = new PlanOptions { DestinationRoot = _tmp };
-        var c = new ConfirmStepViewModel(plan, opt, new[] { _tmp }, _f.Services, _f.Settings.Stored, DateTime.Now);
+        var c = new ConfirmStepViewModel(plan, new OrganizeJob(new OrganizeSession(new[] { _tmp }, opt)), _f.Services, _f.Settings.Stored, DateTime.Now);
         Assert.Equal(6110, c.NeedBytes);
     }
 

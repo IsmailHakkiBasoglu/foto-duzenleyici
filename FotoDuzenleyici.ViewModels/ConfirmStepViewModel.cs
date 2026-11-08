@@ -8,29 +8,49 @@ public sealed partial class ConfirmStepViewModel : ObservableObject
 {
     readonly Services _s;
     readonly AppSettings _settings;
+    readonly IScanJob _job;
 
-    public ConfirmStepViewModel(Plan plan, PlanOptions opt, IEnumerable<string> sources, Services s, AppSettings settings, DateTime now)
+    public ConfirmStepViewModel(Plan plan, IScanJob job, Services s, AppSettings settings, DateTime now)
     {
-        _s = s; _settings = settings;
+        _s = s; _settings = settings; _job = job;
         Plan = plan;
-        Archive = opt.DestinationRoot;
-        Summary = PlanSummary.From(plan, opt);
+        Kind = job.Kind;
+        MoveOnly = job.MoveOnly;
+        Archive = job.RejectsFolder;
+        Summary = PlanSummary.From(plan, job.PlanOptions);
         // _Benzerler / _Kusurlu'ya gidenler de kopyalanıp doğrulanır: yer onlar için de gerekir.
         NeedBytes = Summary.MoveBytes + Summary.DupBytes + Summary.SimilarBytes + Summary.FlawedBytes;
         // Ağ paylaşımı (NAS) ya da takılı olmayan disk: boş alan okunamaz → "bilinmiyor", Uygula engellenmez.
-        try { FreeBytes = s.FreeSpace(ExistingAncestor(Archive)); SpaceKnown = true; }
-        catch (Exception) { FreeBytes = -1; SpaceKnown = false; }
+        // Temizle taşır, kopyalamaz: yer denetimi gerekmez.
+        if (MoveOnly) { FreeBytes = -1; SpaceKnown = false; }
+        else
+        {
+            try { FreeBytes = s.FreeSpace(ExistingAncestor(Archive)); SpaceKnown = true; }
+            catch (Exception) { FreeBytes = -1; SpaceKnown = false; }
+        }
         var archiveRoot = Path.GetPathRoot(Path.GetFullPath(Archive)) ?? "";
-        OtherDriveSources = sources
+        OtherDriveSources = MoveOnly ? new List<string>() : job.Sources
             .Where(p => !string.Equals(Path.GetPathRoot(Path.GetFullPath(p)), archiveRoot, StringComparison.OrdinalIgnoreCase))
             .ToList();
-        JournalPath = Path.Combine(Archive, "_Gunluk", $"islem-{now:yyyyMMdd-HHmmss}.jsonl");
+        JournalPath = job.NewJournalPath(now);
         recycleSource = settings.RecycleSource;
         RefreshUnfinished();
     }
 
     public Plan Plan { get; }
+    /// <summary>Düzenle: arşiv; Temizle: _Ayiklananlar klasörü.</summary>
     public string Archive { get; }
+    public FlowKind Kind { get; }
+    /// <summary>Temizle: taşıma; yer denetimi, başka disk uyarısı ve Geri Dönüşüm kutusu yok.</summary>
+    public bool MoveOnly { get; }
+    public bool ShowSpace => !MoveOnly;
+
+    // Özet satırlarının hedefleri: Düzenle arşivin _Tekrarlar / _Benzerler / _Kusurlu'su, Temizle _Ayiklananlar altı.
+    public string DupTarget => MoveOnly ? @"→ _Ayiklananlar\Tekrarlar" : "→ _Tekrarlar";
+    public string SimilarTarget => MoveOnly ? @"→ _Ayiklananlar\Benzerler" : "→ _Benzerler";
+    public string FlawedTarget => MoveOnly ? @"→ _Ayiklananlar\Kusurlu" : "→ _Kusurlu";
+    /// <summary>Temizle: ayıklananların toplam boyutu (kazanılacak alan).</summary>
+    public long RejectBytes => Plan.Items.Where(i => i.Action != PlanAction.AlreadyInPlace).Sum(i => i.File.Size);
     public PlanSummary Summary { get; }
     public long NeedBytes { get; }
     public long FreeBytes { get; }
@@ -84,7 +104,7 @@ public sealed partial class ConfirmStepViewModel : ObservableObject
 
     public void RefreshUnfinished()
     {
-        var list = Directory.Exists(Archive) ? Executor.FindUnfinished(Archive) : new();
+        var list = _job.FindUnfinished();
         Unfinished = list.Count > 0 ? list[0] : null;
     }
 

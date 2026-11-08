@@ -10,7 +10,7 @@
 
             <Border Style="{StaticResource Panel}">
                 <StackPanel>
-                    <DockPanel Margin="16,11">
+                    <DockPanel Margin="16,11" Visibility="{Binding Confirm.Kind, Converter={StaticResource EqVis}, ConverterParameter=Organize}">
                         <TextBlock DockPanel.Dock="Left" Width="90" TextAlignment="Right" Margin="0,0,14,0" FontSize="20" FontWeight="SemiBold"
                                    Foreground="{DynamicResource TextFillColorPrimaryBrush}" Text="{Binding Confirm.Summary.MoveCount, StringFormat=N0}" />
                         <TextBlock DockPanel.Dock="Right" Style="{StaticResource Mono}" VerticalAlignment="Center"
@@ -24,10 +24,10 @@
                         <DockPanel>
                             <TextBlock DockPanel.Dock="Left" Width="90" TextAlignment="Right" Margin="0,0,14,0" FontSize="20" FontWeight="SemiBold"
                                        Foreground="{DynamicResource TextFillColorPrimaryBrush}" Text="{Binding Confirm.Summary.DupCount, StringFormat=N0}" />
-                            <TextBlock DockPanel.Dock="Right" Style="{StaticResource Mono}" VerticalAlignment="Center" Text="→ _Tekrarlar" />
+                            <TextBlock DockPanel.Dock="Right" Style="{StaticResource Mono}" VerticalAlignment="Center" Text="{Binding Confirm.DupTarget}" />
                             <StackPanel>
                                 <TextBlock Text="Birebir kopya ayrılacak" FontWeight="SemiBold" Foreground="{DynamicResource TextFillColorPrimaryBrush}" />
-                                <TextBlock Style="{StaticResource Small}" Text="{Binding Confirm.Summary.DupBytes, Converter={StaticResource Bytes}, StringFormat='{}{0} · her grubun bir kopyası arşivde kalır'}" />
+                                <TextBlock Style="{StaticResource Small}" Text="{Binding Confirm.Summary.DupBytes, Converter={StaticResource Bytes}, StringFormat='{}{0} · her grubun bir kopyası kalır'}" />
                             </StackPanel>
                         </DockPanel>
                     </Border>
@@ -35,7 +35,7 @@
                         <DockPanel>
                             <TextBlock DockPanel.Dock="Left" Width="90" TextAlignment="Right" Margin="0,0,14,0" FontSize="20" FontWeight="SemiBold"
                                        Foreground="{DynamicResource TextFillColorPrimaryBrush}" Text="{Binding Confirm.Summary.SimilarCount, StringFormat=N0}" />
-                            <TextBlock DockPanel.Dock="Right" Style="{StaticResource Mono}" VerticalAlignment="Center" Text="→ _Benzerler" />
+                            <TextBlock DockPanel.Dock="Right" Style="{StaticResource Mono}" VerticalAlignment="Center" Text="{Binding Confirm.SimilarTarget}" />
                             <StackPanel>
                                 <TextBlock Text="_Benzerler'e ayrılacak" FontWeight="SemiBold" Foreground="{DynamicResource TextFillColorPrimaryBrush}" />
                                 <TextBlock Style="{StaticResource Small}" Text="Benzerler'de ayıkladığın kareler; silinmez" />
@@ -46,14 +46,14 @@
                         <DockPanel>
                             <TextBlock DockPanel.Dock="Left" Width="90" TextAlignment="Right" Margin="0,0,14,0" FontSize="20" FontWeight="SemiBold"
                                        Foreground="{DynamicResource TextFillColorPrimaryBrush}" Text="{Binding Confirm.Summary.FlawedCount, StringFormat=N0}" />
-                            <TextBlock DockPanel.Dock="Right" Style="{StaticResource Mono}" VerticalAlignment="Center" Text="→ _Kusurlu" />
+                            <TextBlock DockPanel.Dock="Right" Style="{StaticResource Mono}" VerticalAlignment="Center" Text="{Binding Confirm.FlawedTarget}" />
                             <StackPanel>
                                 <TextBlock Text="_Kusurlu'ya ayrılacak" FontWeight="SemiBold" Foreground="{DynamicResource TextFillColorPrimaryBrush}" />
                                 <TextBlock Style="{StaticResource Small}" Text="Kusurlu'da ayıkladığın bulanık / karanlık kareler; silinmez" />
                             </StackPanel>
                         </DockPanel>
                     </Border>
-                    <Border Style="{StaticResource Row}">
+                    <Border Style="{StaticResource Row}" Visibility="{Binding Confirm.Kind, Converter={StaticResource EqVis}, ConverterParameter=Organize}">
                         <DockPanel>
                             <TextBlock DockPanel.Dock="Left" Width="90" TextAlignment="Right" Margin="0,0,14,0" FontSize="20" FontWeight="SemiBold"
                                        Foreground="{DynamicResource TextFillColorPrimaryBrush}" Text="{Binding Confirm.Summary.Undated, StringFormat=N0}" />
@@ -64,7 +64,7 @@
                             </StackPanel>
                         </DockPanel>
                     </Border>
-                    <Border Style="{StaticResource Row}">
+                    <Border Style="{StaticResource Row}" Visibility="{Binding Confirm.Kind, Converter={StaticResource EqVis}, ConverterParameter=Organize}">
                         <DockPanel>
                             <TextBlock DockPanel.Dock="Left" Width="90" TextAlignment="Right" Margin="0,0,14,0" FontSize="20" FontWeight="SemiBold"
                                        Foreground="{DynamicResource TextFillColorPrimaryBrush}" Text="{Binding Confirm.Summary.Renamed, StringFormat=N0}" />
@@ -74,7 +74,7 @@
                             </StackPanel>
                         </DockPanel>
                     </Border>
-                    <Border Style="{StaticResource Row}">
+                    <Border Style="{StaticResource Row}" Visibility="{Binding Confirm.Kind, Converter={StaticResource EqVis}, ConverterParameter=Organize}">
                         <DockPanel>
                             <TextBlock DockPanel.Dock="Left" Width="90" TextAlignment="Right" Margin="0,0,14,0" FontSize="20"
                                        Foreground="{DynamicResource TextFillColorSecondaryBrush}" Text="{Binding Confirm.Summary.InPlace, StringFormat=N0}" />
@@ -84,10 +84,18 @@
                 </StackPanel>
             </Border>
 
+            <!-- Temizle: taşıma notu -->
+            <Border Style="{StaticResource Safe}" Margin="0,14,0,0" Visibility="{Binding Confirm.MoveOnly, Converter={StaticResource BoolVis}}">
+                <TextBlock TextWrapping="Wrap" Foreground="{DynamicResource TextFillColorPrimaryBrush}">
+                    <Run FontWeight="SemiBold" Text="{Binding Confirm.RejectBytes, Converter={StaticResource Bytes}, StringFormat='Kazanılacak alan: {0}.', Mode=OneWay}" />
+                    <Run Text="Dosyalar kopyalanmaz; aynı disk içinde yeri değişir, hiçbir şey silinmez." />
+                </TextBlock>
+            </Border>
+
             <!-- Denetimler -->
             <Border Style="{StaticResource Panel}" Margin="0,14,0,0">
                 <StackPanel>
-                    <DockPanel Margin="16,10">
+                    <DockPanel Margin="16,10" Visibility="{Binding Confirm.ShowSpace, Converter={StaticResource BoolVis}}">
                         <ui:SymbolIcon Margin="0,0,12,0" VerticalAlignment="Top" Symbol="CheckmarkCircle24" Foreground="{DynamicResource SystemFillColorSuccessBrush}"
                                        Visibility="{Binding Confirm.SpaceOk, Converter={StaticResource BoolVis}}" />
                         <ui:SymbolIcon Margin="0,0,12,0" VerticalAlignment="Top" Symbol="ErrorCircle24" Foreground="{DynamicResource SystemFillColorCriticalBrush}"
@@ -150,7 +158,7 @@
                 </StackPanel>
             </Border>
 
-            <CheckBox Margin="0,14,0,0" IsChecked="{Binding Confirm.RecycleSource}"
+            <CheckBox Margin="0,14,0,0" Visibility="{Binding Confirm.ShowSpace, Converter={StaticResource BoolVis}}" IsChecked="{Binding Confirm.RecycleSource}"
                       Content="Kaynaktaki eski dosyalar Geri Dönüşüm Kutusu'na alınsın (önerilir)" />
 
             <DockPanel Margin="0,18,0,0">

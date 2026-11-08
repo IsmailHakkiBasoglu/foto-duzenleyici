@@ -64,7 +64,7 @@ public sealed class DuplicateRow : INotifyPropertyChanged
     public string Name => File.FileName;
     public string Created => File.Created.ToString("yyyy-MM-dd HH:mm", CultureInfo.InvariantCulture);
 
-    /// <summary>Hedef klasörde, önceki turda yerleştirilmiş.</summary>
+    /// <summary>Öncelikli konumda: Düzenle'de düzenli arşivde (önceki turda yerleştirilmiş), Temizle'de öncelikli klasörde.</summary>
     public bool Organized
     {
         get => _organized;
@@ -115,7 +115,12 @@ public sealed class DuplicateGroupState : INotifyPropertyChanged
     static string Mb(long bytes) => (bytes / 1048576.0).ToString("N1", Tr);
 
     /// <summary>Gruplar en çok yer kazandırandan başlayarak sıralanır.</summary>
-    public static List<DuplicateGroupState> Build(IEnumerable<DuplicateGroup> groups, PlanOptions opt)
+    public static List<DuplicateGroupState> Build(IEnumerable<DuplicateGroup> groups, PlanOptions opt) =>
+        Build(groups, m => DuplicateKeeper.IsOrganized(m, opt));
+
+    /// <param name="preferred">Bu konumdaki kopya önerilir ve "Organized" etiketi alır (Düzenle: düzenli arşiv,
+    /// Temizle: öncelikli klasör). Durum bu kuralı saklar: <see cref="Refresh()"/> / <see cref="Reset()"/> onu kullanır.</param>
+    public static List<DuplicateGroupState> Build(IEnumerable<DuplicateGroup> groups, Func<MediaFile, bool> preferred)
     {
         var list = new List<DuplicateGroupState>();
         int n = 0;
@@ -123,11 +128,11 @@ public sealed class DuplicateGroupState : INotifyPropertyChanged
         {
             var s = new DuplicateGroupState
             {
-                Group = g, Number = ++n,
+                Group = g, Number = ++n, Preferred = preferred,
                 Preview = new SimilarRow { Group = n, Kind = SimilarKind.SameFrame, File = g.Keeper },
             };
             foreach (var m in DuplicateKeeper.Members(g)) s.Rows.Add(new DuplicateRow { Owner = s, File = m });
-            s.Refresh(opt);
+            s.Refresh();
             list.Add(s);
         }
         return list;
@@ -146,6 +151,19 @@ public sealed class DuplicateGroupState : INotifyPropertyChanged
 
     /// <summary>Elle seçimi bırakıp Plan'ın önerisine döner.</summary>
     public void Reset(PlanOptions opt) { UserChosen = false; Refresh(opt); }
+
+    /// <summary>Kurulurken verilen öncelik kuralı.</summary>
+    public required Func<MediaFile, bool> Preferred { get; init; }
+
+    /// <summary>Etiketleri ve (kullanıcı seçmediyse) öneriyi kurulurken verilen kurala göre yeniler.</summary>
+    public void Refresh()
+    {
+        foreach (var r in Rows) r.Organized = Preferred(r.File);
+        if (!UserChosen) Select(DuplicateKeeper.Choose(Group, Preferred));
+    }
+
+    /// <summary>Elle seçimi bırakıp kuralın önerisine döner.</summary>
+    public void Reset() { UserChosen = false; Refresh(); }
 
     internal void Choose(DuplicateRow row) { Select(row.File); UserChosen = true; }
 

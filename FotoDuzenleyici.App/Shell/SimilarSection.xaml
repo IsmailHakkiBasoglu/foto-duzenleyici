@@ -12,7 +12,7 @@
             <StackPanel Margin="0,0,14,0">
                 <TextBlock Text="Benzerler" Style="{StaticResource H2}" />
                 <TextBlock Style="{StaticResource Small}"
-                           Text="Kareye tıkla: kalsın ↔ ayıkla. Ayıklananlar _Benzerler'e gider, silinmez. Çift tıkla ya da Enter: tam ekran karşılaştır. ★ önerilen kopya, ◎ seri çekimde en net kare." />
+                           Text="Kareye tıkla: kalsın ↔ ayıkla. Ayıklananlar ayrı klasöre gider, silinmez. Çift tıkla ya da Enter: tam ekran karşılaştır. ★ önerilen kopya, ◎ seri çekimde en net kare." />
                 <WrapPanel Margin="0,8,0,0" Visibility="{Binding Total, Converter={StaticResource HasVis}}">
                     <ui:Button Content="Önerileri uygula (yalnız ★ kalsın)" Command="{Binding ApplySuggestionsCommand}" Margin="0,0,8,4" />
                     <ui:Button Content="Bulanıkları ayıkla" Command="{Binding ReleaseSoftCommand}" Margin="0,0,8,4"

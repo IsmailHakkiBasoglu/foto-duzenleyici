@@ -111,4 +111,43 @@ public class DuplicateGroupStateTests
         Assert.Same(b, plan.Items.Single(i => i.File == a).DuplicateOf);
         Assert.Equal(PlanAction.Move, plan.Items.Single(i => i.File == b).Action);
     }
+
+    // Temizle: "öncelikli klasör" kuralı dışarıdan verilir.
+    [Fact]
+    public void Build_WithPreferred_KeepsPreferred()
+    {
+        var oldest = F(@"E:\DCIM\a.jpg", createdDay: 1);
+        var pref = F(@"F:\Onemli\a.jpg", createdDay: 9);
+        var s = Assert.Single(DuplicateGroupState.Build(new[] { G(oldest, pref) }, m => m.Path.StartsWith(@"F:\Onemli")));
+        var row = s.Rows.Single(r => r.File == pref);
+        Assert.True(row.IsKeeper);
+        Assert.True(row.Organized);
+        Assert.False(s.Rows.Single(r => r.File == oldest).Organized);
+    }
+
+    [Fact]
+    public void Reset_Parameterless_UsesPreferred()
+    {
+        var oldest = F(@"E:\DCIM\a.jpg", createdDay: 1);
+        var pref = F(@"F:\Onemli\a.jpg", createdDay: 9);
+        var s = Assert.Single(DuplicateGroupState.Build(new[] { G(oldest, pref) }, m => m.Path.StartsWith(@"F:\Onemli")));
+        s.Rows.Single(r => r.File == oldest).IsKeeper = true;
+        Assert.True(s.UserChosen);
+        s.Reset();
+        Assert.False(s.UserChosen);
+        Assert.True(s.Rows.Single(r => r.File == pref).IsKeeper);
+        s.Refresh();
+        Assert.True(s.Rows.Single(r => r.File == pref).IsKeeper);
+    }
+
+    [Fact]
+    public void Build_PlanOptions_Unchanged()
+    {
+        var oldest = F(@"E:\DCIM\a.jpg", createdDay: 1);
+        var organized = F(@"D:\Arsiv\2024-01\2024-01-Foto\a.jpg", createdDay: 9);
+        var s = Assert.Single(DuplicateGroupState.Build(new[] { G(oldest, organized) }, Opt));
+        Assert.True(s.Rows.Single(r => r.File == organized).IsKeeper);
+        s.Reset();
+        Assert.True(s.Rows.Single(r => r.File == organized).IsKeeper);
+    }
 }

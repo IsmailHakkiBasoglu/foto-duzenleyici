@@ -4,9 +4,11 @@
              xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml">
     <ScrollViewer VerticalScrollBarVisibility="Auto">
         <StackPanel MaxWidth="720" Margin="20,4,20,24" DataContext="{Binding Folders}">
-            <TextBlock Text="Fotoğraf arşivini düzenleyelim" Style="{StaticResource H1}" />
-            <TextBlock Style="{StaticResource Muted}" Margin="0,0,0,18"
+            <TextBlock Text="{Binding Title}" Style="{StaticResource H1}" />
+            <TextBlock Style="{StaticResource Muted}" Margin="0,0,0,18" Visibility="{Binding Kind, Converter={StaticResource EqVis}, ConverterParameter=Organize}"
                        Text="Dağınık klasörlerdeki fotoğraf ve videoları tarihine göre aylık klasörlere yerleştirir, kopyaları ayırır. Sen onaylamadan hiçbir dosyaya dokunulmaz." />
+            <TextBlock Style="{StaticResource Muted}" Margin="0,0,0,18" Visibility="{Binding Kind, Converter={StaticResource EqVis}, ConverterParameter=Clean}"
+                       Text="Seçtiğin klasörlerdeki birebir kopyaları, benzer kareleri ve bulanık fotoğrafları bulur. Ayıkladıkların klasörün içindeki _Ayiklananlar'a taşınır; düzen olduğu gibi kalır. Sen onaylamadan hiçbir dosyaya dokunulmaz." />
 
             <Border Style="{StaticResource Panel}">
                 <StackPanel>
@@ -17,8 +19,10 @@
                         <ui:SymbolIcon DockPanel.Dock="Left" Symbol="Folder24" FontSize="26" VerticalAlignment="Top" Margin="0,0,14,0"
                                        Foreground="{DynamicResource AccentTextFillColorPrimaryBrush}" />
                         <StackPanel>
-                            <TextBlock Text="Nereden?" FontWeight="SemiBold" Foreground="{DynamicResource TextFillColorPrimaryBrush}" />
-                            <TextBlock Style="{StaticResource Small}" Text="Taranacak klasörler: telefon yedeği, SD kart kopyası, eski arşiv… (birden çok)" />
+                            <TextBlock Text="Nereden?" FontWeight="SemiBold" Foreground="{DynamicResource TextFillColorPrimaryBrush}" Visibility="{Binding Kind, Converter={StaticResource EqVis}, ConverterParameter=Organize}" />
+                            <TextBlock Style="{StaticResource Small}" Text="Taranacak klasörler: telefon yedeği, SD kart kopyası, eski arşiv… (birden çok)" Visibility="{Binding Kind, Converter={StaticResource EqVis}, ConverterParameter=Organize}" />
+                            <TextBlock Text="Hangi klasörler?" FontWeight="SemiBold" Foreground="{DynamicResource TextFillColorPrimaryBrush}" Visibility="{Binding Kind, Converter={StaticResource EqVis}, ConverterParameter=Clean}" />
+                            <TextBlock Style="{StaticResource Small}" Text="Temizlenecek klasörler: düzenli arşivin kendisi ya da “Tatil 2024” gibi bir klasör (birden çok)" Visibility="{Binding Kind, Converter={StaticResource EqVis}, ConverterParameter=Clean}" />
                             <ItemsControl ItemsSource="{Binding Sources}" Margin="0,6,0,0">
                                 <ItemsControl.ItemTemplate>
                                     <DataTemplate>
@@ -42,8 +46,42 @@
                         </StackPanel>
                     </DockPanel>
 
+                    <!-- Kopyalarda öncelikli klasörler (Temizle) -->
+                    <Border Style="{StaticResource Row}" Padding="16,14" Visibility="{Binding Kind, Converter={StaticResource EqVis}, ConverterParameter=Clean}">
+                        <DockPanel>
+                            <ui:Button DockPanel.Dock="Right" VerticalAlignment="Top" Content="Klasör ekle" Icon="{ui:SymbolIcon Add24}"
+                                       Command="{Binding AddPriorityCommand}" Margin="12,0,0,0" />
+                            <ui:SymbolIcon DockPanel.Dock="Left" Symbol="Star24" FontSize="26" VerticalAlignment="Top" Margin="0,0,14,0"
+                                           Foreground="{DynamicResource AccentTextFillColorPrimaryBrush}" />
+                            <StackPanel>
+                                <TextBlock Text="Kopyalarda öncelikli klasörler (isteğe bağlı)" FontWeight="SemiBold" Foreground="{DynamicResource TextFillColorPrimaryBrush}" />
+                                <TextBlock Style="{StaticResource Small}" Text="Bir kopya grubunda bu klasörlerdeki dosya kalır. Seçmezsen en eski kalır." />
+                                <ItemsControl ItemsSource="{Binding Priority}" Margin="0,6,0,0">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Border Margin="0,4,0,0" Padding="10,4" CornerRadius="6" BorderThickness="1"
+                                                    BorderBrush="{DynamicResource ControlStrokeColorDefaultBrush}"
+                                                    Background="{DynamicResource SubtleFillColorSecondaryBrush}">
+                                                <DockPanel>
+                                                    <ui:Button DockPanel.Dock="Right" Appearance="Transparent" Icon="{ui:SymbolIcon Dismiss16}" Padding="4"
+                                                               ToolTip="Listeden çıkar"
+                                                               Command="{Binding DataContext.RemovePriorityCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                                               CommandParameter="{Binding}" />
+                                                    <TextBlock DockPanel.Dock="Right" Style="{StaticResource Small}" VerticalAlignment="Center" Margin="8,0"
+                                                               Foreground="{DynamicResource SystemFillColorCriticalBrush}" Text="bulunamadı"
+                                                               Visibility="{Binding Exists, Converter={StaticResource HasVis}, ConverterParameter=!}" />
+                                                    <TextBlock Text="{Binding Path}" Style="{StaticResource Mono}" VerticalAlignment="Center" />
+                                                </DockPanel>
+                                            </Border>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </StackPanel>
+                        </DockPanel>
+                    </Border>
+
                     <!-- Nereye -->
-                    <Border Style="{StaticResource Row}" Padding="16,14">
+                    <Border Style="{StaticResource Row}" Padding="16,14" Visibility="{Binding Kind, Converter={StaticResource EqVis}, ConverterParameter=Organize}">
                         <DockPanel>
                             <ui:Button DockPanel.Dock="Right" VerticalAlignment="Top" Content="Seç…" Command="{Binding PickArchiveCommand}" Margin="12,0,0,0" />
                             <ui:SymbolIcon DockPanel.Dock="Left" Symbol="Archive24" FontSize="26" VerticalAlignment="Top" Margin="0,0,14,0"
@@ -66,7 +104,8 @@
                     <Border Style="{StaticResource Row}" Padding="16,12">
                         <DockPanel>
                             <ui:Button DockPanel.Dock="Right" Content="Değiştir" Appearance="Transparent" Click="Options_Click" />
-                            <TextBlock Style="{StaticResource Small}" Text="Düzen:" VerticalAlignment="Center" Margin="0,0,10,0" />
+                            <TextBlock Style="{StaticResource Small}" Text="Düzen:" VerticalAlignment="Center" Margin="0,0,10,0" Visibility="{Binding Kind, Converter={StaticResource EqVis}, ConverterParameter=Organize}" />
+                            <TextBlock Style="{StaticResource Small}" Text="Tarama:" VerticalAlignment="Center" Margin="0,0,10,0" Visibility="{Binding Kind, Converter={StaticResource EqVis}, ConverterParameter=Clean}" />
                             <TextBlock Text="{Binding OptionsSummary}" VerticalAlignment="Center" TextWrapping="Wrap"
                                        Foreground="{DynamicResource TextFillColorPrimaryBrush}" />
                         </DockPanel>
@@ -86,10 +125,16 @@
                 <DockPanel>
                     <ui:SymbolIcon Symbol="ShieldCheckmark24" Margin="0,0,10,0" VerticalAlignment="Top"
                                    Foreground="{DynamicResource SystemFillColorSuccessBrush}" />
-                    <TextBlock TextWrapping="Wrap" FontSize="13" Foreground="{DynamicResource TextFillColorPrimaryBrush}">
-                        <Run FontWeight="SemiBold" Text="Güvenli çalışır." />
-                        <Run Text="Uygulama aşamasında her dosya kopyalanıp doğrulanır, eski hali Geri Dönüşüm Kutusu'na gider ve her işlem Geri Al ile tersine çevrilebilir." />
-                    </TextBlock>
+                    <StackPanel>
+                        <TextBlock TextWrapping="Wrap" FontSize="13" Foreground="{DynamicResource TextFillColorPrimaryBrush}" Visibility="{Binding Kind, Converter={StaticResource EqVis}, ConverterParameter=Organize}">
+                            <Run FontWeight="SemiBold" Text="Güvenli çalışır." />
+                            <Run Text="Uygulama aşamasında her dosya kopyalanıp doğrulanır, eski hali Geri Dönüşüm Kutusu'na gider ve her işlem Geri Al ile tersine çevrilebilir." />
+                        </TextBlock>
+                        <TextBlock TextWrapping="Wrap" FontSize="13" Foreground="{DynamicResource TextFillColorPrimaryBrush}" Visibility="{Binding Kind, Converter={StaticResource EqVis}, ConverterParameter=Clean}">
+                            <Run FontWeight="SemiBold" Text="Güvenli çalışır." />
+                            <Run Text="Hiçbir dosya silinmez ya da kopyalanmaz: ayıklananlar aynı disk içinde _Ayiklananlar'a taşınır ve her işlem Geri Al ile tersine çevrilebilir." />
+                        </TextBlock>
+                    </StackPanel>
                 </DockPanel>
             </Border>
         </StackPanel>

@@ -7,7 +7,7 @@
     <StackPanel>
         <ui:TitleBar Title="Düzen seçenekleri" ShowMinimize="False" ShowMaximize="False" />
         <StackPanel Margin="20,4,20,20">
-            <TextBlock Text="Klasörler her zaman yyyy-MM › yyyy-MM-Foto / -Video düzeninde açılır." TextWrapping="Wrap"
+            <TextBlock x:Name="LayoutNote" Text="Klasörler her zaman yyyy-MM › yyyy-MM-Foto / -Video düzeninde açılır." TextWrapping="Wrap"
                        Foreground="{DynamicResource TextFillColorSecondaryBrush}" Margin="0,0,0,12" />
             <CheckBox x:Name="SubFolder" Content="Kaynağa göre alt klasör (2026-01-Foto\2026-01-Fuji)" Margin="0,4" />
             <CheckBox x:Name="RenameWithDate" Content="Dosya adının başına tarih ekle" Margin="0,4" />

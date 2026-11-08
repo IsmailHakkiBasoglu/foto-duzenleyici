@@ -22,6 +22,20 @@ public sealed partial class ApplyStepViewModel : ObservableObject
 
     public string Archive { get; }
 
+    /// <summary>Bitti ekranındaki düğme: Temizle'de (ya da temizlik günlüğünün Geri Al'ında) _Ayiklananlar açılır.</summary>
+    /// <summary>Geri Al onay metni, günlüğün türüne göre.</summary>
+    public static string UndoText(string journal) => IsCleanFolder(Path.GetDirectoryName(Path.GetDirectoryName(Path.GetFullPath(journal))) ?? "")
+        ? "Bu temizlik geri alınır: Ayıklananlar eski yerlerine taşınır; hiçbir şey silinmez. Devam edilsin mi?"
+        : "Bu günlükteki dosyalar doğrulanarak eski yerlerine döner; arşivdeki kopyaları Geri Dönüşüm Kutusu'na gider. Devam edilsin mi?";
+
+    static bool IsCleanFolder(string folder) => Path.GetFileName(Path.TrimEndingDirectorySeparator(folder))
+        .Equals(CleanSession.RejectsFolder, StringComparison.OrdinalIgnoreCase);
+
+    public string OpenTitle => IsClean ? "Ayıklananları aç" : "Arşivi aç";
+
+    /// <summary>Temizle işi (ya da temizlik günlüğünün Geri Al'ı): klasör _Ayiklananlar.</summary>
+    public bool IsClean => IsCleanFolder(Archive);
+
     [ObservableProperty] private ApplyMode mode;
     [ObservableProperty] private bool isRunning;
     [ObservableProperty] private bool stopped;
@@ -43,11 +57,15 @@ public sealed partial class ApplyStepViewModel : ObservableObject
     [ObservableProperty] private int pendingAfterStop;
     [ObservableProperty] private string? errorMessage;
 
+    /// <summary>Test kancası: her ilerleme bildiriminde (yapılan sayı), arka plan iş parçacığında.</summary>
+    internal Action<int>? OnProgressForTest { get; set; }
+
     /// <summary>Test kancası: işlem, iptal edilmiş bir belirteçle başlar.</summary>
     internal bool CancelBeforeStartForTest { get; set; }
 
-    public Task RunAsync(IReadOnlyList<PlanItem> items, string journal, bool recycle) =>
-        Execute(ApplyMode.Run, journal, (prog, ct) => new Executor(journal, _s.Recycle).Run(items, recycle, prog, ct));
+    /// <param name="move">true: Temizle; kopyalanmaz, aynı disk içinde yeri değişir.</param>
+    public Task RunAsync(IReadOnlyList<PlanItem> items, string journal, bool recycle, bool move = false) =>
+        Execute(ApplyMode.Run, journal, (prog, ct) => new Executor(journal, _s.Recycle).Run(items, recycle, prog, ct, move));
 
     public Task ResumeAsync(string journal) =>
         Execute(ApplyMode.Resume, journal, (prog, ct) => new Executor(journal, _s.Recycle).Resume(prog, ct));
@@ -74,7 +92,9 @@ public sealed partial class ApplyStepViewModel : ObservableObject
         });
         try
         {
-            Result = await Task.Run(() => work(prog, ct));
+            var hook = OnProgressForTest;
+            IProgress<(int, int, string)> report = hook is null ? prog : new Tap(prog, hook);
+            Result = await Task.Run(() => work(report, ct));
             Done = Total;
         }
         catch (OperationCanceledException)
@@ -113,6 +133,11 @@ public sealed partial class ApplyStepViewModel : ObservableObject
     public static TimeSpan? Eta(int done, int total, TimeSpan elapsed) =>
         done < EtaAfter || total <= done ? null : TimeSpan.FromTicks(elapsed.Ticks / done * (total - done));
 
+    sealed class Tap(IProgress<(int, int, string)> inner, Action<int> hook) : IProgress<(int, int, string)>
+    {
+        public void Report((int, int, string) v) { hook(v.Item1); inner.Report(v); }
+    }
+
     [RelayCommand]
     void Cancel() => _cts?.Cancel();
 
@@ -123,8 +148,7 @@ public sealed partial class ApplyStepViewModel : ObservableObject
     async Task Undo()
     {
         if (IsRunning || string.IsNullOrEmpty(Journal)) return;
-        if (!_s.Dialogs.Confirm("Geri Al",
-                "Bu işlemde taşınan dosyalar doğrulanarak eski yerlerine döner; arşivdeki kopyaları Geri Dönüşüm Kutusu'na gider. Devam edilsin mi?"))
+        if (!_s.Dialogs.Confirm("Geri Al", UndoText(Journal)))
             return;
         // Durdurulmuş bir işte kalanlar: geri alınan işin "yarım" sayılıp sonra Devam et diye önerilmemesi için
         // bırakılır (dosyalarına dokunulmaz).

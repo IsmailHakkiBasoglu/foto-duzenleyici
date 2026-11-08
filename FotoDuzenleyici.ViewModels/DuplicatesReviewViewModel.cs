@@ -6,13 +6,13 @@ namespace FotoDuzenleyici.ViewModels;
 /// <summary>Yinelenenler: her kopya grubunda korunacak konum. Kararlar yalnız bu tarama boyunca tutulur (klasikteki gibi).</summary>
 public sealed partial class DuplicatesReviewViewModel : ObservableObject
 {
-    readonly PlanOptions _opt;
     readonly Services _s;
     readonly Action _changed;
 
-    public DuplicatesReviewViewModel(IReadOnlyList<DuplicateGroupState> groups, PlanOptions opt, Services s, Action changed)
+    /// <param name="preferredLabel">Öncelikli konumun etiketi: Düzenle "düzenli", Temizle "öncelikli".</param>
+    public DuplicatesReviewViewModel(IReadOnlyList<DuplicateGroupState> groups, Services s, Action changed, string preferredLabel = "düzenli")
     {
-        Groups = groups; _opt = opt; _s = s; _changed = changed;
+        Groups = groups; _s = s; _changed = changed; PreferredLabel = preferredLabel;
         foreach (var g in groups)
         {
             g.PropertyChanged += OnGroupChanged;
@@ -21,6 +21,11 @@ public sealed partial class DuplicatesReviewViewModel : ObservableObject
     }
 
     public IReadOnlyList<DuplicateGroupState> Groups { get; }
+    public string PreferredLabel { get; }
+
+    public string Description => PreferredLabel == "öncelikli"
+        ? "Aynı içerikli dosyalar. Her grupta seçili konum korunur, ötekiler _Ayiklananlar\\Tekrarlar'a taşınır. Önerilen: öncelikli klasördeki kopya, yoksa en eskisi. Çift tıkla: dosyayı aç."
+        : "Aynı içerikli dosyalar. Her grupta seçili konum korunur, ötekiler _Tekrarlar'a ayrılır. Önerilen: düzenli arşivdeki kopya, yoksa en eskisi. Çift tıkla: dosyayı aç.";
 
     public string CounterText
     {
@@ -46,7 +51,7 @@ public sealed partial class DuplicatesReviewViewModel : ObservableObject
     [RelayCommand]
     void Reset()
     {
-        foreach (var g in Groups) g.Reset(_opt);
+        foreach (var g in Groups) g.Reset();
     }
 
     [RelayCommand]
@@ -56,7 +61,7 @@ public sealed partial class DuplicatesReviewViewModel : ObservableObject
     }
 
     /// <summary>Hedef klasör değişmiş olabilir: öneriler ve "düzenli" etiketleri tazelenir.</summary>
-    public void Refresh() { foreach (var g in Groups) g.Refresh(_opt); }
+    public void Refresh() { foreach (var g in Groups) g.Refresh(); }
 
     public IReadOnlySet<MediaFile> UserKeepers => DuplicateGroupState.UserKeepers(Groups);
 

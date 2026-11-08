@@ -51,7 +51,7 @@ public class ReviewFilterTests : IDisposable
         var sim = Item(PlanAction.Similar); var fl = Item(PlanAction.Flawed);
         plan.Items.Add(Item(PlanAction.Move)); plan.Items.Add(sim); plan.Items.Add(fl);
         var session = new OrganizeSession(Array.Empty<string>(), new PlanOptions { DestinationRoot = _tmp });
-        var vm = new ReviewStepViewModel(session, plan, new Fakes().Services, ReviewData.Empty(new ReviewStore(Path.Combine(_tmp, "k.json"))));
+        var vm = new ReviewStepViewModel(new OrganizeJob(session), plan, new Fakes().Services, ReviewData.Empty(new ReviewStore(Path.Combine(_tmp, "k.json"))));
         vm.Filter = PlanFilter.Similar;
         Assert.Equal(new[] { sim }, vm.Rows);
         vm.Filter = PlanFilter.Flawed;

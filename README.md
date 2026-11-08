@@ -24,7 +24,14 @@ _Tekrarlar\       (birebir aynı içerikli kopyalar)
 Açılışta **Ana ekran** gelir; **Düzenle** dört adımda ilerler: *Klasörler → Tara ve incele → Onayla →
 Uygulanıyor / Bitti*. *Tara ve incele* adımında sol menüden **Yinelenenler** (korunacak kopyayı seç),
 **Benzerler** (aynı kare, küçültülmüş kopya, seri çekim) ve **Kusurlu** (bulanık / karanlık) bölümlerini
-gözden geçirebilirsin; kararların Onayla'ya geçerken plana yansır. Eski pencere **Klasik görünüm** olarak
+gözden geçirebilirsin; kararların Onayla'ya geçerken plana yansır.
+
+**Temizle** aynı adımlarla çalışır ama dosyaları tarih klasörlerine taşımaz: seçtiğin klasörlerdeki
+kopyaları, benzer ve kusurlu kareleri klasörün içindeki `_Ayiklananlar` klasörüne taşır (kopyalamaz,
+silmez). İstersen "kopyalarda öncelikli klasörler" seçebilirsin; Geri Al hepsini yerine döndürür.
+`_Ayiklananlar`'a baktıktan sonra klasörü kendin silebilirsin.
+
+Eski pencere **Klasik görünüm** olarak
 sağ üstteki ⚙ menüsünde. Eski pencereyi doğrudan açmak için:
 `FotoDuzenleyici.exe --klasik`.
 

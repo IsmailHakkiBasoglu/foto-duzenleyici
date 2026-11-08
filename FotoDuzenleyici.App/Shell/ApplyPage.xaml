@@ -50,6 +50,7 @@
                                 <MultiBinding Converter="{StaticResource DoneTitle}">
                                     <Binding Path="Apply.Mode" />
                                     <Binding Path="Apply.Stopped" />
+                                    <Binding Path="Apply.IsClean" />
                                 </MultiBinding>
                             </TextBlock.Text>
                         </TextBlock>
@@ -102,7 +103,7 @@
                 <UniformGrid Columns="3">
                     <Border Style="{StaticResource Panel}" Padding="14" Margin="0,0,5,0">
                         <StackPanel>
-                            <TextBlock Text="Arşivi aç" Style="{StaticResource H2}" />
+                            <TextBlock Text="{Binding Apply.OpenTitle}" Style="{StaticResource H2}" />
                             <TextBlock Style="{StaticResource Small}" Text="{Binding Apply.Archive}" Margin="0,4,0,10" />
                             <ui:Button Content="Aç" Command="{Binding Apply.OpenArchiveCommand}" />
                         </StackPanel>

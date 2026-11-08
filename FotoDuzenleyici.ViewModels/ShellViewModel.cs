@@ -39,7 +39,15 @@ public sealed partial class ShellViewModel : ObservableObject
     {
         var h = new HomeViewModel(_settings);
         h.OrganizeRequested += StartOrganize;
+        h.CleanRequested += StartClean;
         return h;
+    }
+
+    void StartClean(RecentPair? p)
+    {
+        var f = new OrganizeFlowViewModel(_s, _settings, FlowKind.Clean);
+        if (p is not null) f.Folders.Load(p);
+        CurrentPage = f;
     }
 
     void StartOrganize(RecentPair? p)
@@ -64,9 +72,11 @@ public sealed partial class ShellViewModel : ObservableObject
         var initial = _settings.Recent.FirstOrDefault()?.Archive is { } a ? Path.Combine(a, "_Gunluk") : null;
         var journal = _s.Files.OpenJournal(initial);
         if (journal is null) return;
-        if (!_s.Dialogs.Confirm("Geri Al",
-                "Bu günlükteki dosyalar doğrulanarak eski yerlerine döner; arşivdeki kopyaları Geri Dönüşüm Kutusu'na gider. Devam edilsin mi?"))
+        if (!_s.Dialogs.Confirm("Geri Al", ApplyStepViewModel.UndoText(journal)))
             return;
+        // Durdurulmuş bir işin kalanları bırakılır: geri alınan iş sonra "yarım" sanılıp Devam et diye önerilmesin.
+        try { if (Executor.Pending(journal).Count > 0) Executor.Abandon(journal); }
+        catch (Exception ex) { ErrorMessage = ex.Message; return; }
         var f = new OrganizeFlowViewModel(_s, _settings);
         CurrentPage = f;
         try { await f.StartUndo(journal); }
@@ -79,7 +89,8 @@ public sealed partial class ShellViewModel : ObservableObject
     {
         if (Locked) { ErrorMessage = "İşlem sürerken Klasik görünüm açılamaz; bitmesini bekle ya da durdur."; return; }
         ClassicStart? start = null;
-        if (Flow?.Folders is { CanScan: true } fo)
+        // Klasik pencerede Temizle yok: Temizle akışından boş açılır.
+        if (Flow?.Folders is { CanScan: true, Kind: FlowKind.Organize } fo)
             start = new ClassicStart(fo.ExistingSources.ToList(), fo.Archive!, _settings.SourceFolder,
                 _settings.RenameWithDate, _settings.AppendSourceToName, _settings.SeparateRawFolder, _settings.RecycleSource);
         // Klasik pencere karar dosyasını açılışta okur: bekleyen kararlar önce yazılsın.
