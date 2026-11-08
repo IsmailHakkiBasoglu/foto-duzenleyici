@@ -9,6 +9,14 @@ Biçim [Keep a Changelog](https://keepachangelog.com/tr-TR/1.1.0/), sürüm numa
 ### Eklendi
 - Yeni arayüzde Benzerler'e klasikteki toplu düğmeler: **Önerileri uygula (yalnız ★ kalsın)**, **Bulanıkları
   ayıkla** (seri çekimlerde; en net kareye ve incelenmiş gruplara dokunmaz) ve **Hepsini koru**.
+- **Temizle ekranı** (yeni arayüz, ana ekrandaki Temizle kartı): seçilen klasörlerdeki birebir kopyaları,
+  benzer kareleri ve bulanık / karanlık fotoğrafları Düzenle'deki inceleme ekranlarıyla ayıklar. Ayıklananlar
+  her klasörün kendi `_Ayiklananlar\Tekrarlar|Benzerler|Kusurlu` klasörüne, göreli yoluyla **taşınır**
+  (kopyalanmaz, silinmez); düzen olduğu gibi kalır. Kopyalarda öncelikli klasörler seçilebilir. Durdur,
+  kaldığı yerden devam et ve Geri Al çalışır. Son temizlenen klasörler ayrıca hatırlanır.
+
+### Değişti
+- Düzenle ve Temizle aynı sihirbazı paylaşır (iş türü katmanı `IScanJob`); Düzenle'nin davranışı değişmedi.
 
 ## [0.3.0] - 2026-11-08
 
