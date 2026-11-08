@@ -5,17 +5,37 @@
         <StackPanel DockPanel.Dock="Top" Margin="0,0,0,8">
             <TextBlock Text="Okunamayanlar" Style="{StaticResource H2}" />
             <TextBlock Style="{StaticResource Small}"
-                       Text="Taranırken, benzerlik izi çıkarılırken ya da netlik ölçülürken okunamayan dosyalar. Bunlara dokunulmaz." />
+                       Text="Taranırken, benzerlik izi çıkarılırken ya da netlik ölçülürken okunamayan dosyalar. Bunlara dokunulmaz. Çift tık dosyayı açar." />
         </StackPanel>
         <Border Style="{StaticResource Panel}">
             <Grid>
                 <TextBlock Text="Okunamayan dosya yok." Style="{StaticResource Muted}" Margin="16,12"
                            Visibility="{Binding ScanErrors.Count, Converter={StaticResource HasVis}, ConverterParameter=!}" />
-                <ListBox ItemsSource="{Binding ScanErrors}" BorderThickness="0" Background="Transparent" Margin="8"
-                         VirtualizingPanel.IsVirtualizing="True" ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                <ListBox ItemsSource="{Binding ErrorRows}" BorderThickness="0" Background="Transparent" Margin="8"
+                         VirtualizingPanel.IsVirtualizing="True" ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                         MouseDoubleClick="List_DoubleClick">
                     <ListBox.ItemTemplate>
                         <DataTemplate>
-                            <TextBlock Text="{Binding}" Style="{StaticResource Mono}" TextWrapping="Wrap" TextTrimming="None" />
+                            <DockPanel>
+                                <Grid DockPanel.Dock="Left" Width="96" Height="72" Margin="0,0,12,0"
+                                      Visibility="{Binding Frame, Converter={StaticResource HasVis}}">
+                                    <Border DataContext="{Binding Frame}" CornerRadius="5" ClipToBounds="True" Loaded="Thumb_Loaded"
+                                            Background="{DynamicResource SubtleFillColorSecondaryBrush}">
+                                        <Image Source="{Binding Thumb}" Stretch="UniformToFill" />
+                                    </Border>
+                                    <TextBlock DataContext="{Binding Frame}" Text="Önizleme yok" Style="{StaticResource Small}"
+                                               HorizontalAlignment="Center" VerticalAlignment="Center"
+                                               Visibility="{Binding ThumbFailed, Converter={StaticResource BoolVis}}" />
+                                </Grid>
+                                <StackPanel VerticalAlignment="Center">
+                                    <TextBlock Text="{Binding Name}" FontWeight="SemiBold" TextWrapping="Wrap"
+                                               Foreground="{DynamicResource TextFillColorPrimaryBrush}" />
+                                    <TextBlock Text="{Binding Message}" Style="{StaticResource Small}" TextWrapping="Wrap"
+                                               Visibility="{Binding Frame, Converter={StaticResource HasVis}}" />
+                                    <TextBlock Text="{Binding Path}" Style="{StaticResource Small}" TextWrapping="Wrap"
+                                               Visibility="{Binding Path, Converter={StaticResource HasVis}}" />
+                                </StackPanel>
+                            </DockPanel>
                         </DataTemplate>
                     </ListBox.ItemTemplate>
                 </ListBox>

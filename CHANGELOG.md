@@ -14,9 +14,12 @@ Biçim [Keep a Changelog](https://keepachangelog.com/tr-TR/1.1.0/), sürüm numa
   her klasörün kendi `_Ayiklananlar\Tekrarlar|Benzerler|Kusurlu` klasörüne, göreli yoluyla **taşınır**
   (kopyalanmaz, silinmez); düzen olduğu gibi kalır. Kopyalarda öncelikli klasörler seçilebilir. Durdur,
   kaldığı yerden devam et ve Geri Al çalışır. Son temizlenen klasörler ayrıca hatırlanır.
+- Okunamayanlar bölümünde küçük resim, dosya adı ve neden; çift tık dosyayı açar.
 
 ### Değişti
 - Düzenle ve Temizle aynı sihirbazı paylaşır (iş türü katmanı `IScanJob`); Düzenle'nin davranışı değişmedi.
+- Geri Al, boş kalan klasörleri kaldırır. Temizle'de her şey yerine döndüyse günlükle birlikte `_Ayiklananlar` da
+  silinir; içinde başka dosya olan klasöre dokunulmaz. Düzenle'de arşiv klasörü ve günlüğü kalır.
 
 ## [0.3.0] - 2026-11-08
 

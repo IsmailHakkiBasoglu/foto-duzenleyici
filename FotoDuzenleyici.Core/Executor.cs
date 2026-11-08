@@ -190,8 +190,10 @@ public sealed class Executor
         CancellationToken ct = default, Action<string>? recycle = null)
     {
         recycle ??= RecycleBin;
+        if (!File.Exists(journalPath)) return new ExecuteResult(); // tam geri alınmış temizliğin günlüğü silinmiştir
+        var all = FinalStates(journalPath);
         // Taşıma bitmiş ama "Moved" satırı yazılamadan süreç durmuşsa (Planned/Started, kaynak yok, hedef var) o da geri alınır.
-        var entries = FinalStates(journalPath).Where(e => e.State is "Copied" or "Recycled" or "Moved" ||
+        var entries = all.Where(e => e.State is "Copied" or "Recycled" or "Moved" ||
             (e.Move && e.State is "Planned" or "Started" && !File.Exists(e.Source) && File.Exists(e.Target))).ToList();
         var res = new ExecuteResult(); int n = 0;
         foreach (var e in entries)
@@ -223,7 +225,55 @@ public sealed class Executor
             }
             catch (Exception ex) { res.Failed++; res.Errors.Add($"{e.Target}: {ex.Message}"); }
         }
+        RemoveLeftovers(journalPath, all, entries, res);
         return res;
+    }
+
+    /// <summary>
+    /// Geri alma sonrası bu işin boş kalan hedef klasörlerini kaldırır; içinde bir şey kalan klasöre dokunulmaz.
+    /// Temizle'de her şey döndüyse günlük de silinir, böylece <c>_Ayiklananlar</c> kalmaz. Düzenle'de arşiv klasörü ve
+    /// günlüğü kalır. Burada çıkan hata geri almayı bozmaz: en kötü boş bir klasör kalır.
+    /// </summary>
+    static void RemoveLeftovers(string journalPath, List<JournalEntry> all, List<JournalEntry> undone, ExecuteResult res)
+    {
+        var journalDir = Path.GetDirectoryName(Path.GetFullPath(journalPath))!;
+        var journalRoot = Path.GetDirectoryName(journalDir);
+        if (journalRoot is null) return;
+
+        foreach (var dir in undone.Select(e => Path.GetDirectoryName(Path.GetFullPath(e.Target))!)
+                     .Distinct(StringComparer.OrdinalIgnoreCase))
+            PruneEmpty(dir, RejectsParent(dir) ?? journalRoot);
+
+        var parent = RejectsParent(journalDir);
+        if (parent is null || res.Failed > 0 || all.Any(e => File.Exists(e.Target))) return;
+        try { File.Delete(journalPath); }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { return; }
+        PruneEmpty(journalDir, parent);
+    }
+
+    /// <summary><c>_Ayiklananlar</c> klasörünün içindeyse onun üst klasörü: temizlik buradan yukarı çıkmaz.</summary>
+    static string? RejectsParent(string dir)
+    {
+        for (var d = dir; d is not null; d = Path.GetDirectoryName(d))
+            if (Path.GetFileName(d).Equals(CleanSession.RejectsFolder, StringComparison.OrdinalIgnoreCase))
+                return Path.GetDirectoryName(d);
+        return null;
+    }
+
+    /// <summary>Boş klasörleri yukarı doğru siler; <paramref name="stop"/> ve üstüne çıkmaz, ilk dolu klasörde durur.</summary>
+    static void PruneEmpty(string dir, string stop)
+    {
+        var prefix = Path.EndsInDirectorySeparator(stop) ? stop : stop + Path.DirectorySeparatorChar;
+        for (var d = dir; d is not null && d.StartsWith(prefix, StringComparison.OrdinalIgnoreCase); d = Path.GetDirectoryName(d))
+        {
+            try
+            {
+                if (!Directory.Exists(d)) continue;
+                if (Directory.EnumerateFileSystemEntries(d).Any()) return;
+                Directory.Delete(d);
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { return; }
+        }
     }
 
     /// <summary>Günlüğün tüm satırları. Elektrik kesintisinde yarım kalmış satır atlanır.</summary>

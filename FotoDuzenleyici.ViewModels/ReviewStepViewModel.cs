@@ -50,6 +50,15 @@ public sealed partial class ReviewStepViewModel : ObservableObject
     [ObservableProperty] private PlanSummary summary = null!;
     public int DuplicateGroups { get; }
     public IReadOnlyList<string> ScanErrors { get; }
+    /// <summary>Okunamayanlar bölümünün satırları (taramadaki dosyalar küçük resimli).</summary>
+    public IReadOnlyList<ScanErrorRow> ErrorRows => _errorRows ??= ScanErrorRow.CreateAll(ScanErrors, Job.Files);
+    IReadOnlyList<ScanErrorRow>? _errorRows;
+
+    [RelayCommand]
+    void OpenErrorFile(ScanErrorRow? row)
+    {
+        if (row?.Frame is not null) _s.Shell.OpenFile(row.Path!);
+    }
 
     public DuplicatesReviewViewModel Duplicates { get; }
     public SimilarReviewViewModel Similar { get; }
