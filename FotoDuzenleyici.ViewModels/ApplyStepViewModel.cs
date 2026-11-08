@@ -23,11 +23,18 @@ public sealed partial class ApplyStepViewModel : ObservableObject
     public string Archive { get; }
 
     /// <summary>Bitti ekranındaki düğme: Temizle'de (ya da temizlik günlüğünün Geri Al'ında) _Ayiklananlar açılır.</summary>
+    /// <summary>Geri Al onay metni, günlüğün türüne göre.</summary>
+    public static string UndoText(string journal) => IsCleanFolder(Path.GetDirectoryName(Path.GetDirectoryName(Path.GetFullPath(journal))) ?? "")
+        ? "Bu temizlik geri alınır: Ayıklananlar eski yerlerine taşınır; hiçbir şey silinmez. Devam edilsin mi?"
+        : "Bu günlükteki dosyalar doğrulanarak eski yerlerine döner; arşivdeki kopyaları Geri Dönüşüm Kutusu'na gider. Devam edilsin mi?";
+
+    static bool IsCleanFolder(string folder) => Path.GetFileName(Path.TrimEndingDirectorySeparator(folder))
+        .Equals(CleanSession.RejectsFolder, StringComparison.OrdinalIgnoreCase);
+
     public string OpenTitle => IsClean ? "Ayıklananları aç" : "Arşivi aç";
 
     /// <summary>Temizle işi (ya da temizlik günlüğünün Geri Al'ı): klasör _Ayiklananlar.</summary>
-    public bool IsClean => Path.GetFileName(Path.TrimEndingDirectorySeparator(Archive))
-        .Equals(CleanSession.RejectsFolder, StringComparison.OrdinalIgnoreCase);
+    public bool IsClean => IsCleanFolder(Archive);
 
     [ObservableProperty] private ApplyMode mode;
     [ObservableProperty] private bool isRunning;
@@ -141,8 +148,7 @@ public sealed partial class ApplyStepViewModel : ObservableObject
     async Task Undo()
     {
         if (IsRunning || string.IsNullOrEmpty(Journal)) return;
-        if (!_s.Dialogs.Confirm("Geri Al",
-                "Bu işlemde taşınan dosyalar doğrulanarak eski yerlerine döner; arşivdeki kopyaları Geri Dönüşüm Kutusu'na gider. Devam edilsin mi?"))
+        if (!_s.Dialogs.Confirm("Geri Al", UndoText(Journal)))
             return;
         // Durdurulmuş bir işte kalanlar: geri alınan işin "yarım" sayılıp sonra Devam et diye önerilmemesi için
         // bırakılır (dosyalarına dokunulmaz).

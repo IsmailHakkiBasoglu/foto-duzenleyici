@@ -72,6 +72,8 @@ public sealed class JsonSettingsStore : ISettingsStore
             var s = JsonSerializer.Deserialize<AppSettings>(File.ReadAllText(_path)) ?? throw new JsonException("boş");
             s.Recent ??= new();
             s.Recent.RemoveAll(r => r is null || r.Sources is null || r.Archive is null);
+            s.RecentClean ??= new();
+            s.RecentClean.RemoveAll(r => r is null || r.Sources is null);
             s.Theme ??= "Sistem";
             return s;
         }

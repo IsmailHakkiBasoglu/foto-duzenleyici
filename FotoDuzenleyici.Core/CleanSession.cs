@@ -28,11 +28,16 @@ public sealed class CleanSession
     public List<DuplicateGroup> Duplicates { get; internal set; } = new();
     public List<string> ScanErrors { get; } = new();
 
-    /// <summary>Okur, hiçbir şeyi değiştirmez. <c>_Ayiklananlar</c> klasörleri taranmaz.</summary>
+    /// <summary>Okur, hiçbir şeyi değiştirmez. <c>_Ayiklananlar</c> ve Düzenle'nin <c>_Tekrarlar</c> / <c>_Benzerler</c> /
+    /// <c>_Kusurlu</c> / <c>_Gunluk</c> klasörleri taranmaz.</summary>
     public void Scan(IProgress<(int done, int total)>? scanProgress = null, IProgress<(int done, int total)>? hashProgress = null,
         CancellationToken ct = default)
     {
-        var names = new HashSet<string>(_scan.ExcludedFolderNames, StringComparer.OrdinalIgnoreCase) { RejectsFolder };
+        // Düzenli arşiv temizlenirken Düzenle'nin ayırdıkları (_Tekrarlar, _Benzerler, _Kusurlu) ve günlükleri de taranmaz:
+        // _Tekrarlar'daki eski kopya, tarih klasöründeki asıl dosyayı "fazla kopya" yapmasın.
+        var o = new PlanOptions { DestinationRoot = "" };
+        var names = new HashSet<string>(_scan.ExcludedFolderNames, StringComparer.OrdinalIgnoreCase)
+            { RejectsFolder, o.DuplicatesFolderName, o.SimilarFolderName, o.FlawedFolderName, "_Gunluk" };
         var scanner = new Scanner(new ScanOptions
         {
             Roots = Roots.Where(Directory.Exists).ToList(),
