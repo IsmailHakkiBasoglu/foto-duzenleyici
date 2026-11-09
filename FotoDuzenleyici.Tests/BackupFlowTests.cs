@@ -290,6 +290,61 @@ public class BackupFlowTests : IDisposable
     }
 
     [Fact]
+    public async Task Title_PerOutcome()
+    {
+        Arc("a.jpg"); Arc("b.jpg");
+        var vm = Vm();
+        await vm.ScanCommand.ExecuteAsync(null);
+        await vm.StartCommand.ExecuteAsync(null);
+        Assert.Equal("Bitti", vm.FinishedTitle);
+
+        vm.Result = new BackupResult { Blocked = "Yedek diskinde yer yetmiyor" };
+        Assert.Equal("Yedekleme başlatılamadı", vm.FinishedTitle);
+
+        vm.Result = new BackupResult { Aborted = true };
+        Assert.Equal("Yedekleme yarıda kaldı", vm.FinishedTitle);
+        Assert.True(vm.CanResume);
+
+        vm.Result = new BackupResult { Cancelled = true };
+        vm.Stopped = true;
+        Assert.Equal("Durduruldu", vm.FinishedTitle);
+    }
+
+    [Fact]
+    public async Task EarlyBlocked_FreeAndNeededShowDash()
+    {
+        var vm = Vm();
+        vm.Archive = Path.Combine(_tmp, "baska-arsiv");
+        Directory.CreateDirectory(vm.Archive);
+        vm.Backup = Path.Combine(vm.Archive, "yedek");
+
+        await vm.ScanCommand.ExecuteAsync(null);
+
+        Assert.Contains("iç içe", vm.Preview!.Blocked);
+        Assert.Equal("—", vm.FreeText);
+        Assert.Equal("—", vm.NeededText);
+        Assert.False(vm.Surveyed);
+    }
+
+    [Fact]
+    public async Task Running_BeforeFirstProgress_ShowsRescan()
+    {
+        Arc("a.jpg");
+        var vm = Vm();
+        using var gate = new ManualResetEventSlim();
+        vm.OnProgressForTest = _ => gate.Wait(TimeSpan.FromSeconds(20));
+        await vm.ScanCommand.ExecuteAsync(null);
+
+        var run = vm.StartCommand.ExecuteAsync(null);
+
+        Assert.True(vm.IsPreparing);
+        Assert.Equal("Arşiv yeniden taranıyor…", vm.ProgressText);
+        gate.Set();
+        await run;
+        Assert.False(vm.IsPreparing);
+    }
+
+    [Fact]
     public void Eta_Rules()
     {
         const long Mb = 1L << 20;

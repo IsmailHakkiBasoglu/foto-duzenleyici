@@ -142,4 +142,35 @@ public class BackupShellTests : IDisposable
         var vm = Assert.IsType<BackupFlowViewModel>(shell.CurrentPage);
         Assert.Equal(target, vm.Archive);
     }
+
+    [Fact]
+    public async Task ShellUndo_Done_BackupButton_OpensBackup()
+    {
+        var src = Path.Combine(_tmp, "kaynak");
+        Directory.CreateDirectory(src);
+        var file = Path.Combine(src, "x.pdf");
+        File.WriteAllText(file, "%PDF-1.4 x");
+        File.SetLastWriteTime(file, new DateTime(2024, 3, 1));
+        var target = Path.Combine(_tmp, "hedef");
+        _f.Settings.Stored.FindSimilar = false; _f.Settings.Stored.MarkFlawed = false;
+        _f.Settings.Stored.AddRecent(new[] { src }, target, DateTime.Now);
+        var shell = new ShellViewModel(_f.Services);
+        var home = (HomeViewModel)shell.CurrentPage;
+        home.StartOrganizeCommand.Execute(home.LastOrganize);
+        var flow = (OrganizeFlowViewModel)shell.CurrentPage;
+        await flow.ScanCommand.ExecuteAsync(null);
+        flow.GoToConfirmCommand.Execute(null);
+        var journal = flow.Confirm!.JournalPath;
+        flow.Confirm.ApplyCommand.Execute(null);
+        await flow.ApplyTask!;
+        shell.GoHomeCommand.Execute(null);
+
+        _f.Files.Journal = journal;
+        await shell.UndoCommand.ExecuteAsync(null);
+        var undo = (OrganizeFlowViewModel)shell.CurrentPage;
+        undo.BackupFromDoneCommand.Execute(null);
+
+        var vm = Assert.IsType<BackupFlowViewModel>(shell.CurrentPage);
+        Assert.Equal(target, vm.Archive);
+    }
 }

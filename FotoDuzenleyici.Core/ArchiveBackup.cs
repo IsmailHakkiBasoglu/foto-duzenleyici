@@ -24,6 +24,8 @@ public sealed class BackupResult
     public long BytesCopied { get; set; }
     public List<string> Errors { get; } = new();
     public bool Cancelled { get; set; }
+    /// <summary>Yedek diski doldu ya da koptu; iş yarıda bırakıldı, kalanlar sonra devam ettirilebilir.</summary>
+    public bool Aborted { get; set; }
     /// <summary>İş hiç başlamadıysa nedeni (iç içe kök, yer yok, okunamayan liste, kök yok).</summary>
     public string? Blocked { get; set; }
 }
@@ -36,6 +38,7 @@ public sealed class BackupPreview
     public int Unchanged { get; set; }
     public int MissingInArchive { get; set; }
     public long BytesNeeded { get; set; }
+    /// <summary>-1: ölçülmedi (tarama engelle erken durdu); long.MaxValue: ölçülemedi.</summary>
     public long FreeBytes { get; set; }
     public List<string> Errors { get; } = new();
     public bool Cancelled { get; set; }
@@ -144,7 +147,12 @@ public sealed class ArchiveBackup
             catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
             {
                 res.Errors.Add($"{w.Rel}: {ex.Message}");
-                if (Fatal(ex, bak)) { res.Errors.Add("Yedekleme durdu: yedek diski dolu ya da erişilemiyor."); break; }
+                if (Fatal(ex, bak))
+                {
+                    res.Errors.Add("Yedekleme durdu: yedek diski dolu ya da erişilemiyor.");
+                    res.Aborted = true;
+                    break;
+                }
             }
             bytesDone += w.Size;
             if ((i + 1) % Math.Max(1, opt.SaveEvery) == 0) TrySave(manifest, res.Errors);
@@ -176,7 +184,7 @@ public sealed class ArchiveBackup
         public BackupManifest? Manifest;
         public List<(string Rel, string Src, long Size, bool Changed)> Work = new();
         public int Unchanged, Missing;
-        public long Need, Free;
+        public long Need, Free = -1;
         public bool Cancelled;
         public string? Blocked;
     }
@@ -216,7 +224,9 @@ public sealed class ArchiveBackup
         s.Work.Sort((x, y) => StringComparer.OrdinalIgnoreCase.Compare(x.Rel, y.Rel));
         s.Missing = s.Manifest.Entries.Count(e => !seen.Contains(e.Path));
         s.Need = s.Work.Sum(w => w.Size);
+        // Yedeklemenin başında silinecek yarım kopyalar da boş yer sayılır; yoksa özet yanlışlıkla "yer yetmiyor" der.
         s.Free = FreeSpace(bak);
+        if (s.Free != long.MaxValue) s.Free = SaturatingAdd(s.Free, LeftoverBytes(bak));
         if (s.Need > 0 && s.Need + s.Need / 100 > s.Free)
             s.Blocked = $"Yedek diskinde yer yetmiyor: {Gb(s.Need)} gerekli, {Gb(s.Free)} boş.";
         return s;
@@ -462,6 +472,24 @@ public sealed class ArchiveBackup
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { }
         TryDelete(Path.Combine(bak, BackupManifest.FileName + ".tmp"));
     }
+
+    /// <summary><see cref="CleanLeftovers"/>'ın sileceği dosyaların toplam boyutu; okunamazsa 0.</summary>
+    static long LeftoverBytes(string bak)
+    {
+        long sum = 0;
+        try
+        {
+            var tmpDir = Path.Combine(bak, TempFolder);
+            if (Directory.Exists(tmpDir))
+                foreach (var p in Directory.GetFiles(tmpDir)) sum += new FileInfo(p).Length;
+            var tmpList = new FileInfo(Path.Combine(bak, BackupManifest.FileName + ".tmp"));
+            if (tmpList.Exists) sum += tmpList.Length;
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { }
+        return sum;
+    }
+
+    static long SaturatingAdd(long a, long b) => a > long.MaxValue - b ? long.MaxValue : a + b;
 
     static void TryDelete(string path)
     {

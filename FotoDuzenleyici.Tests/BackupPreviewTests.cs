@@ -29,6 +29,46 @@ public class BackupPreviewTests : IDisposable
     static readonly BackupOptions Opt = new();
 
     [Fact]
+    public void Preview_EarlyBlocked_FreeNotMeasured()
+    {
+        var p = new ArchiveBackup { FreeSpace = _ => 123 }.Preview(Path.Combine(_tmp, "yok"), _bak, Opt);
+
+        Assert.NotNull(p.Blocked);
+        Assert.Equal(-1, p.FreeBytes);
+    }
+
+    [Fact]
+    public void LeftoverTemp_CountsAsFree_PreviewAndRun()
+    {
+        Arc("a.jpg", new string('a', 500));
+        var tmp = Path.Combine(_bak, ArchiveBackup.TempFolder);
+        Directory.CreateDirectory(tmp);
+        File.WriteAllBytes(Path.Combine(tmp, "eski.part"), new byte[2000]);
+        var b = new ArchiveBackup { FreeSpace = _ => 100 };
+
+        var p = b.Preview(_arc, _bak, Opt);
+        var r = b.Run(_arc, _bak, Opt);
+
+        Assert.Null(p.Blocked);
+        Assert.Equal(2100, p.FreeBytes);
+        Assert.Null(r.Blocked);
+        Assert.Equal(1, r.New);
+    }
+
+    [Fact]
+    public void Run_BackupFolderGone_Aborted()
+    {
+        Arc("a.jpg", "aaaa"); Arc("b.jpg", "bbbb");
+        var b = new ArchiveBackup { AfterWrite = _ => Directory.Delete(_bak, true) };
+
+        var r = b.Run(_arc, _bak, Opt);
+
+        Assert.True(r.Aborted);
+        Assert.False(r.Cancelled);
+        Assert.Contains(r.Errors, e => e.StartsWith("Yedekleme durdu"));
+    }
+
+    [Fact]
     public void Preview_MatchesRun()
     {
         var changed = Arc(@"a\degisen.jpg", "eski");

@@ -55,10 +55,17 @@ public sealed partial class ShellViewModel : ObservableObject
 
     void StartOrganize(RecentPair? p)
     {
-        var f = new OrganizeFlowViewModel(_s, _settings);
-        f.BackupRequested += StartBackup;
+        var f = NewOrganize();
         if (p is not null) f.Folders.Load(p);
         CurrentPage = f;
+    }
+
+    /// <summary>Düzenle akışı; Bitti ekranındaki Yedekle… düğmesi kabuğa bağlı.</summary>
+    OrganizeFlowViewModel NewOrganize()
+    {
+        var f = new OrganizeFlowViewModel(_s, _settings);
+        f.BackupRequested += StartBackup;
+        return f;
     }
 
     /// <param name="archive">Düzenle'nin Bitti ekranından: o işin arşivi; null → son kullanılan.</param>
@@ -89,7 +96,7 @@ public sealed partial class ShellViewModel : ObservableObject
         // Durdurulmuş bir işin kalanları bırakılır: geri alınan iş sonra "yarım" sanılıp Devam et diye önerilmesin.
         try { if (Executor.Pending(journal).Count > 0) Executor.Abandon(journal); }
         catch (Exception ex) { ErrorMessage = ex.Message; return; }
-        var f = new OrganizeFlowViewModel(_s, _settings);
+        var f = NewOrganize();
         CurrentPage = f;
         try { await f.StartUndo(journal); }
         catch (Exception ex) { ErrorMessage = ex.Message; }

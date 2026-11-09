@@ -50,7 +50,7 @@
             <StackPanel Visibility="{Binding Step, Converter={StaticResource EqVis}, ConverterParameter=Preview}">
                 <TextBlock Text="Yedekleme özeti" Style="{StaticResource H1}" />
                 <TextBlock Style="{StaticResource Muted}" Margin="0,0,0,18" Text="Henüz hiçbir dosya kopyalanmadı." />
-                <Border Style="{StaticResource Panel}" Padding="18">
+                <Border Style="{StaticResource Panel}" Padding="18" Visibility="{Binding Surveyed, Converter={StaticResource BoolVis}}">
                     <UniformGrid Columns="4">
                         <StackPanel><TextBlock Style="{StaticResource TileValue}" Text="{Binding Preview.New, StringFormat=N0}" /><TextBlock Style="{StaticResource Small}" Text="yeni" /></StackPanel>
                         <StackPanel><TextBlock Style="{StaticResource TileValue}" Text="{Binding Preview.Changed, StringFormat=N0}" /><TextBlock Style="{StaticResource Small}" Text="değişmiş" /></StackPanel>
@@ -60,7 +60,7 @@
                 </Border>
                 <Border Style="{StaticResource Panel}" Padding="18" Margin="0,10,0,0">
                     <StackPanel>
-                        <TextBlock Foreground="{DynamicResource TextFillColorPrimaryBrush}"><Run Text="Gereken alan: " /><Run Text="{Binding NeededText, Mode=OneWay}" FontWeight="SemiBold" /><Run Text="   ·   Diskte boş: " /><Run Text="{Binding FreeText, Mode=OneWay}" FontWeight="SemiBold" /></TextBlock>
+                        <TextBlock Foreground="{DynamicResource TextFillColorPrimaryBrush}" Visibility="{Binding Surveyed, Converter={StaticResource BoolVis}}"><Run Text="Gereken alan: " /><Run Text="{Binding NeededText, Mode=OneWay}" FontWeight="SemiBold" /><Run Text="   ·   Diskte boş: " /><Run Text="{Binding FreeText, Mode=OneWay}" FontWeight="SemiBold" /></TextBlock>
                         <TextBlock Style="{StaticResource Mono}" Margin="0,8,0,0" TextWrapping="Wrap" Text="{Binding Backup}" />
                     </StackPanel>
                 </Border>
@@ -98,12 +98,14 @@
                     <StackPanel>
                         <DockPanel Margin="0,0,0,10">
                             <TextBlock DockPanel.Dock="Right" Style="{StaticResource Muted}" VerticalAlignment="Bottom" Text="{Binding RemainingText}" />
-                            <TextBlock Style="{StaticResource TileValue}" Text="{Binding Percent, StringFormat='%{0:N0}'}" Margin="0,0,12,0" />
+                            <TextBlock Style="{StaticResource TileValue}" Text="{Binding Percent, StringFormat='%{0:N0}'}" Margin="0,0,12,0"
+                                       Visibility="{Binding IsPreparing, Converter={StaticResource HasVis}, ConverterParameter=!}" />
                             <TextBlock Style="{StaticResource Muted}" VerticalAlignment="Bottom" Margin="0,0,0,4" Text="{Binding ProgressText}" />
                         </DockPanel>
-                        <ProgressBar Height="8" Maximum="100" Value="{Binding Percent, Mode=OneWay}" />
+                        <ProgressBar Height="8" Maximum="100" Value="{Binding Percent, Mode=OneWay}" IsIndeterminate="{Binding IsPreparing, Mode=OneWay}" />
                         <TextBlock Style="{StaticResource Small}" Margin="0,10,0,0" TextTrimming="CharacterEllipsis"
-                                   Text="{Binding Current, StringFormat='Şu an: {0}'}" />
+                                   Text="{Binding Current, StringFormat='Şu an: {0}'}"
+                                   Visibility="{Binding Current, Converter={StaticResource HasVis}}" />
                     </StackPanel>
                 </Border>
                 <ui:Button Content="Durdur" Icon="{ui:SymbolIcon Stop24}" Command="{Binding StopCommand}" Margin="0,18,0,0" />
@@ -111,8 +113,7 @@
 
             <!-- Sonuç -->
             <StackPanel Visibility="{Binding Step, Converter={StaticResource EqVis}, ConverterParameter=Finished}">
-                <TextBlock Text="Bitti" Style="{StaticResource H1}" Visibility="{Binding Stopped, Converter={StaticResource HasVis}, ConverterParameter=!}" />
-                <TextBlock Text="Durduruldu" Style="{StaticResource H1}" Visibility="{Binding Stopped, Converter={StaticResource BoolVis}}" />
+                <TextBlock Text="{Binding FinishedTitle}" Style="{StaticResource H1}" />
 
                 <Border Style="{StaticResource Panel}" Padding="18" Margin="0,8,0,0" Visibility="{Binding Result, Converter={StaticResource HasVis}}">
                     <TextBlock Text="{Binding FinishedSummary}" TextWrapping="Wrap" Foreground="{DynamicResource TextFillColorPrimaryBrush}" />
@@ -140,6 +141,14 @@
                                 </DockPanel>
                             </DataTemplate>
                         </ListBox.ItemTemplate>
+                    </ListBox>
+                </StackPanel>
+
+                <StackPanel Margin="0,12,0,0" Visibility="{Binding VerifyIssues.Count, Converter={StaticResource HasVis}}">
+                    <TextBlock Text="Okunamayanlar" Style="{StaticResource H2}" FontSize="14" />
+                    <ListBox ItemsSource="{Binding VerifyIssues}" MaxHeight="180" BorderThickness="0" Background="Transparent"
+                             ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                        <ListBox.ItemTemplate><DataTemplate><TextBlock Text="{Binding}" Style="{StaticResource Small}" TextWrapping="Wrap" /></DataTemplate></ListBox.ItemTemplate>
                     </ListBox>
                 </StackPanel>
 

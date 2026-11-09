@@ -40,6 +40,31 @@ public class BackupVerifyFlowTests : IDisposable
     }
 
     [Fact]
+    public async Task Verify_LockedFile_ShownAsUnreadableWithReason()
+    {
+        var vm = Vm();
+        using (new FileStream(Path.Combine(_bak, "a.jpg"), FileMode.Open, FileAccess.ReadWrite, FileShare.None))
+            await vm.VerifyCommand.ExecuteAsync(null);
+
+        Assert.Equal("okunamadı", Assert.Single(vm.ProblemRows).Reason);
+        Assert.Contains(vm.VerifyIssues, e => e.StartsWith("a.jpg: "));
+        Assert.Contains("0 bozuk · 1 okunamadı", vm.VerifySummary);
+        Assert.Equal("Bitti", vm.FinishedTitle);
+    }
+
+    [Fact]
+    public async Task Verify_Blocked_Title()
+    {
+        File.WriteAllText(Path.Combine(_bak, BackupManifest.FileName), "bozuk liste");
+        var vm = Vm();
+
+        await vm.VerifyCommand.ExecuteAsync(null);
+
+        Assert.NotNull(vm.Verification!.Blocked);
+        Assert.Equal("Doğrulama yapılamadı", vm.FinishedTitle);
+    }
+
+    [Fact]
     public async Task Verify_Corrupt_Repair_ThenClean()
     {
         Corrupt("a.jpg");

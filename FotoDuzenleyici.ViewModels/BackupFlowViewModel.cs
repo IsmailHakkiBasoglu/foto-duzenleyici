@@ -53,7 +53,11 @@ public sealed partial class BackupFlowViewModel : ObservableObject, ILongRunning
 
     partial void OnVerificationChanged(VerifyResult? value) => ProblemRows = value is null
         ? Array.Empty<BackupProblemRow>()
-        : value.Problems.Select(p => new BackupProblemRow(p.Entry.Path, p.Status == VerifyStatus.Missing ? "eksik" : "bozuk")).ToList();
+        : value.Problems.Select(p => new BackupProblemRow(p.Entry.Path,
+            p.Status == VerifyStatus.Missing ? "eksik" : Unreadable(value, p.Entry.Path) ? "okunamadı" : "bozuk")).ToList();
+
+    /// <summary>Motor okunamayan dosyayı bozuk sayar ve nedenini "yol: ileti" olarak yazar.</summary>
+    static bool Unreadable(VerifyResult v, string path) => v.Errors.Any(e => e.StartsWith(path + ": ", StringComparison.OrdinalIgnoreCase));
 
     public bool CanVerify => !IsScanning && Step != BackupStep.Running
         && !string.IsNullOrWhiteSpace(Backup) && Directory.Exists(Backup);
@@ -69,8 +73,10 @@ public sealed partial class BackupFlowViewModel : ObservableObject, ILongRunning
             if (v.Blocked is { } b) return b;
             if (!v.Cancelled && v.Ok == 0 && v.Problems.Count == 0)
                 return "Bu klasörde bu uygulamayla alınmış bir yedek bulunamadı.";
-            int missing = v.Problems.Count(p => p.Status == VerifyStatus.Missing);
-            var text = $"{v.Ok:N0} sağlam · {missing:N0} eksik · {v.Problems.Count - missing:N0} bozuk";
+            int missing = ProblemRows.Count(r => r.Reason == "eksik");
+            int unreadable = ProblemRows.Count(r => r.Reason == "okunamadı");
+            var text = $"{v.Ok:N0} sağlam · {missing:N0} eksik · {v.Problems.Count - missing - unreadable:N0} bozuk";
+            if (unreadable > 0) text += $" · {unreadable:N0} okunamadı";
             if (v.NotInManifest > 0) text += $" · {v.NotInManifest:N0} listede yok";
             return VerifyPartial ? text + " (yarım: doğrulama durduruldu)" : text;
         }
@@ -102,15 +108,24 @@ public sealed partial class BackupFlowViewModel : ObservableObject, ILongRunning
 
     public bool CanStart => Step == BackupStep.Preview && Preview is { Blocked: null } && !NothingToCopy;
 
-    public bool CanResume => Step == BackupStep.Finished && Stopped && Activity == BackupActivity.Backup;
+    public bool CanResume => Step == BackupStep.Finished && Activity == BackupActivity.Backup
+        && (Stopped || Result is { Aborted: true });
 
-    public string NeededText => Sizes.Text(Preview?.BytesNeeded ?? 0);
+    /// <summary>Tarama engelle erken durduysa sayılar ve alan hiç hesaplanmadı.</summary>
+    bool SpaceUnknown => Preview is { FreeBytes: < 0 };
 
-    public string FreeText => Preview?.FreeBytes == long.MaxValue ? "ölçülemedi" : Sizes.Text(Preview?.FreeBytes ?? 0);
+    /// <summary>Özetin sayıları anlamlı mı (arşiv tarandı mı); erken engelde sayı kutuları gizlenir.</summary>
+    public bool Surveyed => Preview is not null && !SpaceUnknown;
+
+    public string NeededText => SpaceUnknown ? "—" : Sizes.Text(Preview?.BytesNeeded ?? 0);
+
+    public string FreeText => SpaceUnknown ? "—"
+        : Preview?.FreeBytes == long.MaxValue ? "ölçülemedi" : Sizes.Text(Preview?.FreeBytes ?? 0);
 
     public double Percent => BytesTotal > 0 ? BytesDone * 100.0 / BytesTotal : 0;
 
-    public string ProgressText => $"{Done:N0} / {Total:N0} dosya";
+    public string ProgressText => !IsPreparing ? $"{Done:N0} / {Total:N0} dosya"
+        : Activity == BackupActivity.Backup ? "Arşiv yeniden taranıyor…" : "Hazırlanıyor…";
 
     public string? RemainingText => Remaining is { } r
         ? r.TotalMinutes < 1 ? "Kalan: 1 dakikadan az"
@@ -126,13 +141,27 @@ public sealed partial class BackupFlowViewModel : ObservableObject, ILongRunning
                + $"{r.Errors.Count:N0} hata · {Sizes.Text(r.BytesCopied)} kopyalandı",
     };
 
-    public IReadOnlyList<string> FinishedErrors => Result?.Errors ?? (IReadOnlyList<string>)Array.Empty<string>();
+    public string FinishedTitle =>
+        Result is { Blocked: not null } ? "Yedekleme başlatılamadı"
+        : Verification is { Blocked: not null } ? "Doğrulama yapılamadı"
+        : Result is { Aborted: true } ? "Yedekleme yarıda kaldı"
+        : Stopped ? "Durduruldu"
+        : "Bitti";
+
+    /// <summary>İş başladı ama ilk ilerleme gelmedi: yedekleme arşivi yeniden tarıyor.</summary>
+    public bool IsPreparing => Step == BackupStep.Running && Total == 0;
+
+    /// <summary>Doğrulamada okunamayan dosya ve klasörler, nedenleriyle.</summary>
+    public IReadOnlyList<string> VerifyIssues => Verification?.Errors ?? (IReadOnlyList<string>)Array.Empty<string>();
+
+    public IReadOnlyList<string> FinishedErrors =>Result?.Errors ?? (IReadOnlyList<string>)Array.Empty<string>();
 
     static readonly string[] Computed =
     {
         nameof(CanScan), nameof(NothingToCopy), nameof(CanStart), nameof(CanResume), nameof(NeededText), nameof(FreeText),
         nameof(Percent), nameof(ProgressText), nameof(RemainingText), nameof(FinishedSummary), nameof(FinishedErrors),
         nameof(UpToDate), nameof(CanVerify), nameof(CanRepair), nameof(VerifySummary), nameof(RepairSummary), nameof(RepairIssues),
+        nameof(FinishedTitle), nameof(IsPreparing), nameof(VerifyIssues), nameof(Surveyed),
     };
 
     protected override void OnPropertyChanged(PropertyChangedEventArgs e)

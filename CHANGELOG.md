@@ -6,12 +6,23 @@ Biçim [Keep a Changelog](https://keepachangelog.com/tr-TR/1.1.0/), sürüm numa
 
 ## [Yayınlanmamış]
 
+## [0.5.0] - 2026-11-10
+
 ### Eklendi
 - **Yedekle ekranı** (yeni arayüz, ana ekrandaki Yedekle kartı ve Düzenle'nin Bitti ekranı): arşiv ikinci bir
   diske artımlı kopyalanır. Kopyalama başlamadan önce özet gösterilir (yeni, değişmiş, aynı, arşivde yok,
   gereken ve boş alan); onaylamadan hiçbir şey kopyalanmaz. Durdurulan yedek kaldığı yerden sürer. **Yedeği
   doğrula** yedeği baştan okuyup eksik ve bozuk dosyaları bulur, **Onar** bunları arşivden yeniden kopyalar.
   Son arşiv ve yedek klasörü hatırlanır.
+- Yedek diski dolar ya da koparsa sonuç ekranı "Yedekleme yarıda kaldı" der ve **Kaldığı yerden devam et**
+  sunar; başlatılamayan yedekleme ve doğrulama da kendi başlığıyla gösterilir.
+- Doğrulamada okunamayan dosyalar "okunamadı" diye ayrı sayılır, nedenleri listelenir.
+
+### Düzeltildi
+- Üst çubuktaki Geri Al'dan sonra Bitti ekranındaki **Yedekle…** düğmesi çalışmıyordu.
+- Yedekleme başında arşiv yeniden taranırken ilerleme "%0" görünüyordu; artık "Arşiv yeniden taranıyor…" yazar.
+- Önceki yarım kopyalar (`_Gecici`) boş alana sayılmıyordu; özet yanlışlıkla "yer yetmiyor" diyebiliyordu.
+- Klasörler iç içeyken özet anlamsız 0'lar ve "Diskte boş: 0 B" gösteriyordu; artık yalnız engel yazılır.
 
 ## [0.4.0] - 2026-11-08
 
@@ -275,7 +286,8 @@ Biçim [Keep a Changelog](https://keepachangelog.com/tr-TR/1.1.0/), sürüm numa
   SHA-256 ile birebir kopya tespiti, kopyala → doğrula → Geri Dönüşüm Kutusu ile güvenli
   taşıma, işlem günlüğü ve Geri Al, WPF arayüzü.
 
-[Yayınlanmamış]: https://github.com/IsmailHakkiBasoglu/foto-duzenleyici/compare/v0.4.0...HEAD
+[Yayınlanmamış]: https://github.com/IsmailHakkiBasoglu/foto-duzenleyici/compare/v0.5.0...HEAD
+[0.5.0]: https://github.com/IsmailHakkiBasoglu/foto-duzenleyici/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/IsmailHakkiBasoglu/foto-duzenleyici/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/IsmailHakkiBasoglu/foto-duzenleyici/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/IsmailHakkiBasoglu/foto-duzenleyici/compare/v0.1.6...v0.2.0
