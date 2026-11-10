@@ -14,6 +14,7 @@ using FotoDuzenleyici.Core;
 //           Cli --clean <klasör> [--clean <klasör>]... [--priority <klasör>]... [--csv <dosya>] [--apply]
 //               Temizle: birebir kopyaları raporlar; --apply ile fazla kopyalar <kök>\_Ayiklananlar\Tekrarlar'a
 //               taşınır (silinmez; --undo <günlük> ile geri alınır). Kopyada öncelikli klasördeki, yoksa en eski kalır.
+RunningMarker.Hold(); // Kurulum, komut satırı çalışırken güncellemez.
 var roots = new List<string>(); var excl = new List<string>(); var cleanRoots = new List<string>(); var priority = new List<string>();
 string? dest = null, csv = null, undo = null, resume = null, backup = null, verifyBackup = null;
 bool srcFolder = false, renameDate = false, appendSrc = false, noHash = false, apply = false, keepSource = false, similar = false, quality = false,

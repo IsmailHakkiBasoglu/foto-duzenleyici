@@ -6,6 +6,18 @@ Biçim [Keep a Changelog](https://keepachangelog.com/tr-TR/1.1.0/), sürüm numa
 
 ## [Yayınlanmamış]
 
+### Eklendi
+- **Setup.exe** (Türkçe / İngilizce kurulum): yalnız bu kullanıcıya (yönetici izni yok) ya da tüm kullanıcılara
+  kurulur; Başlat menüsü kısayolu, isteğe bağlı masaüstü kısayolu, klasör ve sürücü sağ tık menüsünde
+  **Foto Düzenleyici ile aç**, komut satırı aracını PATH'e ekleme. Yeni sürüm eskisinin üzerine kurulur,
+  ayarlar kalır; uygulama açıksa kurulum önce kapatılmasını ister. Kaldırırken ayarların silinmesi sorulur
+  (varsayılan: kalır). Taşınabilir zip de yayınlanmaya devam eder.
+- Sağ tıkla (ya da `FotoDuzenleyici.exe <klasör>` ile) açılınca klasör ana ekranda seçili gelir: Düzenle
+  kartında kaynak, Temizle kartında temizlenecek klasör olur; × ile bırakılır.
+
+### Değişti
+- Komut satırı aracının adı `fotoduzenle.exe` (önce `FotoDuzenleyici.Cli.exe`).
+
 ## [0.5.0] - 2026-11-10
 
 ### Eklendi

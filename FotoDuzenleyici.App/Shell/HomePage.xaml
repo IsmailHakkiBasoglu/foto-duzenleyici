@@ -8,13 +8,29 @@
             <TextBlock Style="{StaticResource Muted}" Margin="0,0,0,18"
                        Text="Her araç tek başına çalışır. Sen onaylamadan hiçbir dosyaya dokunulmaz." />
 
+            <!-- Sağ tık "Foto Düzenleyici ile aç": Düzenle ve Temizle bu klasörle başlar -->
+            <Border Style="{StaticResource Panel}" Padding="14,8" Margin="0,0,0,12"
+                    BorderBrush="{DynamicResource AccentTextFillColorPrimaryBrush}"
+                    Visibility="{Binding HasSelectedFolder, Converter={StaticResource BoolVis}}">
+                <DockPanel>
+                    <ui:Button DockPanel.Dock="Right" Appearance="Transparent" Icon="{ui:SymbolIcon Dismiss16}"
+                               ToolTip="Seçimi bırak" Command="{Binding ClearSelectedFolderCommand}" />
+                    <ui:SymbolIcon Symbol="Folder24" FontSize="20" Margin="0,0,10,0" VerticalAlignment="Center"
+                                   Foreground="{DynamicResource AccentTextFillColorPrimaryBrush}" />
+                    <StackPanel VerticalAlignment="Center">
+                        <TextBlock Style="{StaticResource Small}" Text="Seçili klasör — Düzenle'de kaynak, Temizle'de temizlenecek klasör olur:" />
+                        <TextBlock Style="{StaticResource Mono}" Text="{Binding SelectedFolder}" TextTrimming="CharacterEllipsis" />
+                    </StackPanel>
+                </DockPanel>
+            </Border>
+
             <UniformGrid Columns="3">
                 <!-- Düzenle -->
                 <Border Style="{StaticResource Panel}" Margin="0,0,6,0" Padding="18"
                         BorderBrush="{DynamicResource AccentTextFillColorPrimaryBrush}">
                     <DockPanel>
                         <ui:Button DockPanel.Dock="Bottom" HorizontalAlignment="Left" Margin="0,10,0,0" Appearance="Primary"
-                                   Content="Başla →" Command="{Binding StartOrganizeCommand}" CommandParameter="{Binding LastOrganize}" />
+                                   Content="Başla →" Command="{Binding OrganizeCardCommand}" />
                         <StackPanel DockPanel.Dock="Bottom" Visibility="{Binding LastOrganize, Converter={StaticResource HasVis}}">
                             <TextBlock Style="{StaticResource Small}" Text="Son kullanılan:" Margin="0,8,0,0" />
                             <TextBlock Style="{StaticResource Mono}" Text="{Binding LastOrganize.Archive, StringFormat='→ {0}'}" />
@@ -32,7 +48,7 @@
                 <Border Style="{StaticResource Panel}" Margin="6,0" Padding="18">
                     <DockPanel>
                         <ui:Button DockPanel.Dock="Bottom" HorizontalAlignment="Left" Margin="0,10,0,0"
-                                   Content="Başla →" Command="{Binding StartCleanCommand}" CommandParameter="{Binding LastClean}" />
+                                   Content="Başla →" Command="{Binding CleanCardCommand}" />
                         <StackPanel DockPanel.Dock="Bottom" Visibility="{Binding LastClean, Converter={StaticResource HasVis}}">
                             <TextBlock Style="{StaticResource Small}" Text="Son temizlenen:" Margin="0,8,0,0" />
                             <TextBlock Style="{StaticResource Mono}" Text="{Binding LastClean.Sources[0]}" />

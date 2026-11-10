@@ -6,6 +6,8 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
+    <!-- Kurulumda PATH'e eklenen komut adı. -->
+    <AssemblyName>fotoduzenle</AssemblyName>
     <TargetFramework>net8.0-windows</TargetFramework>
     <UseWPF>true</UseWPF>
     <!-- UseWPF, System.IO'yu örtük using listesinden çıkarır. -->

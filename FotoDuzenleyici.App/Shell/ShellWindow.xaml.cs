@@ -12,10 +12,11 @@ public partial class ShellWindow : FluentWindow
 {
     readonly ShellViewModel _vm;
 
-    public ShellWindow()
+    /// <param name="startFolder">Sağ tık "Foto Düzenleyici ile aç" klasörü; ana ekranda seçili gelir.</param>
+    public ShellWindow(string? startFolder = null)
     {
         InitializeComponent();
-        _vm = new ShellViewModel(WpfServices.Create());
+        _vm = new ShellViewModel(WpfServices.Create(), startFolder);
         DataContext = _vm;
         AboutItem.Header = "Sürüm " + (Assembly.GetExecutingAssembly().GetName().Version?.ToString(3) ?? "?");
         _vm.PropertyChanged += (_, e) => { if (e.PropertyName == nameof(ShellViewModel.Theme)) ApplyTheme(); };

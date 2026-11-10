@@ -38,6 +38,9 @@ Durum işaretleri: ✅ bitti · 🔄 sürüyor · ⬜ planlandı
 - 🔄 Koyu tema, modern görünüm (WPF-UI / Fluent): 1. parça kabuk + Düzenle akışı (0.2.0); 2. parça
   inceleme ekranları (Yinelenenler, Benzerler, Kusurlu, 0.3.0); Temizle ekranı (0.4.0); Yedekle ekranı (0.5.0)
 
+- ✅ Setup.exe: Türkçe/İngilizce kurulum, sağ tık "Foto Düzenleyici ile aç", komut satırı PATH'e
+  (Yayınlanmamış)
+
 ## Aşama 4 — Otomatik içe aktarma ve yedek
 
 - ⬜ SD kart veya telefon takılınca "içe aktar" penceresi

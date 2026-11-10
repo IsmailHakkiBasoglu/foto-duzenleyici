@@ -12,14 +12,23 @@ Dağınık klasörlerdeki fotoğraf ve videoları **çekim tarihine** (EXIF / vi
 _Tekrarlar\       (birebir aynı içerikli kopyalar)
 ```
 
-## Kullanım (kurulum yok)
+## Kurulum
 
-1. [Releases](../../releases) sayfasından `FotoDuzenleyici-win-x64.zip` dosyasını indir.
-2. Zip'i bir klasöre çıkar.
-3. `FotoDuzenleyici.exe` dosyasına çift tıkla. .NET veya başka bir şey kurmana gerek yok.
+[Releases](../../releases) sayfasından iki biçimden birini indir. .NET veya başka bir şey kurmana gerek yok.
 
-> Windows "bilinmeyen yayıncı" uyarısı verirse: *Ek bilgi → Yine de çalıştır*.
-> (Uygulama henüz dijital olarak imzalı değil.)
+- **`FotoDuzenleyici-Setup-x.y.z.exe`** (önerilen): çift tıkla. Başta *yalnız benim için* (yönetici izni
+  istemez) ya da *tüm kullanıcılar için* seçilir. İsteğe bağlı: masaüstü kısayolu, klasör ve sürücü
+  sağ tık menüsüne **Foto Düzenleyici ile aç** (Windows 11'de *Daha fazla seçenek göster* altında; açılan
+  klasör ana ekranda seçili gelir, Düzenle'de kaynak, Temizle'de temizlenecek klasör olur), komut satırı
+  aracını (`fotoduzenle`) PATH'e ekleme. Yeni sürüm için yeni Setup.exe'yi eskisinin üzerine kur; ayarlar kalır.
+  Kaldırırken ayarların da silinip silinmeyeceği sorulur (varsayılan: kalır). Fotoğraflarına ve arşivdeki
+  günlüklere kurulum ya da kaldırma hiçbir durumda dokunmaz.
+- **`FotoDuzenleyici-win-x64.zip`** (taşınabilir): bir klasöre çıkar, `FotoDuzenleyici.exe`'ye çift tıkla.
+
+Uygulama güncelleme denetimi de dahil hiçbir şey için internete bağlanmaz.
+
+> Windows *"Windows bilgisayarınızı korudu"* ya da "bilinmeyen yayıncı" uyarısı verirse: *Ek bilgi → Yine de
+> çalıştır*. (Uygulama henüz dijital olarak imzalı değil.)
 
 Açılışta **Ana ekran** gelir; **Düzenle** dört adımda ilerler: *Klasörler → Tara ve incele → Onayla →
 Uygulanıyor / Bitti*. *Tara ve incele* adımında sol menüden **Yinelenenler** (korunacak kopyayı seç),
@@ -50,15 +59,19 @@ sağ üstteki ⚙ menüsünde. Eski pencereyi doğrudan açmak için:
 
 ```powershell
 dotnet test
-./publish.ps1        # dist\FotoDuzenleyici-win-x64.zip üretir
+./publish.ps1        # dist\FotoDuzenleyici-win-x64.zip ve (Inno Setup 6 kuruluysa) dist\FotoDuzenleyici-Setup-x.y.z.exe
 ```
+
+Kurulum betiği `installer\FotoDuzenleyici.iss`; `installer\test-install.ps1` Setup.exe'yi sessizce kurup
+denetler ve kaldırır (GitHub Actions her gönderimde çalıştırır; kendi bilgisayarında çalıştırırsan kurulu
+Foto Düzenleyici'yi kaldırır).
 
 ## Proje yapısı
 
 - `FotoDuzenleyici.Core` – tarama, tarih okuma, yinelenen bulma, planlama, güvenli uygulama
 - `FotoDuzenleyici.ViewModels` – ekran mantığı (WPF'siz, testli): Ana ekran ve Düzenle akışı
 - `FotoDuzenleyici.App` – WPF arayüzü: yeni kabuk (WPF-UI) ve Klasik görünüm
-- `FotoDuzenleyici.Cli` – rapor aracı; `--apply` verilmedikçe hiçbir dosyaya dokunmaz, `--undo <günlük>` ile geri alır
+- `FotoDuzenleyici.Cli` – komut satırı aracı (`fotoduzenle.exe`); `--apply` verilmedikçe hiçbir dosyaya dokunmaz, `--undo <günlük>` ile geri alır
 - `FotoDuzenleyici.Tests` – birim testleri
 
 ## Plan ve değişiklikler
