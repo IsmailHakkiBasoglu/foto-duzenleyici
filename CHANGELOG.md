@@ -6,6 +6,8 @@ Biçim [Keep a Changelog](https://keepachangelog.com/tr-TR/1.1.0/), sürüm numa
 
 ## [Yayınlanmamış]
 
+## [0.6.0] - 2026-11-11
+
 ### Eklendi
 - **Setup.exe** (Türkçe / İngilizce kurulum): yalnız bu kullanıcıya (yönetici izni yok) ya da tüm kullanıcılara
   kurulur; Başlat menüsü kısayolu, isteğe bağlı masaüstü kısayolu, klasör ve sürücü sağ tık menüsünde
@@ -298,7 +300,8 @@ Biçim [Keep a Changelog](https://keepachangelog.com/tr-TR/1.1.0/), sürüm numa
   SHA-256 ile birebir kopya tespiti, kopyala → doğrula → Geri Dönüşüm Kutusu ile güvenli
   taşıma, işlem günlüğü ve Geri Al, WPF arayüzü.
 
-[Yayınlanmamış]: https://github.com/IsmailHakkiBasoglu/foto-duzenleyici/compare/v0.5.0...HEAD
+[Yayınlanmamış]: https://github.com/IsmailHakkiBasoglu/foto-duzenleyici/compare/v0.6.0...HEAD
+[0.6.0]: https://github.com/IsmailHakkiBasoglu/foto-duzenleyici/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/IsmailHakkiBasoglu/foto-duzenleyici/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/IsmailHakkiBasoglu/foto-duzenleyici/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/IsmailHakkiBasoglu/foto-duzenleyici/compare/v0.2.0...v0.3.0

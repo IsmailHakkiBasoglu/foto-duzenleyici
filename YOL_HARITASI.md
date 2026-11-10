@@ -39,7 +39,7 @@ Durum işaretleri: ✅ bitti · 🔄 sürüyor · ⬜ planlandı
   inceleme ekranları (Yinelenenler, Benzerler, Kusurlu, 0.3.0); Temizle ekranı (0.4.0); Yedekle ekranı (0.5.0)
 
 - ✅ Setup.exe: Türkçe/İngilizce kurulum, sağ tık "Foto Düzenleyici ile aç", komut satırı PATH'e
-  (Yayınlanmamış)
+  (0.6.0)
 
 ## Aşama 4 — Otomatik içe aktarma ve yedek
 
