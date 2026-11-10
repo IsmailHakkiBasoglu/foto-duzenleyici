@@ -64,3 +64,5 @@ if (-not (Test-Path (Join-Path $settings 'test-isareti.txt'))) { Fail 'sessiz ka
 Remove-Item (Join-Path $settings 'test-isareti.txt')
 
 Write-Host 'Kurulum testi geçti: kur (2 kez), denetle, kaldır, denetle.'
+# fotoduzenle denetiminden kalan çıkış kodu (2) adımı başarısız saydırmasın.
+exit 0
