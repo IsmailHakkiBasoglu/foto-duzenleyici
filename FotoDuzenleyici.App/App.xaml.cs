@@ -2,6 +2,8 @@
 using System.Windows;
 using System.Windows.Markup;
 using FotoDuzenleyici.App.Shell;
+using FotoDuzenleyici.Core;
+using FotoDuzenleyici.ViewModels;
 
 namespace FotoDuzenleyici.App;
 
@@ -11,6 +13,7 @@ public partial class App : Application
     protected override void OnStartup(StartupEventArgs e)
     {
         base.OnStartup(e);
+        RunningMarker.Hold();
         // Beklenmeyen bir hata pencereyi kapatmasın: dosya durumu günlükte, devam ya da Geri Al mümkün kalır.
         DispatcherUnhandledException += (_, ex) =>
         {
@@ -24,7 +27,7 @@ public partial class App : Application
 
         Window w = e.Args.Any(a => a.Equals("--klasik", StringComparison.OrdinalIgnoreCase))
             ? new MainWindow()
-            : new ShellWindow();
+            : new ShellWindow(StartArgs.Folder(e.Args, System.IO.Directory.Exists));
         MainWindow = w;
         w.Show();
     }

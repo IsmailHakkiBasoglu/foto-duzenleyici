@@ -9,14 +9,18 @@ public sealed partial class ShellViewModel : ObservableObject
     readonly Services _s;
     readonly AppSettings _settings;
 
-    public ShellViewModel(Services s)
+    public ShellViewModel(Services s, string? startFolder = null)
     {
         _s = s;
         _settings = s.Settings.Load();
         if (s.Settings.LoadFailed) errorMessage = "Ayar dosyası okunamadı; varsayılan ayarlarla başlandı.";
         theme = _settings.Theme;
+        _startFolder = startFolder;
         currentPage = NewHome();
     }
+
+    /// <summary>Sağ tıkla verilen klasör; bir akış başlayınca ya da × ile unutulur.</summary>
+    string? _startFolder;
 
     public AppSettings Settings => _settings;
 
@@ -39,15 +43,17 @@ public sealed partial class ShellViewModel : ObservableObject
 
     HomeViewModel NewHome()
     {
-        var h = new HomeViewModel(_settings);
+        var h = new HomeViewModel(_settings, _startFolder);
         h.OrganizeRequested += StartOrganize;
         h.CleanRequested += StartClean;
+        h.SelectedFolderCleared += () => _startFolder = null;
         h.BackupRequested += () => StartBackup(null);
         return h;
     }
 
     void StartClean(RecentPair? p)
     {
+        _startFolder = null;
         var f = new OrganizeFlowViewModel(_s, _settings, FlowKind.Clean);
         if (p is not null) f.Folders.Load(p);
         CurrentPage = f;
@@ -55,6 +61,7 @@ public sealed partial class ShellViewModel : ObservableObject
 
     void StartOrganize(RecentPair? p)
     {
+        _startFolder = null;
         var f = NewOrganize();
         if (p is not null) f.Folders.Load(p);
         CurrentPage = f;
