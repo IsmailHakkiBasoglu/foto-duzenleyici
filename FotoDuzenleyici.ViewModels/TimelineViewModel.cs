@@ -45,7 +45,9 @@ public sealed partial class TimelineViewModel : ObservableObject, ILongRunningPa
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(FooterLines), nameof(CanUseCaptureDate))]
     private TimelineResult? result;
-    [ObservableProperty] private TimelineTable? table;
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(FooterLines))]
+    private TimelineTable? table;
     [ObservableProperty] private bool stopped;
     /// <summary>Çekim tarihi yönteminde birden çok klasörlü ay tıklanınca: klasör listesi gösterilir.</summary>
     [ObservableProperty]
@@ -84,7 +86,11 @@ public sealed partial class TimelineViewModel : ObservableObject, ILongRunningPa
                 lines.Add($"{r.Outside:N0} dosya Yıl-Ay klasörleri dışında");
             foreach (var (name, n) in r.Special) lines.Add($"{name}: {n:N0} dosya");
             if (r.Method == TimelineMethod.CaptureDate)
+            {
+                int guessed = Table?.Rows.SelectMany(row => row.Months).Sum(c => c.NotFromMetadata) ?? 0;
+                if (guessed > 0) lines.Add($"{guessed:N0} dosyanın tarihi dosya adından / dosya zamanından");
                 lines.Add("Kopyalar ayıklanmaz; aynı fotoğrafın kopyaları ayrı sayılır.");
+            }
             if (r.Errors.Count > 0) lines.Add($"{r.Errors.Count:N0} dosya ya da klasör okunamadı");
             return lines;
         }

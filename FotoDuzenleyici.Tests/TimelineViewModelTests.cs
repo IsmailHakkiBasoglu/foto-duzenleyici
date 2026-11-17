@@ -259,6 +259,17 @@ public class TimelineViewModelTests : IDisposable
     }
 
     [Fact]
+    public async Task FooterLines_CaptureDate_TotalOfGuessedDates_FollowsFilter()
+    {
+        var d = Loose();
+        var vm = Vm(d);
+        await Counted(vm);
+        Assert.Contains("4 dosyanın tarihi dosya adından / dosya zamanından", vm.FooterLines);
+        vm.Filter = KindFilter.Video;
+        Assert.DoesNotContain(vm.FooterLines, l => l.Contains("dosya adından"));
+    }
+
+    [Fact]
     public void LongRunningPage_NeverLocks_NeverAsks()
     {
         ILongRunningPage p = Vm(Dir("a"));

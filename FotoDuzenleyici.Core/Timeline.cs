@@ -94,11 +94,14 @@ public static class Timeline
     {
         read ??= Scanner.ReadFile;
         var r = new TimelineResult { Root = root, Method = TimelineMethod.CaptureDate };
+        // Kullanıcı özel bir klasörün kendisini seçtiyse (ör. Arsiv\Tarihsiz) kökü dışlama: tablo sessizce boş kalmasın.
+        var excluded = new HashSet<string>(SpecialFolderNames, StringComparer.OrdinalIgnoreCase);
+        excluded.Remove(Path.GetFileName(Path.TrimEndingDirectorySeparator(root)));
         var opt = new ScanOptions
         {
             Roots = { root },
             IncludedKinds = { FileKind.Photo, FileKind.Raw, FileKind.Video },
-            ExcludedFolderNames = new HashSet<string>(SpecialFolderNames, StringComparer.OrdinalIgnoreCase),
+            ExcludedFolderNames = excluded,
         };
         opt.IncludedKinds.Remove(FileKind.Pdf);
         var scanner = new Scanner(opt);

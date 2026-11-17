@@ -65,6 +65,21 @@ public class TimelineCaptureDateTests : IDisposable
     }
 
     [Fact]
+    public void ByCaptureDate_RootItselfNamedSpecial_IsCounted()
+    {
+        var root = Path.Combine(_root, "Tarihsiz");
+        Directory.CreateDirectory(root);
+        File.WriteAllBytes(Path.Combine(root, "IMG_20200105_a.jpg"), new byte[] { 1 });
+        Directory.CreateDirectory(Path.Combine(root, "_Tekrarlar"));
+        File.WriteAllBytes(Path.Combine(root, "_Tekrarlar", "b.jpg"), new byte[] { 1 });
+
+        var r = Timeline.ByCaptureDate(root + "\\");
+
+        Assert.Single(r.Entries);
+        Assert.Equal(1, r.Special["_Tekrarlar"]);
+    }
+
+    [Fact]
     public void ByCaptureDate_IgnoresPdfAndOther()
     {
         Put("x.pdf");

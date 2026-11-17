@@ -25,6 +25,12 @@ public sealed partial class ShellViewModel : ObservableObject
     public AppSettings Settings => _settings;
 
     [ObservableProperty] private object currentPage;
+
+    /// <summary>Zaman çizelgesinden hangi yolla çıkılırsa çıkılsın (Ana ekran, Geri Al…) sayım durur: dosyaları okumaya devam etmesin.</summary>
+    partial void OnCurrentPageChanging(object value)
+    {
+        if (currentPage is TimelineViewModel t && !ReferenceEquals(t, value)) t.RequestStop();
+    }
     [ObservableProperty] private string? errorMessage;
     [ObservableProperty] private string theme;
 
@@ -98,7 +104,6 @@ public sealed partial class ShellViewModel : ObservableObject
     {
         if (Locked) return;
         Flow?.FlushReviews();
-        (CurrentPage as TimelineViewModel)?.RequestStop();
         CurrentPage = NewHome();
     }
 

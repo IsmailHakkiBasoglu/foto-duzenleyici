@@ -65,6 +65,22 @@ public class TimelineShellTests : IDisposable
     }
 
     [Fact]
+    public async Task AnyPageChange_DuringCount_StopsIt()
+    {
+        var shell = new ShellViewModel(_f.Services, _tmp);
+        var vm = Open(shell);
+        var entered = new ManualResetEventSlim();
+        vm.BeforeCountForTest = _ => { entered.Set(); _gate.Wait(TimeSpan.FromSeconds(20)); };
+        var t = vm.CountAsync();
+        Assert.True(entered.Wait(TimeSpan.FromSeconds(20)));
+
+        shell.CurrentPage = new object(); // Geri Al, Yedekle gibi her geçiş
+        _gate.Set();
+        await t;
+        Assert.True(vm.Stopped);
+    }
+
+    [Fact]
     public void RequestClose_DuringCount_ClosesWithoutAsking()
     {
         var shell = new ShellViewModel(_f.Services, _tmp);
