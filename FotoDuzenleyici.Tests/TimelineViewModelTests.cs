@@ -222,6 +222,8 @@ public class TimelineViewModelTests : IDisposable
         Assert.Single(_f.Shell.Opened);
         Assert.Equal("Tatil", vm.ShortPath(jul.Folders[0].Folder));
         Assert.Equal(".", vm.ShortPath(d));
+        Assert.Equal(new[] { new FolderRow(Path.Combine(d, "Tatil"), "Tatil", 2), new FolderRow(Path.Combine(d, "WhatsApp"), "WhatsApp", 1) },
+            vm.SelectedFolders);
 
         vm.OpenFolderCommand.Execute(jul.Folders[1].Folder);
         Assert.Equal(Path.Combine(d, "WhatsApp"), _f.Shell.Opened[1]);

@@ -6,6 +6,17 @@ Biçim [Keep a Changelog](https://keepachangelog.com/tr-TR/1.1.0/), sürüm numa
 
 ## [Yayınlanmamış]
 
+### Eklendi
+- **Zaman çizelgesi** (ana ekranda dördüncü kart): seçilen klasördeki fotoğraflar yıl × ay tablosunda; kutu ne
+  kadar koyuysa o ay o kadar çok fotoğraf. Sayım yolu seçilir: **Klasör adlarından** (Düzenle'nin `Yıl-Ay`
+  klasörleri, hızlı) ya da **Çekim tarihinden** (EXIF; klasör düzenli olmasa da çalışır, ilerleme ve Durdur var).
+  Foto / Raw / Video / Hepsi süzgeci; kutunun üstüne gelince sayı, boyut ve tür dağılımı; tıklayınca o ayın
+  klasörü Gezgin'de açılır. `_Tekrarlar` gibi özel klasörler ve Yıl-Ay dışında kalan dosyalar ayrıca yazılır;
+  art arda boş yıllar tek satıra toplanır. Hiçbir dosyaya dokunmaz; son seçilen klasör hatırlanır.
+
+### Değişti
+- Ana ekran kartları 2 × 2 düzende.
+
 ## [0.6.0] - 2026-11-11
 
 ### Eklendi

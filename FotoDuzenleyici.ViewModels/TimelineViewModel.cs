@@ -3,6 +3,8 @@ using CommunityToolkit.Mvvm.Input;
 
 namespace FotoDuzenleyici.ViewModels;
 
+public sealed record FolderRow(string Path, string Short, int Count);
+
 /// <summary>
 /// Zaman çizelgesi: seçilen klasördeki dosyalar yıl × ay tablosunda. Salt okunur; gezinmeyi kilitlemez,
 /// sayfadan çıkışta ve pencere kapanışında sayım sessizce durur.
@@ -46,7 +48,14 @@ public sealed partial class TimelineViewModel : ObservableObject, ILongRunningPa
     [ObservableProperty] private TimelineTable? table;
     [ObservableProperty] private bool stopped;
     /// <summary>Çekim tarihi yönteminde birden çok klasörlü ay tıklanınca: klasör listesi gösterilir.</summary>
-    [ObservableProperty] private TimelineCell? selectedCell;
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(SelectedFolders))]
+    private TimelineCell? selectedCell;
+
+    /// <summary>Seçili ayın klasörleri: tam yol, köke göre kısa yol, dosya sayısı.</summary>
+    public IReadOnlyList<FolderRow> SelectedFolders => SelectedCell is { } c
+        ? c.Folders.Select(f => new FolderRow(f.Folder, ShortPath(f.Folder), f.Count)).ToList()
+        : Array.Empty<FolderRow>();
 
     /// <summary>Test kancası: sayım başlamadan, arka plan iş parçacığında; sayılan klasörle çağrılır.</summary>
     internal Action<string>? BeforeCountForTest { get; set; }

@@ -1,0 +1,211 @@
+<UserControl x:Class="FotoDuzenleyici.App.Shell.TimelinePage"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+             x:Name="Root">
+    <UserControl.Resources>
+        <!-- Ay kutusu: düz düğme; boş kutu tıklanmaz -->
+        <Style x:Key="CellButton" TargetType="Button">
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Margin" Value="2" />
+            <Setter Property="Height" Value="34" />
+            <Setter Property="ToolTipService.InitialShowDelay" Value="150" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="B" CornerRadius="4" Background="{Binding Converter={StaticResource Heat}}"
+                                BorderThickness="1" BorderBrush="Transparent">
+                            <TextBlock HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="12"
+                                       Foreground="{Binding Converter={StaticResource Heat}, ConverterParameter=fg}"
+                                       Text="{Binding Count, StringFormat=N0}"
+                                       Visibility="{Binding Count, Converter={StaticResource HasVis}}" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="B" Property="BorderBrush" Value="{DynamicResource TextFillColorPrimaryBrush}" />
+                            </Trigger>
+                            <DataTrigger Binding="{Binding IsEmpty}" Value="True">
+                                <Setter Property="Cursor" Value="Arrow" />
+                                <Setter Property="IsHitTestVisible" Value="False" />
+                            </DataTrigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </UserControl.Resources>
+
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <StackPanel MaxWidth="900" Margin="20,16,20,24">
+            <TextBlock Text="Zaman çizelgesi" Style="{StaticResource H1}" />
+            <TextBlock Style="{StaticResource Muted}" Margin="0,0,0,14" TextWrapping="Wrap"
+                       Text="Hangi ayda ne kadar fotoğraf var. Yalnız okunur; hiçbir dosyaya dokunulmaz." />
+
+            <!-- Klasör, süzgeç, yöntem -->
+            <Border Style="{StaticResource Panel}" Padding="16">
+                <StackPanel>
+                    <DockPanel>
+                        <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
+                            <RadioButton GroupName="TlKind" Content="Foto" Margin="0,0,10,0" MinWidth="0"
+                                         IsChecked="{Binding Filter, Converter={StaticResource EnumBool}, ConverterParameter=Photo}" />
+                            <RadioButton GroupName="TlKind" Content="Raw" Margin="0,0,10,0" MinWidth="0"
+                                         IsChecked="{Binding Filter, Converter={StaticResource EnumBool}, ConverterParameter=Raw}" />
+                            <RadioButton GroupName="TlKind" Content="Video" Margin="0,0,10,0" MinWidth="0"
+                                         IsChecked="{Binding Filter, Converter={StaticResource EnumBool}, ConverterParameter=Video}" />
+                            <RadioButton GroupName="TlKind" Content="Hepsi" MinWidth="0"
+                                         IsChecked="{Binding Filter, Converter={StaticResource EnumBool}, ConverterParameter=All}" />
+                        </StackPanel>
+                        <TextBlock Text="Klasör:" VerticalAlignment="Center" Margin="0,0,8,0" Foreground="{DynamicResource TextFillColorPrimaryBrush}" />
+                        <ui:Button DockPanel.Dock="Right" Margin="10,0,16,0" Command="{Binding ChangeFolderCommand}" Content="Değiştir…"
+                                   Visibility="{Binding HasFolder, Converter={StaticResource BoolVis}}" />
+                        <ui:Button DockPanel.Dock="Right" Margin="10,0,16,0" Command="{Binding ChangeFolderCommand}" Content="Klasör seç…"
+                                   Appearance="Primary" Visibility="{Binding HasFolder, Converter={StaticResource HasVis}, ConverterParameter=!}" />
+                        <TextBlock Style="{StaticResource Mono}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"
+                                   Text="{Binding Folder, TargetNullValue='Seçilmedi'}" ToolTip="{Binding Folder}" />
+                    </DockPanel>
+
+                    <StackPanel Margin="0,12,0,0" Visibility="{Binding HasFolder, Converter={StaticResource BoolVis}}">
+                        <StackPanel Orientation="Horizontal">
+                            <RadioButton GroupName="TlMethod" Margin="0,0,18,0"
+                                         IsChecked="{Binding Method, Converter={StaticResource EnumBool}, ConverterParameter=FolderNames}">
+                                <TextBlock><Run Text="Klasör adlarından" FontWeight="SemiBold" /><Run Text=" (hızlı)" /></TextBlock>
+                            </RadioButton>
+                            <RadioButton GroupName="TlMethod"
+                                         IsChecked="{Binding Method, Converter={StaticResource EnumBool}, ConverterParameter=CaptureDate}">
+                                <TextBlock><Run Text="Çekim tarihinden" FontWeight="SemiBold" /><Run Text=" (EXIF, daha yavaş)" /></TextBlock>
+                            </RadioButton>
+                        </StackPanel>
+                        <TextBlock Style="{StaticResource Small}" Margin="0,6,0,0" TextWrapping="Wrap" Text="{Binding MethodReason}" />
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+
+            <!-- Sayılıyor -->
+            <StackPanel Margin="0,16,0,0" Visibility="{Binding IsCounting, Converter={StaticResource BoolVis}}">
+                <ProgressBar Height="4" Maximum="{Binding Total}" Value="{Binding Done}">
+                    <ProgressBar.Style>
+                        <Style TargetType="ProgressBar" BasedOn="{StaticResource {x:Type ProgressBar}}">
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding Total}" Value="0">
+                                    <Setter Property="IsIndeterminate" Value="True" />
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </ProgressBar.Style>
+                </ProgressBar>
+                <DockPanel Margin="0,8,0,0">
+                    <ui:Button DockPanel.Dock="Right" Content="Durdur" Icon="{ui:SymbolIcon Stop24}" Command="{Binding StopCommand}" />
+                    <TextBlock Style="{StaticResource Muted}" VerticalAlignment="Center" Text="{Binding ProgressText}" />
+                </DockPanel>
+            </StackPanel>
+
+            <!-- Durduruldu -->
+            <DockPanel Margin="0,16,0,0" Visibility="{Binding Stopped, Converter={StaticResource BoolVis}}">
+                <ui:Button DockPanel.Dock="Right" Content="Yeniden say" Icon="{ui:SymbolIcon ArrowClockwise24}" Command="{Binding RecountCommand}" />
+                <TextBlock Style="{StaticResource Muted}" VerticalAlignment="Center" Text="Sayım durduruldu." />
+            </DockPanel>
+
+            <!-- Tablo -->
+            <StackPanel Margin="0,16,0,0" Visibility="{Binding Table, Converter={StaticResource HasVis}}">
+                <TextBlock Text="{Binding Table.Summary}" FontWeight="SemiBold" Margin="0,0,0,10" TextWrapping="Wrap"
+                           Foreground="{DynamicResource TextFillColorPrimaryBrush}" />
+                <Border Style="{StaticResource Panel}" Padding="12" Visibility="{Binding Table.Rows, Converter={StaticResource HasVis}}">
+                    <StackPanel>
+                        <Grid Margin="0,0,0,4">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="104" /><ColumnDefinition /><ColumnDefinition /><ColumnDefinition /><ColumnDefinition />
+                                <ColumnDefinition /><ColumnDefinition /><ColumnDefinition /><ColumnDefinition /><ColumnDefinition />
+                                <ColumnDefinition /><ColumnDefinition /><ColumnDefinition /><ColumnDefinition Width="70" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="1" Text="Oca" Style="{StaticResource Small}" HorizontalAlignment="Center" />
+                            <TextBlock Grid.Column="2" Text="Şub" Style="{StaticResource Small}" HorizontalAlignment="Center" />
+                            <TextBlock Grid.Column="3" Text="Mar" Style="{StaticResource Small}" HorizontalAlignment="Center" />
+                            <TextBlock Grid.Column="4" Text="Nis" Style="{StaticResource Small}" HorizontalAlignment="Center" />
+                            <TextBlock Grid.Column="5" Text="May" Style="{StaticResource Small}" HorizontalAlignment="Center" />
+                            <TextBlock Grid.Column="6" Text="Haz" Style="{StaticResource Small}" HorizontalAlignment="Center" />
+                            <TextBlock Grid.Column="7" Text="Tem" Style="{StaticResource Small}" HorizontalAlignment="Center" />
+                            <TextBlock Grid.Column="8" Text="Ağu" Style="{StaticResource Small}" HorizontalAlignment="Center" />
+                            <TextBlock Grid.Column="9" Text="Eyl" Style="{StaticResource Small}" HorizontalAlignment="Center" />
+                            <TextBlock Grid.Column="10" Text="Eki" Style="{StaticResource Small}" HorizontalAlignment="Center" />
+                            <TextBlock Grid.Column="11" Text="Kas" Style="{StaticResource Small}" HorizontalAlignment="Center" />
+                            <TextBlock Grid.Column="12" Text="Ara" Style="{StaticResource Small}" HorizontalAlignment="Center" />
+                        </Grid>
+                        <ItemsControl ItemsSource="{Binding Table.Rows}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="104" /><ColumnDefinition /><ColumnDefinition Width="70" />
+                                        </Grid.ColumnDefinitions>
+                                        <!-- Normal yıl -->
+                                        <TextBlock Text="{Binding Label}" FontWeight="SemiBold" VerticalAlignment="Center"
+                                                   Foreground="{DynamicResource TextFillColorPrimaryBrush}"
+                                                   Visibility="{Binding IsCollapsed, Converter={StaticResource HasVis}, ConverterParameter=!}" />
+                                        <ItemsControl Grid.Column="1" ItemsSource="{Binding Months}">
+                                            <ItemsControl.ItemsPanel>
+                                                <ItemsPanelTemplate><UniformGrid Columns="12" /></ItemsPanelTemplate>
+                                            </ItemsControl.ItemsPanel>
+                                            <ItemsControl.ItemTemplate>
+                                                <DataTemplate>
+                                                    <Button Style="{StaticResource CellButton}" ToolTip="{Binding Tooltip}"
+                                                            Command="{Binding DataContext.OpenCellCommand, ElementName=Root}"
+                                                            CommandParameter="{Binding}" />
+                                                </DataTemplate>
+                                            </ItemsControl.ItemTemplate>
+                                        </ItemsControl>
+                                        <TextBlock Grid.Column="2" HorizontalAlignment="Right" VerticalAlignment="Center" Style="{StaticResource Small}"
+                                                   Text="{Binding Total, StringFormat=N0}"
+                                                   Visibility="{Binding IsCollapsed, Converter={StaticResource HasVis}, ConverterParameter=!}" />
+                                        <!-- Art arda boş yıllar -->
+                                        <TextBlock Grid.ColumnSpan="3" Text="{Binding Label}" Style="{StaticResource Small}" FontStyle="Italic"
+                                                   Margin="0,4" Visibility="{Binding IsCollapsed, Converter={StaticResource BoolVis}}" />
+                                    </Grid>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </StackPanel>
+                </Border>
+
+                <!-- Ayın klasörleri (çekim tarihi, çok klasör) -->
+                <Border Style="{StaticResource Panel}" Padding="14" Margin="0,10,0,0"
+                        Visibility="{Binding SelectedCell, Converter={StaticResource HasVis}}">
+                    <StackPanel>
+                        <DockPanel Margin="0,0,0,6">
+                            <ui:Button DockPanel.Dock="Right" Appearance="Transparent" Icon="{ui:SymbolIcon Dismiss16}"
+                                       ToolTip="Kapat" Command="{Binding CloseFoldersCommand}" />
+                            <TextBlock FontWeight="SemiBold" VerticalAlignment="Center" Foreground="{DynamicResource TextFillColorPrimaryBrush}"
+                                       Text="{Binding SelectedCell.Title, StringFormat='{}{0} — bulunduğu klasörler'}" />
+                        </DockPanel>
+                        <ItemsControl ItemsSource="{Binding SelectedFolders}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Border Style="{StaticResource Row}" Padding="0,4">
+                                        <DockPanel>
+                                            <ui:Button DockPanel.Dock="Right" Content="Aç" Appearance="Transparent"
+                                                       Command="{Binding DataContext.OpenFolderCommand, ElementName=Root}"
+                                                       CommandParameter="{Binding Path}" />
+                                            <TextBlock DockPanel.Dock="Right" Style="{StaticResource Small}" VerticalAlignment="Center" Margin="12,0"
+                                                       Text="{Binding Count, StringFormat='{}{0:N0} dosya'}" />
+                                            <TextBlock Style="{StaticResource Mono}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"
+                                                       Text="{Binding Short}" ToolTip="{Binding Path}" />
+                                        </DockPanel>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </StackPanel>
+                </Border>
+
+                <!-- Tablo dışı -->
+                <ItemsControl Margin="0,10,0,0" ItemsSource="{Binding FooterLines}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate><TextBlock Style="{StaticResource Small}" Text="{Binding}" TextWrapping="Wrap" Margin="0,1" /></DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+                <ui:Button HorizontalAlignment="Left" Margin="0,8,0,0" Content="Çekim tarihinden say" Icon="{ui:SymbolIcon CalendarLtr24}"
+                           Command="{Binding UseCaptureDateCommand}"
+                           Visibility="{Binding CanUseCaptureDate, Converter={StaticResource BoolVis}}" />
+            </StackPanel>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>
