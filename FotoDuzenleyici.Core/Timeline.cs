@@ -88,6 +88,55 @@ public static class Timeline
         return r;
     }
 
+    /// <param name="read">Dosya okuyucu; null → <see cref="Scanner.ReadFile"/>. Atarsa dosya "okunamadı" sayılır.</param>
+    public static TimelineResult ByCaptureDate(string root, IProgress<(int done, int total)>? progress = null,
+        CancellationToken ct = default, Func<string, MediaFile>? read = null)
+    {
+        read ??= Scanner.ReadFile;
+        var r = new TimelineResult { Root = root, Method = TimelineMethod.CaptureDate };
+        var opt = new ScanOptions
+        {
+            Roots = { root },
+            IncludedKinds = { FileKind.Photo, FileKind.Raw, FileKind.Video },
+            ExcludedFolderNames = new HashSet<string>(SpecialFolderNames, StringComparer.OrdinalIgnoreCase),
+        };
+        opt.IncludedKinds.Remove(FileKind.Pdf);
+        var scanner = new Scanner(opt);
+        try
+        {
+            if (!Directory.Exists(root)) { r.Errors.Add($"{root}: klasör bulunamadı"); return r; }
+            foreach (var dir in Directory.GetDirectories(root))
+            {
+                var name = Path.GetFileName(dir);
+                if (!SpecialFolderNames.Contains(name) || Skipped(dir, r)) continue;
+                int n = Walk(dir, r, ct).Count();
+                if (n > 0) r.Special[name] = n;
+            }
+
+            var paths = new List<string>();
+            foreach (var p in scanner.EnumerateFiles()) { ct.ThrowIfCancellationRequested(); paths.Add(p); }
+            var found = new TimelineEntry?[paths.Count];
+            int done = 0;
+            Parallel.For(0, paths.Count, new ParallelOptions { MaxDegreeOfParallelism = 4, CancellationToken = ct }, i =>
+            {
+                try
+                {
+                    var m = read(paths[i]);
+                    if (m.Taken is { } t)
+                        found[i] = new TimelineEntry(t.Year, t.Month, m.Kind, m.Size,
+                            Path.GetDirectoryName(paths[i]) ?? root, m.DateSource);
+                }
+                catch (Exception ex) { lock (r.Errors) r.Errors.Add($"{paths[i]}: {ex.Message}"); }
+                progress?.Report((Interlocked.Increment(ref done), paths.Count));
+            });
+            r.Entries.AddRange(found.OfType<TimelineEntry>());
+            r.Errors.AddRange(scanner.Errors);
+        }
+        catch (OperationCanceledException) { r.Entries.Clear(); r.Cancelled = true; }
+        catch (Exception ex) { r.Errors.Add($"{root}: {ex.Message}"); }
+        return r;
+    }
+
     /// <summary>Klasörün altındaki sayılan dosyalar; özel, gizli+sistem ve bağlantı klasörlerine girmez.</summary>
     internal static IEnumerable<string> Walk(string dir, TimelineResult r, CancellationToken ct)
     {
