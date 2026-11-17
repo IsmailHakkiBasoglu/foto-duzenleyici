@@ -13,6 +13,7 @@
             <DataTemplate DataType="{x:Type vm:HomeViewModel}"><local:HomePage /></DataTemplate>
             <DataTemplate DataType="{x:Type vm:OrganizeFlowViewModel}"><local:OrganizeFlowView /></DataTemplate>
             <DataTemplate DataType="{x:Type vm:BackupFlowViewModel}"><local:BackupPage /></DataTemplate>
+            <DataTemplate DataType="{x:Type vm:TimelineViewModel}"><local:TimelinePage /></DataTemplate>
         </ResourceDictionary>
     </ui:FluentWindow.Resources>
 

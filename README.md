@@ -40,6 +40,11 @@ kopyaları, benzer ve kusurlu kareleri klasörün içindeki `_Ayiklananlar` klas
 silmez). İstersen "kopyalarda öncelikli klasörler" seçebilirsin; Geri Al hepsini yerine döndürür.
 `_Ayiklananlar`'a baktıktan sonra klasörü kendin silebilirsin.
 
+**Zaman çizelgesi** seçtiğin klasördeki fotoğrafları yıl × ay tablosunda gösterir: hangi ayda kaç fotoğraf
+var, boş aylar hangileri. İki sayım yolu var: düzenlenmiş arşivde **Klasör adlarından** (`Yıl-Ay` klasörleri,
+saniyeler sürer), düzenlenmemiş klasörde **Çekim tarihinden** (her dosyanın EXIF tarihi okunur). Foto / Raw /
+Video / Hepsi süzgeci, aya tıklayınca klasörü Gezgin'de açma. Yalnız okur, hiçbir dosyaya dokunmaz.
+
 Eski pencere **Klasik görünüm** olarak
 sağ üstteki ⚙ menüsünde. Eski pencereyi doğrudan açmak için:
 `FotoDuzenleyici.exe --klasik`.

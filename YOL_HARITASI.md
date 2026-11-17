@@ -34,7 +34,8 @@ Durum işaretleri: ✅ bitti · 🔄 sürüyor · ⬜ planlandı
 - ✅ Plan tablosunun yanında küçük resim önizleme (0.1.6)
 - ✅ Kopya ve benzer grupları yan yana karşılaştırma ekranı (benzerler 0.1.5; Yinelenenler
   grup kartları ve korunacak konumu seçme, 0.1.6)
-- ⬜ Ay ay zaman çizelgesi; ay başına dosya sayısı ve boyut grafiği
+- ✅ Ay ay zaman çizelgesi: yıl × ay tablosu, ay başına sayı ve boyut; klasör adlarından ya da çekim
+  tarihinden sayım (Yayınlanmamış)
 - 🔄 Koyu tema, modern görünüm (WPF-UI / Fluent): 1. parça kabuk + Düzenle akışı (0.2.0); 2. parça
   inceleme ekranları (Yinelenenler, Benzerler, Kusurlu, 0.3.0); Temizle ekranı (0.4.0); Yedekle ekranı (0.5.0)
 

@@ -25,6 +25,12 @@ public sealed partial class ShellViewModel : ObservableObject
     public AppSettings Settings => _settings;
 
     [ObservableProperty] private object currentPage;
+
+    /// <summary>Zaman çizelgesinden hangi yolla çıkılırsa çıkılsın (Ana ekran, Geri Al…) sayım durur: dosyaları okumaya devam etmesin.</summary>
+    partial void OnCurrentPageChanging(object value)
+    {
+        if (currentPage is TimelineViewModel t && !ReferenceEquals(t, value)) t.RequestStop();
+    }
     [ObservableProperty] private string? errorMessage;
     [ObservableProperty] private string theme;
 
@@ -48,7 +54,17 @@ public sealed partial class ShellViewModel : ObservableObject
         h.CleanRequested += StartClean;
         h.SelectedFolderCleared += () => _startFolder = null;
         h.BackupRequested += () => StartBackup(null);
+        h.TimelineRequested += StartTimeline;
         return h;
+    }
+
+    /// <summary>Salt okunur ekran: sağ tık klasörü unutulmaz, Düzenle'de hâlâ kullanılabilir.</summary>
+    void StartTimeline()
+    {
+        if (Locked) return;
+        var vm = new TimelineViewModel(_s, _settings, _startFolder);
+        CurrentPage = vm;
+        _ = vm.CountAsync();
     }
 
     void StartClean(RecentPair? p)

@@ -141,6 +141,28 @@ sealed class DoneTitleConverter : IMultiValueConverter
     public object[] ConvertBack(object v, Type[] t, object p, CultureInfo c) => throw new NotSupportedException();
 }
 
+/// <summary>
+/// Zaman çizelgesi kutusu: vurgu rengi, opaklık 0,15 + 0,85 × yoğunluk; boş kutu soluk dolgu.
+/// Parametre "fg": kutu metninin rengi (koyu kutuda beyaz).
+/// </summary>
+sealed class HeatBrushConverter : IValueConverter
+{
+    public object Convert(object value, Type t, object p, CultureInfo c)
+    {
+        var cell = value as ViewModels.TimelineCell;
+        double i = cell?.Intensity ?? 0;
+        if (p as string == "fg")
+            return i > 0.55 ? Brushes.White : Application.Current.TryFindResource("TextFillColorPrimaryBrush") as Brush ?? Brushes.Black;
+        if (cell is null || cell.IsEmpty)
+            return Application.Current.TryFindResource("ControlFillColorSecondaryBrush") as Brush ?? Brushes.Transparent;
+        var accent = Application.Current.TryFindResource("SystemAccentColorPrimary") is Color col ? col : Color.FromRgb(0x3B, 0x82, 0xF6);
+        var b = new SolidColorBrush(accent) { Opacity = 0.15 + 0.85 * i };
+        b.Freeze();
+        return b;
+    }
+    public object ConvertBack(object value, Type t, object p, CultureInfo c) => Binding.DoNothing;
+}
+
 /// <summary>TimeSpan? → "~9 dk kaldı".</summary>
 sealed class EtaConverter : IValueConverter
 {

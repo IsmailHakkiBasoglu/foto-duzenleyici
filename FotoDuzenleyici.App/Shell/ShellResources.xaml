@@ -11,6 +11,7 @@
     <local:StepBrushConverter x:Key="StepBrush" />
     <local:PercentConverter x:Key="Percent" />
     <local:EtaConverter x:Key="Eta" />
+    <local:HeatBrushConverter x:Key="Heat" />
     <local:ApplyTitleConverter x:Key="ApplyTitle" />
     <local:DoneTitleConverter x:Key="DoneTitle" />
     <BooleanToVisibilityConverter x:Key="BoolVis" />
