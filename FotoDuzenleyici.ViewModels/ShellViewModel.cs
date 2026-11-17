@@ -48,7 +48,17 @@ public sealed partial class ShellViewModel : ObservableObject
         h.CleanRequested += StartClean;
         h.SelectedFolderCleared += () => _startFolder = null;
         h.BackupRequested += () => StartBackup(null);
+        h.TimelineRequested += StartTimeline;
         return h;
+    }
+
+    /// <summary>Salt okunur ekran: sağ tık klasörü unutulmaz, Düzenle'de hâlâ kullanılabilir.</summary>
+    void StartTimeline()
+    {
+        if (Locked) return;
+        var vm = new TimelineViewModel(_s, _settings, _startFolder);
+        CurrentPage = vm;
+        _ = vm.CountAsync();
     }
 
     void StartClean(RecentPair? p)
@@ -88,6 +98,7 @@ public sealed partial class ShellViewModel : ObservableObject
     {
         if (Locked) return;
         Flow?.FlushReviews();
+        (CurrentPage as TimelineViewModel)?.RequestStop();
         CurrentPage = NewHome();
     }
 

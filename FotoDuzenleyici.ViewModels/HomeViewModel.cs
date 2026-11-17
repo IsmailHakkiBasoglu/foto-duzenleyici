@@ -68,4 +68,10 @@ public sealed partial class HomeViewModel : ObservableObject
 
     [RelayCommand]
     void StartBackup() => BackupRequested?.Invoke();
+
+    /// <summary>Zaman çizelgesi kartı; seçili klasör varsa kabuk onu açar.</summary>
+    public event Action? TimelineRequested;
+
+    [RelayCommand]
+    void StartTimeline() => TimelineRequested?.Invoke();
 }

@@ -17,6 +17,8 @@ public sealed class AppSettings
     /// <summary>Son temizlenen klasörler (Archive boş, öncelikli klasörler Priority'de).</summary>
     public List<RecentPair> RecentClean { get; set; } = new();
     public BackupPair? LastBackup { get; set; }
+    /// <summary>Zaman çizelgesinde son seçilen klasör.</summary>
+    public string? LastTimelineFolder { get; set; }
     public SourceFolderMode SourceFolder { get; set; } = SourceFolderMode.None;
     public bool RenameWithDate { get; set; }
     public bool AppendSourceToName { get; set; }
