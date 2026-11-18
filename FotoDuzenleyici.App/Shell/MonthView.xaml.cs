@@ -33,12 +33,23 @@ public partial class MonthView : UserControl
     int _columns;
     List<object> _rows = new();
     MonthPhoto? _selected;
+    Window? _window;
 
     public MonthView()
     {
         InitializeComponent();
         DataContextChanged += (_, e) => Attach(e.NewValue as MonthViewModel);
-        Loaded += (_, _) => Focus();
+        Loaded += (_, _) =>
+        {
+            Focus();
+            _window = Window.GetWindow(this);
+            if (_window is not null) _window.PreviewKeyDown += Window_PreviewKeyDown;
+        };
+        Unloaded += (_, _) =>
+        {
+            if (_window is not null) _window.PreviewKeyDown -= Window_PreviewKeyDown;
+            _window = null;
+        };
         IsVisibleChanged += (_, _) => { if (IsVisible) Dispatcher.BeginInvoke(() => Focus()); };
     }
 
@@ -176,6 +187,17 @@ public partial class MonthView : UserControl
 
     // ── Tuşlar ───────────────────────────────────────────────────
 
+    /// <summary>
+    /// Odak ay görünümünün dışındaysa (ör. üst çubuktaki Ana ekran'a basılıp "Hayır" denince) tuşlar yine buraya gelsin:
+    /// yoksa Ayıkla'da ← → Delete Esc çalışmaz.
+    /// </summary>
+    void Window_PreviewKeyDown(object sender, KeyEventArgs e)
+    {
+        if (!IsVisible || IsKeyboardFocusWithin || e.Handled || Keyboard.FocusedElement is TextBox) return;
+        if (e.Key is Key.Left or Key.Right or Key.Delete or Key.Escape) Focus();
+        Root_PreviewKeyDown(this, e);
+    }
+
     void Root_PreviewKeyDown(object sender, KeyEventArgs e)
     {
         if (_vm is null || _vm.IsDiscarding) return;
@@ -229,6 +251,7 @@ public partial class MonthView : UserControl
     void Stage_MouseDown(object sender, MouseButtonEventArgs e)
     {
         if (_vm?.Current is null) return;
+        Focus();
         _dragStart = e.GetPosition(Stage);
         Stage.CaptureMouse();
         e.Handled = true;
