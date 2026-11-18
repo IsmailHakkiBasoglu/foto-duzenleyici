@@ -47,6 +47,9 @@ public sealed partial class ShellViewModel : ObservableObject
 
     bool Locked => Long is { IsLocked: true };
 
+    /// <summary>Sayfanın çıkış sorusu varsa (ay görünümünde işaretli dosyalar) sorar; hayır → false.</summary>
+    bool MayLeave() => CurrentPage is not ILeaveGuard { LeaveQuestion: { } q } || _s.Dialogs.Confirm("Ay görünümü", q);
+
     HomeViewModel NewHome()
     {
         var h = new HomeViewModel(_settings, _startFolder);
@@ -94,7 +97,7 @@ public sealed partial class ShellViewModel : ObservableObject
     /// <param name="archive">Düzenle'nin Bitti ekranından: o işin arşivi; null → son kullanılan.</param>
     public void StartBackup(string? archive)
     {
-        if (Locked) return;
+        if (Locked || !MayLeave()) return;
         Flow?.FlushReviews();
         CurrentPage = new BackupFlowViewModel(_s, _settings, archive);
     }
@@ -102,7 +105,7 @@ public sealed partial class ShellViewModel : ObservableObject
     [RelayCommand]
     void GoHome()
     {
-        if (Locked) return;
+        if (Locked || !MayLeave()) return;
         Flow?.FlushReviews();
         CurrentPage = NewHome();
     }
@@ -110,7 +113,7 @@ public sealed partial class ShellViewModel : ObservableObject
     [RelayCommand]
     async Task Undo()
     {
-        if (Locked) return;
+        if (Locked || !MayLeave()) return;
         var initial = _settings.Recent.FirstOrDefault()?.Archive is { } a ? Path.Combine(a, "_Gunluk") : null;
         var journal = _s.Files.OpenJournal(initial);
         if (journal is null) return;
@@ -154,6 +157,7 @@ public sealed partial class ShellViewModel : ObservableObject
     {
         if (Long is not { MustConfirmClose: true } p)
         {
+            if (!MayLeave()) return CloseDecision.Stay;
             _waitingToClose = false;
             Flow?.FlushReviews();
             Long?.RequestStop(); // Yalnız tarama sürüyor olabilir: yazılan bir şey yok, sormadan durur.

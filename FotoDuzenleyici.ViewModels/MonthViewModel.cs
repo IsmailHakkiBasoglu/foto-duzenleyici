@@ -60,7 +60,8 @@ public sealed partial class MonthViewModel : ObservableObject
     int _generation;
     List<MediaFile> _files = new();
 
-    /// <param name="logDir">Geri Dönüşüm Kutusu'na gönderilenlerin kaydı; null → uygulama veri klasörü\Ayikla.</param>
+    /// <param name="logDir">Geri Dönüşüm Kutusu'na gönderilenlerin kaydı; null → karar dosyasının klasörü\Ayikla
+    /// (uygulama veri klasörü).</param>
     public MonthViewModel(Services s, AppSettings settings, string root, TimelineMethod method, int year, int month,
         IReadOnlyList<string> folders, KindFilter filter, Func<string, MediaFile>? read = null, string? logDir = null)
     {
@@ -73,7 +74,7 @@ public sealed partial class MonthViewModel : ObservableObject
         MonthNumber = month;
         Folders = folders;
         Filter = filter;
-        _logDir = logDir ?? Path.Combine(Path.GetDirectoryName(ReviewStore.DefaultPath)!, "Ayikla");
+        _logDir = logDir ?? Path.Combine(Path.GetDirectoryName(s.CacheFiles.Reviews)!, "Ayikla");
         mode = Enum.TryParse<MonthViewMode>(settings.MonthView, out var m) ? m : MonthViewMode.Grid;
     }
 

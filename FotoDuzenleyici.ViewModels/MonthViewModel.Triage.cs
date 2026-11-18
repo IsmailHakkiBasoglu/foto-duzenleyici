@@ -14,6 +14,7 @@ public sealed record ReviewLine(MonthPhoto Photo, DiscardRoute Route, bool RawTo
 public sealed partial class MonthViewModel : ILeaveGuard
 {
     List<DiscardStep> _steps = new();
+    CancellationTokenSource? _discardCts;
     readonly List<(MediaFile File, bool Moved)> _discarded = new();
 
     // ── İşaretler ────────────────────────────────────────────────
@@ -238,9 +239,11 @@ public sealed partial class MonthViewModel : ILeaveGuard
         IProgress<(int done, int total, string current)> ui = new Progress<(int done, int total, string current)>(v =>
             DiscardProgress = $"{v.done:N0} / {v.total:N0} · {v.current}");
         var (root, bin, logDir) = (Root, _s.RecycleBin, _logDir);
+        _discardCts = new CancellationTokenSource();
+        var ct = _discardCts.Token;
         try
         {
-            var task = Task.Run(() => Discarder.Run(steps, root, bin, logDir, ui));
+            var task = Task.Run(() => Discarder.Run(steps, root, bin, logDir, ui, ct));
             DiscardTask = task;
             var res = await task;
             Apply(res, notPlanned);
@@ -277,6 +280,13 @@ public sealed partial class MonthViewModel : ILeaveGuard
         ResultMessage = failed == 0
             ? $"{done.Count:N0} dosya atıldı"
             : $"{done.Count:N0} dosya atıldı, {failed:N0} dosya atılamadı";
+    }
+
+    /// <summary>Pencere kapanırken: okuma durur, atma sıradaki dosyadan önce durur (o anki dosya yarıda kalmaz).</summary>
+    public void RequestStop()
+    {
+        if (IsLoading) StopCommand.Execute(null);
+        _discardCts?.Cancel();
     }
 
     partial void CheckLeave(ref bool ok)
