@@ -39,7 +39,11 @@ Durum işaretleri: ✅ bitti · 🔄 sürüyor · ⬜ planlandı
 - ⬜ Zaman çizelgesinde aya girme: dolu bir aya (örn. "Ağustos 2026 · 140 foto") tıklayınca o ayın
   görünümü açılır; ayın günleri ve fotoğrafları küçük resimlerle görünür, geri dönülür. Kullanıcı isteği
   (2026-11-18). Tasarımda karar verilecek: gün takvimi mi, düz küçük resim ızgarası mı; büyük ayda
-  küçük resimlerin hızı; Gezgin'de açma seçeneği kalır mı.
+  küçük resimlerin hızı; Gezgin'de açma seçeneği kalır mı. Tasarım:
+  `docs/superpowers/specs/2026-11-18-ay-gorunumu-ayikla-design.md` (Izgara/Takvim, Ayıkla, Geri Dönüşüm Kutusu).
+- ⬜ **Fotoğraflar uygulaması yerine:** tam ekran görüntüleyici, yakınlaştırma, video oynatma, döndürme,
+  klasörler arasında gezinme; Gezgin'e gitmeden taşıma / yeniden adlandırma. Kullanıcı hedefi (2026-11-18);
+  ay görünümündeki Ayıkla ekranı ilk parçası.
 - 🔄 Koyu tema, modern görünüm (WPF-UI / Fluent): 1. parça kabuk + Düzenle akışı (0.2.0); 2. parça
   inceleme ekranları (Yinelenenler, Benzerler, Kusurlu, 0.3.0); Temizle ekranı (0.4.0); Yedekle ekranı (0.5.0)
 
