@@ -1,199 +1,199 @@
-﻿# Ay gÃ¶rÃ¼nÃ¼mÃ¼ ve hÄ±zlÄ± ayÄ±klama â€” tasarÄ±m
+# Ay görünümü ve hızlı ayıklama — tasarım
 
-Tarih: 2026-11-18 Â· Durum: taslak (kullanÄ±cÄ± onayÄ± bekliyor)
+Tarih: 2026-11-18 · Durum: onaylandı (2026-11-18)
 
 ## Niyet
 
-KullanÄ±cÄ± Zaman Ã§izelgesinde dolu bir aya (Ã¶rn. "AÄŸustos 2026 Â· 140 foto") tÄ±klayÄ±nca o ayÄ±n iÃ§ine
-girmek istiyor. Kendi sÃ¶zleriyle: **"o ay ne Ã§ektiÄŸimi hÄ±zlÄ±ca gÃ¶rÃ¼p hatÄ±rlamak istiyorum. belki hÄ±zlÄ±ca
-silme yaparÄ±m ya da Ã§Ã¶p kutusuna atÄ±lacaklar listesi iÃ§in iÅŸaretleme yaparÄ±m. mobilde fotoÄŸraf kaydÄ±rarak
-telefonda yer aÃ§an uygulamalar var ya onun gibi dÃ¼ÅŸÃ¼n."**
+Kullanıcı Zaman çizelgesinde dolu bir aya (örn. "Ağustos 2026 · 140 foto") tıklayınca o ayın içine
+girmek istiyor. Kendi sözleriyle: **"o ay ne çektiğimi hızlıca görüp hatırlamak istiyorum. belki hızlıca
+silme yaparım ya da çöp kutusuna atılacaklar listesi için işaretleme yaparım. mobilde fotoğraf kaydırarak
+telefonda yer açan uygulamalar var ya onun gibi düşün."**
 
-Daha bÃ¼yÃ¼k hedef: uygulamayÄ± Windows FotoÄŸraflar uygulamasÄ± ve Gezgin yerine kullanmak. Bu tasarÄ±m o hedefin
-ilk parÃ§asÄ±. Hedefin tamamÄ± ayrÄ± bir yol haritasÄ± maddesidir ("FotoÄŸraflar uygulamasÄ± yerine").
+Daha büyük hedef: uygulamayı Windows Fotoğraflar uygulaması ve Gezgin yerine kullanmak. Bu tasarım o hedefin
+ilk parçası. Hedefin tamamı ayrı bir yol haritası maddesidir ("Fotoğraflar uygulaması yerine").
 
 ## Hedefler
 
-- Aya tÄ±klayÄ±nca, uygulamadan Ã§Ä±kmadan, o ayÄ±n fotoÄŸraflarÄ± kÃ¼Ã§Ã¼k resimlerle gÃ¶rÃ¼nÃ¼r.
-- GÃ¶rÃ¼nÃ¼mde gezinmek hÄ±zlÄ± ve akÄ±cÄ± olur; 1.000 dosyalÄ± bir ayda da Ã¶yle kalÄ±r.
-- KÃ¶tÃ¼ kareler hÄ±zlÄ±ca "atÄ±lsÄ±n" diye iÅŸaretlenir. Ä°ÅŸaretlenenler gÃ¶zden geÃ§irilir ve tek onayla Geri DÃ¶nÃ¼ÅŸÃ¼m
-  Kutusu'na gÃ¶nderilir.
-- Ä°ÅŸlem bitince, Zaman Ã§izelgesine dÃ¶nÃ¼ldÃ¼ÄŸÃ¼nde o ayÄ±n sayÄ±sÄ± gÃ¼ncel olur.
+- Aya tıklayınca, uygulamadan çıkmadan, o ayın fotoğrafları küçük resimlerle görünür.
+- Görünümde gezinmek hızlı ve akıcı olur; 1.000 dosyalı bir ayda da öyle kalır.
+- Kötü kareler hızlıca "atılsın" diye işaretlenir. İşaretlenenler gözden geçirilir ve tek onayla Geri Dönüşüm
+  Kutusu'na gönderilir.
+- İşlem bitince, Zaman çizelgesine dönüldüğünde o ayın sayısı güncel olur.
 
-## Hedef dÄ±ÅŸÄ± (bu iÅŸ deÄŸil)
+## Hedef dışı (bu iş değil)
 
-- Video oynatma, yakÄ±nlaÅŸtÄ±rma, dÃ¶ndÃ¼rme, dÃ¼zenleme, yeniden adlandÄ±rma, taÅŸÄ±ma.
-- Birden Ã§ok ayÄ± aynÄ± anda ayÄ±klamak.
-- AyÄ±klama kararlarÄ±nÄ± kalÄ±cÄ± saklamak. Liste yalnÄ±z o ay aÃ§Ä±kken yaÅŸar.
-- "FotoÄŸraflar uygulamasÄ± yerine" hedefinin geri kalanÄ±.
+- Video oynatma, yakınlaştırma, döndürme, düzenleme, yeniden adlandırma, taşıma.
+- Birden çok ayı aynı anda ayıklamak.
+- Ayıklama kararlarını kalıcı saklamak. Liste yalnız o ay açıkken yaşar.
+- "Fotoğraflar uygulaması yerine" hedefinin geri kalanı.
 
-## Anti-hedefler (Ã§alÄ±ÅŸsa bile baÅŸarÄ±sÄ±zlÄ±k sayÄ±lÄ±r)
+## Anti-hedefler (çalışsa bile başarısızlık sayılır)
 
-- KullanÄ±cÄ±nÄ±n onayÄ± olmadan herhangi bir dosyanÄ±n gitmesi.
-- Bir dosyanÄ±n sessizce, kalÄ±cÄ± olarak silinmesi. Bu, Geri DÃ¶nÃ¼ÅŸÃ¼m Kutusu olmayan sÃ¼rÃ¼cÃ¼leri de kapsar.
-- Hedefte var olan bir dosyanÄ±n Ã¼zerine yazÄ±lmasÄ±.
-- Ay gÃ¶rÃ¼nÃ¼mÃ¼nÃ¼n aÃ§Ä±lÄ±rken ya da kaydÄ±rÄ±lÄ±rken takÄ±lmasÄ±.
-- AtÄ±lan dosyanÄ±n RAW eÅŸinin sÃ¼rpriz biÃ§imde gitmesi. KullanÄ±cÄ± bunu gÃ¶zden geÃ§irme ekranÄ±nda Ã¶nceden
-  gÃ¶rmeli.
+- Kullanıcının onayı olmadan herhangi bir dosyanın gitmesi.
+- Bir dosyanın sessizce, kalıcı olarak silinmesi. Bu, Geri Dönüşüm Kutusu olmayan sürücüleri de kapsar.
+- Hedefte var olan bir dosyanın üzerine yazılması.
+- Ay görünümünün açılırken ya da kaydırılırken takılması.
+- Atılan dosyanın RAW eşinin sürpriz biçimde gitmesi. Kullanıcı bunu gözden geçirme ekranında önceden
+  görmeli.
 
-## KullanÄ±cÄ±nÄ±n verdiÄŸi kararlar
+## Kullanıcının verdiği kararlar
 
-1. **Kapsam ve sÄ±ra:** Bu iÅŸ ay gÃ¶rÃ¼nÃ¼mÃ¼ ile hÄ±zlÄ± ayÄ±klamadÄ±r. "FotoÄŸraflar uygulamasÄ± yerine" hedefi yol
-   haritasÄ±na ayrÄ± bir baÅŸlÄ±k olarak eklenir.
-2. **AtÄ±lanlar Geri DÃ¶nÃ¼ÅŸÃ¼m Kutusu'na gider.** Geri getirmek Windows'un "Geri yÃ¼kle" iÅŸleviyle yapÄ±lÄ±r.
-   Geri DÃ¶nÃ¼ÅŸÃ¼m Kutusu olmayan sÃ¼rÃ¼cÃ¼de dosyalar `_Ayiklananlar` klasÃ¶rÃ¼ne taÅŸÄ±nÄ±r ve kullanÄ±cÄ±ya bu
-   aÃ§Ä±kÃ§a yazÄ±lÄ±r.
-3. **BirleÅŸik gÃ¶rÃ¼nÃ¼m:** Ãœst Ã§ubukta iki konumlu bir dÃ¼ÄŸme bulunur: **â–¦ Izgara / ğŸ“… Takvim**.
-   - **Izgara:** gÃ¼nlere bÃ¶lÃ¼nmÃ¼ÅŸ kÃ¼Ã§Ã¼k resim Ä±zgarasÄ±. Her gÃ¼nÃ¼n bir baÅŸlÄ±ÄŸÄ± vardÄ±r, Ã¶rn.
-     "15 AÄŸustos Cumartesi Â· 38".
-   - **Takvim:** ay haftalara bÃ¶lÃ¼nÃ¼r ve her gÃ¼n bir kutu olur. Kutuda o gÃ¼nÃ¼n birkaÃ§ kÃ¼Ã§Ã¼k resmi ve
-     "+N" gÃ¶sterilir. Bir gÃ¼ne tÄ±klamak Izgara'ya geÃ§irir ve o gÃ¼nÃ¼n baÅŸÄ±na kaydÄ±rÄ±r.
-   - Son seÃ§ilen gÃ¶rÃ¼nÃ¼m hatÄ±rlanÄ±r. Ä°lk kullanÄ±mda Izgara aÃ§Ä±lÄ±r *(YapÄ±cÄ± kararÄ±, kullanÄ±cÄ± gÃ¶rdÃ¼)*.
-4. **AyÄ±kla (tek tek bÃ¼yÃ¼k gÃ¶rÃ¼nÃ¼m), tuÅŸ dÃ¼zeni B:**
+1. **Kapsam ve sıra:** Bu iş ay görünümü ile hızlı ayıklamadır. "Fotoğraflar uygulaması yerine" hedefi yol
+   haritasına ayrı bir başlık olarak eklenir.
+2. **Atılanlar Geri Dönüşüm Kutusu'na gider.** Geri getirmek Windows'un "Geri yükle" işleviyle yapılır.
+   Geri Dönüşüm Kutusu olmayan sürücüde dosyalar `_Ayiklananlar` klasörüne taşınır ve kullanıcıya bu
+   açıkça yazılır.
+3. **Birleşik görünüm:** Üst çubukta iki konumlu bir düğme bulunur: **▦ Izgara / 📅 Takvim**.
+   - **Izgara:** günlere bölünmüş küçük resim ızgarası. Her günün bir başlığı vardır, örn.
+     "15 Ağustos Cumartesi · 38".
+   - **Takvim:** ay haftalara bölünür ve her gün bir kutu olur. Kutuda o günün birkaç küçük resmi ve
+     "+N" gösterilir. Bir güne tıklamak Izgara'ya geçirir ve o günün başına kaydırır.
+   - Son seçilen görünüm hatırlanır. İlk kullanımda Izgara açılır *(Yapıcı kararı, kullanıcı gördü)*.
+4. **Ayıkla (tek tek büyük görünüm), tuş düzeni B:**
 
    | Hareket | Ne yapar |
    |---|---|
-   | â† / â†’ | Ã–nceki / sonraki fotoÄŸraf; karar vermez |
-   | Delete | "AtÄ±lsÄ±n" iÅŸaretini koyar ya da kaldÄ±rÄ±r, sonrakine geÃ§er |
-   | FotoÄŸrafÄ± sola sÃ¼rÃ¼kle | AtÄ±lsÄ±n, sonrakine geÃ§ |
-   | FotoÄŸrafÄ± saÄŸa sÃ¼rÃ¼kle | KalsÄ±n (iÅŸaret varsa kalkar), sonrakine geÃ§ |
-   | Esc | Ay gÃ¶rÃ¼nÃ¼mÃ¼ne dÃ¶n |
+   | ← / → | Önceki / sonraki fotoğraf; karar vermez |
+   | Delete | "Atılsın" işaretini koyar ya da kaldırır, sonrakine geçer |
+   | Fotoğrafı sola sürükle | Atılsın, sonrakine geç |
+   | Fotoğrafı sağa sürükle | Kalsın (işaret varsa kalkar), sonrakine geç |
+   | Esc | Ay görünümüne dön |
 
-   Ãœstte tarih, saat, dosya adÄ±, boyut ve "58 / 140" sÄ±rasÄ± gÃ¶rÃ¼nÃ¼r. Altta kararlarÄ± âœ• iÅŸaretiyle gÃ¶steren
-   kÃ¼Ã§Ã¼k resim ÅŸeridi bulunur.
-5. **RAW+JPG eÅŸleri:** Ay gÃ¶rÃ¼nÃ¼mÃ¼nde eÅŸin yalnÄ±z JPG'si gÃ¶sterilir. JPG "atÄ±lsÄ±n" iÅŸaretlenirse RAW eÅŸi
-   de onunla gider. GÃ¶zden geÃ§irme ekranÄ±nda o resmin Ã¼stÃ¼nde "+RAW" etiketi bulunur ve toplam boyuta RAW da
+   Üstte tarih, saat, dosya adı, boyut ve "58 / 140" sırası görünür. Altta kararları ✕ işaretiyle gösteren
+   küçük resim şeridi bulunur.
+5. **RAW+JPG eşleri:** Ay görünümünde eşin yalnız JPG'si gösterilir. JPG "atılsın" işaretlenirse RAW eşi
+   de onunla gider. Gözden geçirme ekranında o resmin üstünde "+RAW" etiketi bulunur ve toplam boyuta RAW da
    dahildir.
-   - **Ä°stisna (kullanÄ±cÄ± isteÄŸi):** Bazen kullanÄ±cÄ± kÃ¶tÃ¼ JPG'yi atÄ±p RAW'Ä± saklamak isteyebilir. RAW eÅŸi
-     olan bir fotoÄŸraf AyÄ±kla'da aÃ§Ä±kken bir **"RAW'Ä± tut"** dÃ¼ÄŸmesi gÃ¶rÃ¼nÃ¼r (anlamÄ±: "bu fotoÄŸrafÄ±n
-     RAW'Ä±nÄ± dahil etme"). DÃ¼ÄŸmeye basÄ±lÄ±rsa o fotoÄŸraf atÄ±ldÄ±ÄŸÄ±nda RAW yerinde kalÄ±r.
-   - SeÃ§im fotoÄŸraf baÅŸÄ±nadÄ±r ve yalnÄ±z o ay aÃ§Ä±kken saklanÄ±r, tÄ±pkÄ± iÅŸaretler gibi.
-   - GÃ¶zden geÃ§ir ekranÄ±nda bu fotoÄŸrafÄ±n etiketi "+RAW" yerine "RAW kalÄ±r" olur ve toplam boyuta RAW
-     katÄ±lmaz.
-   - GÃ¶zden geÃ§ir'de etikete tÄ±klamak da seÃ§imi deÄŸiÅŸtirir *(YapÄ±cÄ± kararÄ±)*.
-6. **YaklaÅŸÄ±m 1:** Aya girerken o ayÄ±n dosyalarÄ± yeniden okunur. AyrÄ±ntÄ±sÄ± aÅŸaÄŸÄ±daki YaklaÅŸÄ±mlar
-   bÃ¶lÃ¼mÃ¼nde.
+   - **İstisna (kullanıcı isteği):** Bazen kullanıcı kötü JPG'yi atıp RAW'ı saklamak isteyebilir. RAW eşi
+     olan bir fotoğraf Ayıkla'da açıkken bir **"RAW'ı tut"** düğmesi görünür (anlamı: "bu fotoğrafın
+     RAW'ını dahil etme"). Düğmeye basılırsa o fotoğraf atıldığında RAW yerinde kalır.
+   - Seçim fotoğraf başınadır ve yalnız o ay açıkken saklanır, tıpkı işaretler gibi.
+   - Gözden geçir ekranında bu fotoğrafın etiketi "+RAW" yerine "RAW kalır" olur ve toplam boyuta RAW
+     katılmaz.
+   - Gözden geçir'de etikete tıklamak da seçimi değiştirir *(Yapıcı kararı)*.
+6. **Yaklaşım 1:** Aya girerken o ayın dosyaları yeniden okunur. Ayrıntısı aşağıdaki Yaklaşımlar
+   bölümünde.
 
-## YaklaÅŸÄ±mlar
+## Yaklaşımlar
 
-| | YaklaÅŸÄ±m | ArtÄ± | Eksi |
+| | Yaklaşım | Artı | Eksi |
 |---|---|---|---|
-| **1 (seÃ§ildi)** | Aya girerken o ayÄ±n klasÃ¶rleri okunur: gÃ¼n, saat, yÃ¶n, RAW+JPG eÅŸleri | Liste her zaman gÃ¼ncel olur; Gezgin'de yapÄ±lan deÄŸiÅŸiklikleri gÃ¶rÃ¼r. SayÄ±m deÄŸiÅŸmez. | Aya giriÅŸte kÄ±sa bir bekleme olur (140 dosyada yaklaÅŸÄ±k 1 sn). |
-| 2 | Zaman Ã§izelgesi sayarken her dosyanÄ±n yolu ve gÃ¼nÃ¼ bellekte tutulur | Aya giriÅŸ anÄ±nda olur. | "KlasÃ¶r adlarÄ±ndan" yÃ¶ntemi EXIF okumadÄ±ÄŸÄ± iÃ§in gÃ¼n bilgisi zaten yoktur. Liste sayÄ±m anÄ±nda donar. |
-| 3 | AyÄ±kla gÃ¶rÃ¼nÃ¼mÃ¼ ayrÄ±, tam ekran bir pencere olur | Ä°kinci ekrana taÅŸÄ±nabilir. | Bu iÅŸ iÃ§in fazla bÃ¼yÃ¼k. "FotoÄŸraflar yerine" aÅŸamasÄ±nda yeniden dÃ¼ÅŸÃ¼nÃ¼lecek. |
+| **1 (seçildi)** | Aya girerken o ayın klasörleri okunur: gün, saat, yön, RAW+JPG eşleri | Liste her zaman güncel olur; Gezgin'de yapılan değişiklikleri görür. Sayım değişmez. | Aya girişte kısa bir bekleme olur (140 dosyada yaklaşık 1 sn). |
+| 2 | Zaman çizelgesi sayarken her dosyanın yolu ve günü bellekte tutulur | Aya giriş anında olur. | "Klasör adlarından" yöntemi EXIF okumadığı için gün bilgisi zaten yoktur. Liste sayım anında donar. |
+| 3 | Ayıkla görünümü ayrı, tam ekran bir pencere olur | İkinci ekrana taşınabilir. | Bu iş için fazla büyük. "Fotoğraflar yerine" aşamasında yeniden düşünülecek. |
 
-## Ekranlar ve akÄ±ÅŸ
+## Ekranlar ve akış
 
 ```
-Zaman Ã§izelgesi â”€â”€(dolu aya tÄ±kla)â”€â”€â–º Ay gÃ¶rÃ¼nÃ¼mÃ¼ (Izgara | Takvim)
-                                        â”‚  Ã§ift tÄ±k / "AyÄ±kla â–¶"
-                                        â–¼
-                                      AyÄ±kla (bÃ¼yÃ¼k, tek tek) â”€â”€Escâ”€â”€â–º Ay gÃ¶rÃ¼nÃ¼mÃ¼
-                                        â”‚
-            alt ÅŸerit "GÃ¶zden geÃ§ir" â”€â”€â–º  GÃ¶zden geÃ§ir â”€â”€"N dosyayÄ± Geri DÃ¶nÃ¼ÅŸÃ¼m Kutusu'na at"â”€â”€â–º Ay gÃ¶rÃ¼nÃ¼mÃ¼ (atÄ±lanlar yok)
-Ay gÃ¶rÃ¼nÃ¼mÃ¼ â”€â”€"â† Zaman Ã§izelgesi"â”€â”€â–º Zaman Ã§izelgesi (tablo aynÄ± yerde, sayÄ±lar gÃ¼ncel)
+Zaman çizelgesi ──(dolu aya tıkla)──► Ay görünümü (Izgara | Takvim)
+                                        │  çift tık / "Ayıkla ▶"
+                                        ▼
+                                      Ayıkla (büyük, tek tek) ──Esc──► Ay görünümü
+                                        │
+            alt şerit "Gözden geçir" ──►  Gözden geçir ──"N dosyayı Geri Dönüşüm Kutusu'na at"──► Ay görünümü (atılanlar yok)
+Ay görünümü ──"← Zaman çizelgesi"──► Zaman çizelgesi (tablo aynı yerde, sayılar güncel)
 ```
 
-EkranlarÄ±n hepsi aynÄ± pencerede, bugÃ¼nkÃ¼ sayfalar gibi birbirinin yerine geÃ§er.
+Ekranların hepsi aynı pencerede, bugünkü sayfalar gibi birbirinin yerine geçer.
 
-### Ay gÃ¶rÃ¼nÃ¼mÃ¼
+### Ay görünümü
 
-- **Ãœst Ã§ubuk:** "â† Zaman Ã§izelgesi", ay adÄ±, dosya sayÄ±sÄ± ve toplam boyut, â–¦/ğŸ“… dÃ¼ÄŸmesi, "AyÄ±kla â–¶" ve
-  bir â‹¯ menÃ¼sÃ¼. MenÃ¼de "Gezgin'de aÃ§" bulunur. AyÄ±n dosyalarÄ± birden Ã§ok klasÃ¶rdeyse bu seÃ§enek bir alt
-  menÃ¼de o klasÃ¶rleri listeler.
-- **Alt ÅŸerit:** yalnÄ±z iÅŸaretli dosya varken gÃ¶rÃ¼nÃ¼r. Ä°Ã§inde "ğŸ—‘ AtÄ±lacaklar: N Â· boyut",
-  "GÃ¶zden geÃ§ir" ve "Geri DÃ¶nÃ¼ÅŸÃ¼m Kutusu'na at" bulunur. "Geri DÃ¶nÃ¼ÅŸÃ¼m Kutusu'na at" dÃ¼ÄŸmesi Ã¶nce GÃ¶zden
-  geÃ§ir ekranÄ±nÄ± aÃ§ar; dosyalar doÄŸrudan gitmez.
-- **IÅŸaretleme:** Bir kÃ¼Ã§Ã¼k resim seÃ§iliyken Delete tuÅŸu ya da saÄŸ tÄ±k menÃ¼sÃ¼ndeki "AtÄ±lsÄ±n" kullanÄ±lÄ±r.
-  Ä°ÅŸaretli resim soluk gÃ¶rÃ¼nÃ¼r ve kÃ¶ÅŸesinde kÄ±rmÄ±zÄ± âœ• bulunur. AynÄ± iÅŸlem iÅŸareti geri kaldÄ±rÄ±r.
-- **YÃ¼kleme:** Okuma sÃ¼rerken bir ilerleme gÃ¶stergesi gÃ¶rÃ¼nÃ¼r. Okuma bir Durdur dÃ¼ÄŸmesiyle ya da geri
-  dÃ¶nÃ¼lerek iptal edilebilir.
-- **SÃ¼zgeÃ§:** Hangi tÃ¼rlerin gÃ¶sterileceÄŸini Zaman Ã§izelgesinin sÃ¼zgeci belirler (Foto / Raw / Video / Hepsi).
-  - JPG'si gÃ¶rÃ¼nen bir RAW ayrÄ±ca gÃ¶sterilmez.
-  - "Raw" sÃ¼zgecinde yalnÄ±z RAW dosyalar gÃ¶rÃ¼nÃ¼r. Bunlar iÅŸaretlenirse JPG eÅŸi gitmez, Ã§Ã¼nkÃ¼ 5. karar
-    yalnÄ±z JPG'den RAW'a doÄŸru iÅŸler *(YapÄ±cÄ± kararÄ±)*.
+- **Üst çubuk:** "← Zaman çizelgesi", ay adı, dosya sayısı ve toplam boyut, ▦/📅 düğmesi, "Ayıkla ▶" ve
+  bir ⋯ menüsü. Menüde "Gezgin'de aç" bulunur. Ayın dosyaları birden çok klasördeyse bu seçenek bir alt
+  menüde o klasörleri listeler.
+- **Alt şerit:** yalnız işaretli dosya varken görünür. İçinde "🗑 Atılacaklar: N · boyut",
+  "Gözden geçir" ve "Geri Dönüşüm Kutusu'na at" bulunur. "Geri Dönüşüm Kutusu'na at" düğmesi önce Gözden
+  geçir ekranını açar; dosyalar doğrudan gitmez.
+- **Işaretleme:** Bir küçük resim seçiliyken Delete tuşu ya da sağ tık menüsündeki "Atılsın" kullanılır.
+  İşaretli resim soluk görünür ve köşesinde kırmızı ✕ bulunur. Aynı işlem işareti geri kaldırır.
+- **Yükleme:** Okuma sürerken bir ilerleme göstergesi görünür. Okuma bir Durdur düğmesiyle ya da geri
+  dönülerek iptal edilebilir.
+- **Süzgeç:** Hangi türlerin gösterileceğini Zaman çizelgesinin süzgeci belirler (Foto / Raw / Video / Hepsi).
+  - JPG'si görünen bir RAW ayrıca gösterilmez.
+  - "Raw" süzgecinde yalnız RAW dosyalar görünür. Bunlar işaretlenirse JPG eşi gitmez, çünkü 5. karar
+    yalnız JPG'den RAW'a doğru işler *(Yapıcı kararı)*.
 
-### GÃ¶zden geÃ§ir
+### Gözden geçir
 
-- Ä°ÅŸaretli dosyalar kÃ¼Ã§Ã¼k resim olarak listelenir. Bir resme tÄ±klamak onu listeden Ã§Ä±karÄ±r.
-- Toplam dosya sayÄ±sÄ± ve boyut, RAW eÅŸleri dahil gÃ¶sterilir.
-- AÃ§Ä±klama metni: "Dosyalar Windows'un Geri DÃ¶nÃ¼ÅŸÃ¼m Kutusu'na gider; oradan 'Geri yÃ¼kle' ile
-  dÃ¶nebilirsin. Disk yeri, Geri DÃ¶nÃ¼ÅŸÃ¼m Kutusu'nu boÅŸaltÄ±nca aÃ§Ä±lÄ±r."
-- SÃ¼rÃ¼cÃ¼de Geri DÃ¶nÃ¼ÅŸÃ¼m Kutusu yoksa sarÄ± bir uyarÄ± Ã§Ä±kar ve dÃ¼ÄŸmenin metni de deÄŸiÅŸir:
-  "N dosyayÄ± _Ayiklananlar'a taÅŸÄ±".
-- "VazgeÃ§" dÃ¼ÄŸmesi listeye dokunmadan geri dÃ¶ner.
+- İşaretli dosyalar küçük resim olarak listelenir. Bir resme tıklamak onu listeden çıkarır.
+- Toplam dosya sayısı ve boyut, RAW eşleri dahil gösterilir.
+- Açıklama metni: "Dosyalar Windows'un Geri Dönüşüm Kutusu'na gider; oradan 'Geri yükle' ile
+  dönebilirsin. Disk yeri, Geri Dönüşüm Kutusu'nu boşaltınca açılır."
+- Sürücüde Geri Dönüşüm Kutusu yoksa sarı bir uyarı çıkar ve düğmenin metni de değişir:
+  "N dosyayı _Ayiklananlar'a taşı".
+- "Vazgeç" düğmesi listeye dokunmadan geri döner.
 
 ## Kurallar
 
 - **Okunacak dosyalar:**
-  - *KlasÃ¶r adlarÄ±ndan* yÃ¶nteminde, hÃ¼crenin klasÃ¶rlerinin iÃ§indekilerin hepsi okunur.
-  - *Ã‡ekim tarihinden* yÃ¶nteminde hÃ¼crenin klasÃ¶rleri okunur, ama yalnÄ±z Ã§ekim tarihi o yÄ±l-aya dÃ¼ÅŸen
-    dosyalar alÄ±nÄ±r.
-  - Tarih okuma kurallarÄ± uygulamanÄ±n her yerinde kullanÄ±lanlarla aynÄ±dÄ±r: EXIF, yoksa dosya adÄ±, yoksa
-    dosya zamanÄ±.
-  - Zaman Ã§izelgesinin dÄ±ÅŸarÄ±da bÄ±raktÄ±ÄŸÄ± Ã¶zel klasÃ¶rler burada da atlanÄ±r.
-- **SÄ±ralama ve gruplama:** Dosyalar Ã§ekim zamanÄ±na gÃ¶re sÄ±ralanÄ±r, gÃ¼ne gÃ¶re gruplanÄ±r.
-- **KlasÃ¶r adÄ± ile tarih uyuÅŸmazlÄ±ÄŸÄ±:** *KlasÃ¶r adlarÄ±ndan* yÃ¶nteminde bir dosyanÄ±n Ã§ekim tarihi baÅŸka bir
-  aya dÃ¼ÅŸebilir (Ã¶rn. elle konmuÅŸ bir dosya). BÃ¶yle bir dosya yine gÃ¶sterilir, gerÃ§ek gÃ¼nÃ¼nÃ¼n altÄ±nda.
-  - O gÃ¼n o ayda deÄŸilse ayÄ±n sonunda "BaÅŸka aydan" baÅŸlÄ±klÄ± bir grupta toplanÄ±r *(YapÄ±cÄ± kararÄ±)*.
-- **Atma iÅŸlemi:**
-  - Her dosya iÃ§in Ã¶nce Geri DÃ¶nÃ¼ÅŸÃ¼m Kutusu'nun bulunduÄŸu doÄŸrulanÄ±r, sonra dosya gÃ¶nderilir.
-  - Geri DÃ¶nÃ¼ÅŸÃ¼m Kutusu olmayan sÃ¼rÃ¼cÃ¼lerde dosya `_Ayiklananlar` klasÃ¶rÃ¼ne taÅŸÄ±nÄ±r. Kapsanan sÃ¼rÃ¼cÃ¼ler:
-    Ã§Ä±karÄ±labilir sÃ¼rÃ¼cÃ¼ler (USB bellek, SD kart) ve aÄŸ sÃ¼rÃ¼cÃ¼leri.
-    - TaÅŸÄ±ma Temizle'nin taÅŸÄ±ma koduyla aynÄ± gÃ¼venceleri taÅŸÄ±r: Ã¼zerine yazmaz ve gÃ¼nlÃ¼k tutar.
-    - BÃ¶ylece uygulamanÄ±n Geri Al'Ä± ile geri alÄ±nabilir.
-  - KalÄ±cÄ± silme hiÃ§bir koÅŸulda yoktur.
-- **Geri DÃ¶nÃ¼ÅŸÃ¼m Kutusu var ama dosyayÄ± almÄ±yor** *(YapÄ±cÄ± kararÄ±)*:
-  - Kapsanan durumlar: kutu kapatÄ±lmÄ±ÅŸ ya da 0 MB'a ayarlanmÄ±ÅŸ, ya da dosya kutuda kalan yerden bÃ¼yÃ¼k
-    (Ã§oÄŸu zaman bÃ¼yÃ¼k bir video).
-  - BugÃ¼nkÃ¼ `Executor.RecycleBin` Ã§aÄŸrÄ±sÄ± Windows'un "kalÄ±cÄ± silinsin mi?" sorusunu bastÄ±rÄ±yor. Bu yÃ¼zden
-    bu yol kullanÄ±lmaz.
-  - GÃ¶nderimden Ã¶nce her dosya iÃ§in kutunun dosyayÄ± alacaÄŸÄ± doÄŸrulanÄ±r. Alamayacaksa dosya, kutusu olmayan
-    sÃ¼rÃ¼cÃ¼deki gibi `_Ayiklananlar`'a taÅŸÄ±nÄ±r.
-  - GÃ¶zden geÃ§ir ekranÄ± bunu Ã¶nceden hesaplar. KarÄ±ÅŸÄ±k bir toplu iÅŸte dÃ¼ÄŸme ÅŸÃ¶yle yazar: "4 dosyayÄ± Geri
-    DÃ¶nÃ¼ÅŸÃ¼m Kutusu'na at, 2 dosyayÄ± _Ayiklananlar'a taÅŸÄ±". TaÅŸÄ±nacak dosyalarÄ±n Ã¼stÃ¼nde ayrÄ±ca bir etiket
+  - *Klasör adlarından* yönteminde, hücrenin klasörlerinin içindekilerin hepsi okunur.
+  - *Çekim tarihinden* yönteminde hücrenin klasörleri okunur, ama yalnız çekim tarihi o yıl-aya düşen
+    dosyalar alınır.
+  - Tarih okuma kuralları uygulamanın her yerinde kullanılanlarla aynıdır: EXIF, yoksa dosya adı, yoksa
+    dosya zamanı.
+  - Zaman çizelgesinin dışarıda bıraktığı özel klasörler burada da atlanır.
+- **Sıralama ve gruplama:** Dosyalar çekim zamanına göre sıralanır, güne göre gruplanır.
+- **Klasör adı ile tarih uyuşmazlığı:** *Klasör adlarından* yönteminde bir dosyanın çekim tarihi başka bir
+  aya düşebilir (örn. elle konmuş bir dosya). Böyle bir dosya yine gösterilir, gerçek gününün altında.
+  - O gün o ayda değilse ayın sonunda "Başka aydan" başlıklı bir grupta toplanır *(Yapıcı kararı)*.
+- **Atma işlemi:**
+  - Her dosya için önce Geri Dönüşüm Kutusu'nun bulunduğu doğrulanır, sonra dosya gönderilir.
+  - Geri Dönüşüm Kutusu olmayan sürücülerde dosya `_Ayiklananlar` klasörüne taşınır. Kapsanan sürücüler:
+    çıkarılabilir sürücüler (USB bellek, SD kart) ve ağ sürücüleri.
+    - Taşıma Temizle'nin taşıma koduyla aynı güvenceleri taşır: üzerine yazmaz ve günlük tutar.
+    - Böylece uygulamanın Geri Al'ı ile geri alınabilir.
+  - Kalıcı silme hiçbir koşulda yoktur.
+- **Geri Dönüşüm Kutusu var ama dosyayı almıyor** *(Yapıcı kararı)*:
+  - Kapsanan durumlar: kutu kapatılmış ya da 0 MB'a ayarlanmış, ya da dosya kutuda kalan yerden büyük
+    (çoğu zaman büyük bir video).
+  - Bugünkü `Executor.RecycleBin` çağrısı Windows'un "kalıcı silinsin mi?" sorusunu bastırıyor. Bu yüzden
+    bu yol kullanılmaz.
+  - Gönderimden önce her dosya için kutunun dosyayı alacağı doğrulanır. Alamayacaksa dosya, kutusu olmayan
+    sürücüdeki gibi `_Ayiklananlar`'a taşınır.
+  - Gözden geçir ekranı bunu önceden hesaplar. Karışık bir toplu işte düğme şöyle yazar: "4 dosyayı Geri
+    Dönüşüm Kutusu'na at, 2 dosyayı _Ayiklananlar'a taşı". Taşınacak dosyaların üstünde ayrıca bir etiket
     bulunur.
-  - GÃ¶nderim sÄ±rasÄ±nda yine de beklenmedik bir kalÄ±cÄ± silme sinyali gelirse o dosya atlanÄ±r ve "atÄ±lamadÄ±"
-    sayÄ±lÄ±r.
-- **`_Ayiklananlar`'Ä±n yeri** *(YapÄ±cÄ± kararÄ±)*:
-  - Temizle'deki gibi Zaman Ã§izelgesinin kÃ¶kÃ¼nÃ¼n altÄ±nda, `_Ayiklananlar\Ayikla\<kÃ¶ke gÃ¶re gÃ¶reli yol>`.
-  - Dosya kÃ¶kle aynÄ± birimde deÄŸilse (Ã¶rn. baÄŸlanmÄ±ÅŸ bir sÃ¼rÃ¼cÃ¼), `_Ayiklananlar` o dosyanÄ±n birimindeki en
-    Ã¼st kÃ¶k altÄ± klasÃ¶re konur.
-  - TaÅŸÄ±nan dosyalar Zaman Ã§izelgesi alt satÄ±rÄ±ndaki `_Ayiklananlar: N dosya` sayÄ±sÄ±na eklenir.
-- **GÃ¼nlÃ¼k** *(YapÄ±cÄ± kararÄ±)*:
-  - YalnÄ±z Geri DÃ¶nÃ¼ÅŸÃ¼m Kutusu'na gÃ¶nderilen bir iÅŸlem iÃ§in `_Ayiklananlar` klasÃ¶rÃ¼ oluÅŸturulmaz. GÃ¼nlÃ¼k
-    uygulamanÄ±n kendi veri klasÃ¶rÃ¼ne, yalnÄ±z kayÄ±t amacÄ±yla yazÄ±lÄ±r. Bu iÅŸlemi yarÄ±da kalÄ±nan yerden
-    sÃ¼rdÃ¼rme ve uygulamanÄ±n Geri Al'Ä± yoktur; geri getirme Windows'un "Geri yÃ¼kle"siyle yapÄ±lÄ±r.
-  - TaÅŸÄ±ma iÃ§eren iÅŸlemlerde gÃ¼nlÃ¼k, Temizle'deki gibi `_Ayiklananlar\_Gunluk` iÃ§ine yazÄ±lÄ±r. BÃ¶ylece Geri
-    Al ve yarÄ±m iÅŸlem denetimi bugÃ¼nkÃ¼ gibi Ã§alÄ±ÅŸÄ±r.
-  - Geri Al, Geri DÃ¶nÃ¼ÅŸÃ¼m Kutusu'na gidenleri atlar, Ã§Ã¼nkÃ¼ onlarÄ±n hedefi yoktur.
-- **Hatalar:** Bir dosya kilitliyse ya da yerinde yoksa diÄŸerleri atÄ±lmaya devam eder. Sonunda
-  "N dosya atÄ±ldÄ±, M dosya atÄ±lamadÄ±" denir ve atÄ±lamayanlar iÅŸaretli kalÄ±r.
-- **KayÄ±t:** Ä°ÅŸlemin bir gÃ¼nlÃ¼k kaydÄ±, mevcut gÃ¼nlÃ¼k biÃ§imiyle yazÄ±lÄ±r. BÃ¶ylece neyin ne zaman atÄ±ldÄ±ÄŸÄ±
+  - Gönderim sırasında yine de beklenmedik bir kalıcı silme sinyali gelirse o dosya atlanır ve "atılamadı"
+    sayılır.
+- **`_Ayiklananlar`'ın yeri** *(Yapıcı kararı)*:
+  - Temizle'deki gibi Zaman çizelgesinin kökünün altında, `_Ayiklananlar\Ayikla\<köke göre göreli yol>`.
+  - Dosya kökle aynı birimde değilse (örn. bağlanmış bir sürücü), `_Ayiklananlar` o dosyanın birimindeki en
+    üst kök altı klasöre konur.
+  - Taşınan dosyalar Zaman çizelgesi alt satırındaki `_Ayiklananlar: N dosya` sayısına eklenir.
+- **Günlük** *(Yapıcı kararı)*:
+  - Yalnız Geri Dönüşüm Kutusu'na gönderilen bir işlem için `_Ayiklananlar` klasörü oluşturulmaz. Günlük
+    uygulamanın kendi veri klasörüne, yalnız kayıt amacıyla yazılır. Bu işlemi yarıda kalınan yerden
+    sürdürme ve uygulamanın Geri Al'ı yoktur; geri getirme Windows'un "Geri yükle"siyle yapılır.
+  - Taşıma içeren işlemlerde günlük, Temizle'deki gibi `_Ayiklananlar\_Gunluk` içine yazılır. Böylece Geri
+    Al ve yarım işlem denetimi bugünkü gibi çalışır.
+  - Geri Al, Geri Dönüşüm Kutusu'na gidenleri atlar, çünkü onların hedefi yoktur.
+- **Hatalar:** Bir dosya kilitliyse ya da yerinde yoksa diğerleri atılmaya devam eder. Sonunda
+  "N dosya atıldı, M dosya atılamadı" denir ve atılamayanlar işaretli kalır.
+- **Kayıt:** İşlemin bir günlük kaydı, mevcut günlük biçimiyle yazılır. Böylece neyin ne zaman atıldığı
   bilinir.
-- **Ä°ÅŸaretliyken Ã§Ä±kÄ±ÅŸ:** Ä°ÅŸaretli dosya varken ay gÃ¶rÃ¼nÃ¼mÃ¼nden Ã§Ä±kmak ya da uygulamayÄ± kapatmak ÅŸunu
-  sorar: "5 dosya atÄ±lmak Ã¼zere iÅŸaretli. BÄ±rakÄ±p Ã§Ä±kÄ±lsÄ±n mÄ±?" Ä°ÅŸaretler kaydedilmez.
-- **SayÄ±larÄ±n gÃ¼ncellenmesi:** Zaman Ã§izelgesine dÃ¶nÃ¼ldÃ¼ÄŸÃ¼nde atÄ±lan dosyalar o ayÄ±n sayÄ±sÄ±ndan ve
-  boyutundan dÃ¼ÅŸÃ¼lÃ¼r, tablo ile Ã¶zet yeniden kurulur. Tam yeniden sayÄ±m yapÄ±lmaz.
+- **İşaretliyken çıkış:** İşaretli dosya varken ay görünümünden çıkmak ya da uygulamayı kapatmak şunu
+  sorar: "5 dosya atılmak üzere işaretli. Bırakıp çıkılsın mı?" İşaretler kaydedilmez.
+- **Sayıların güncellenmesi:** Zaman çizelgesine dönüldüğünde atılan dosyalar o ayın sayısından ve
+  boyutundan düşülür, tablo ile özet yeniden kurulur. Tam yeniden sayım yapılmaz.
 
-## KÄ±sÄ±tlar
+## Kısıtlar
 
-- Teknoloji bugÃ¼nkÃ¼yle aynÄ± kalÄ±r: .NET 8, WPF, WPF-UI, CommunityToolkit.Mvvm. Ekran mantÄ±ÄŸÄ± testli
+- Teknoloji bugünküyle aynı kalır: .NET 8, WPF, WPF-UI, CommunityToolkit.Mvvm. Ekran mantığı testli
   `FotoDuzenleyici.ViewModels` projesinde durur.
-- KÃ¼Ã§Ã¼k resimler mevcut `ThumbnailLoader` ile yÃ¼klenir; bunun iÃ§in loader genelleÅŸtirilir.
-  - AynÄ± anda en fazla 4 dosya Ã§Ã¶zÃ¼lÃ¼r, bellekte en Ã§ok 600 sonuÃ§ tutulur.
-  - GÃ¶rÃ¼nmeyen Ã¶ÄŸenin isteÄŸi iptal edilir.
-  - Izgara sanal kaydÄ±rma kullanÄ±r: yalnÄ±z gÃ¶rÃ¼nen satÄ±rlar oluÅŸturulur.
-- AyÄ±kla'daki bÃ¼yÃ¼k resim ekran boyutunda Ã§Ã¶zÃ¼lÃ¼r. Bir sonraki resim Ã¶nceden yÃ¼klenir.
-- Uygulama internete baÄŸlanmaz. Yeni bir paket eklenmez.
+- Küçük resimler mevcut `ThumbnailLoader` ile yüklenir; bunun için loader genelleştirilir.
+  - Aynı anda en fazla 4 dosya çözülür, bellekte en çok 600 sonuç tutulur.
+  - Görünmeyen öğenin isteği iptal edilir.
+  - Izgara sanal kaydırma kullanır: yalnız görünen satırlar oluşturulur.
+- Ayıkla'daki büyük resim ekran boyutunda çözülür. Bir sonraki resim önceden yüklenir.
+- Uygulama internete bağlanmaz. Yeni bir paket eklenmez.
 
-## YapÄ±cÄ±ya bÄ±rakÄ±lanlar
+## Yapıcıya bırakılanlar
 
 - Videolar:
-  - KÃ¼Ã§Ã¼k resim Ã§Ä±karÄ±labiliyorsa gÃ¶sterilir, yoksa bir video simgesi gÃ¶rÃ¼nÃ¼r.
-  - AyÄ±kla'da videoyu oynatmak yerine "VarsayÄ±lan uygulamada aÃ§" dÃ¼ÄŸmesi bulunur.
-- Tarihi dosya adÄ±ndan ya da dosya zamanÄ±ndan tahmin edilen fotoÄŸraflarÄ±n Ã¼stÃ¼nde kÃ¼Ã§Ã¼k bir iÅŸaret olup
-  olmayacaÄŸÄ±.
-- Takvim kutusunda kaÃ§ kÃ¼Ã§Ã¼k resim gÃ¶sterileceÄŸi.
-- YÃ¼kleme sÄ±rasÄ±ndaki ilerleme gÃ¶stergesinin biÃ§imi.
-- SÃ¼rÃ¼kleme eÅŸiÄŸi ve animasyonu.
+  - Küçük resim çıkarılabiliyorsa gösterilir, yoksa bir video simgesi görünür.
+  - Ayıkla'da videoyu oynatmak yerine "Varsayılan uygulamada aç" düğmesi bulunur.
+- Tarihi dosya adından ya da dosya zamanından tahmin edilen fotoğrafların üstünde küçük bir işaret olup
+  olmayacağı.
+- Takvim kutusunda kaç küçük resim gösterileceği.
+- Yükleme sırasındaki ilerleme göstergesinin biçimi.
+- Sürükleme eşiği ve animasyonu.

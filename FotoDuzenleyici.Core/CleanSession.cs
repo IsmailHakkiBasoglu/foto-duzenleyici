@@ -119,7 +119,7 @@ public sealed class CleanSession
     }
 
     /// <summary>Hedefte ya da plandaki başka bir hedefte aynı ad varsa " (2)", " (3)"… eklenir.</summary>
-    static string FreeName(string dir, string name, HashSet<string> taken)
+    internal static string FreeName(string dir, string name, HashSet<string> taken)
     {
         var stem = Path.GetFileNameWithoutExtension(name);
         var ext = Path.GetExtension(name);

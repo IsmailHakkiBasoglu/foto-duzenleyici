@@ -3,13 +3,11 @@ using CommunityToolkit.Mvvm.Input;
 
 namespace FotoDuzenleyici.ViewModels;
 
-public sealed record FolderRow(string Path, string Short, int Count);
-
 /// <summary>
 /// Zaman çizelgesi: seçilen klasördeki dosyalar yıl × ay tablosunda. Salt okunur; gezinmeyi kilitlemez,
 /// sayfadan çıkışta ve pencere kapanışında sayım sessizce durur.
 /// </summary>
-public sealed partial class TimelineViewModel : ObservableObject, ILongRunningPage
+public sealed partial class TimelineViewModel : ObservableObject, ILongRunningPage, ILeaveGuard
 {
     readonly Services _s;
     readonly AppSettings _settings;
@@ -49,15 +47,12 @@ public sealed partial class TimelineViewModel : ObservableObject, ILongRunningPa
     [NotifyPropertyChangedFor(nameof(FooterLines))]
     private TimelineTable? table;
     [ObservableProperty] private bool stopped;
-    /// <summary>Çekim tarihi yönteminde birden çok klasörlü ay tıklanınca: klasör listesi gösterilir.</summary>
+    /// <summary>Açık ay görünümü (dolu bir aya tıklanınca); null → tablo.</summary>
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(SelectedFolders))]
-    private TimelineCell? selectedCell;
+    [NotifyPropertyChangedFor(nameof(HasMonth))]
+    private MonthViewModel? month;
 
-    /// <summary>Seçili ayın klasörleri: tam yol, köke göre kısa yol, dosya sayısı.</summary>
-    public IReadOnlyList<FolderRow> SelectedFolders => SelectedCell is { } c
-        ? c.Folders.Select(f => new FolderRow(f.Folder, ShortPath(f.Folder), f.Count)).ToList()
-        : Array.Empty<FolderRow>();
+    public bool HasMonth => Month is not null;
 
     /// <summary>Test kancası: sayım başlamadan, arka plan iş parçacığında; sayılan klasörle çağrılır.</summary>
     internal Action<string>? BeforeCountForTest { get; set; }
@@ -122,12 +117,13 @@ public sealed partial class TimelineViewModel : ObservableObject, ILongRunningPa
 
     void Rebuild()
     {
-        SelectedCell = null;
         Table = Result is null ? null : TimelineTable.Build(Result.Entries, Filter);
     }
 
-    /// <summary>Sürmekte olan sayım; pencere kapanışı beklemez (MustConfirmClose hep false).</summary>
-    public Task? RunningTask { get; private set; }
+    Task? _countTask;
+
+    /// <summary>Ay görünümünde atma sürüyorsa o iş (pencere bekler), yoksa sayım (beklenmez).</summary>
+    public Task? RunningTask => Month is { IsDiscarding: true } m ? m.DiscardTask : _countTask;
 
     /// <summary>Önceki sayımı iptal edip baştan sayar. Klasör yoksa hiçbir şey yapmaz.</summary>
     public Task CountAsync()
@@ -140,12 +136,12 @@ public sealed partial class TimelineViewModel : ObservableObject, ILongRunningPa
         Stopped = false;
         Result = null;
         Table = null;
-        SelectedCell = null;
+        CloseMonth();
         Done = 0;
         Total = 0;
         IsCounting = true;
         var task = Run(f, m, gen, _cts.Token);
-        RunningTask = task;
+        _countTask = task;
         return task;
     }
 
@@ -203,7 +199,6 @@ public sealed partial class TimelineViewModel : ObservableObject, ILongRunningPa
         IsCounting = false;
         Result = null;
         Table = null;
-        SelectedCell = null;
         Stopped = true;
     }
 
@@ -213,26 +208,56 @@ public sealed partial class TimelineViewModel : ObservableObject, ILongRunningPa
     [RelayCommand]
     void OpenCell(TimelineCell? cell)
     {
-        if (cell is not { IsEmpty: false } || cell.Folders.Count == 0 || Result is null) return;
-        if (Result.Method == TimelineMethod.FolderNames || cell.Folders.Count == 1)
-        {
-            SelectedCell = null;
-            _s.Shell.OpenFolder(cell.Folders[0].Folder);
-        }
-        else SelectedCell = cell;
+        if (cell is not { IsEmpty: false } || cell.Folders.Count == 0 || Result is null || Month is not null) return;
+        var m = new MonthViewModel(_s, _settings, Result.Root, Result.Method, cell.Year, cell.Month,
+            cell.Folders.Select(f => f.Folder).ToList(), Filter);
+        m.BackRequested += () => { if (ReferenceEquals(Month, m)) { Patch(m); CloseMonth(); } };
+        Month = m;
+        _ = m.LoadAsync();
     }
 
-    [RelayCommand]
-    void OpenFolder(string? path)
+    void CloseMonth()
     {
-        if (!string.IsNullOrEmpty(path)) _s.Shell.OpenFolder(path);
+        if (Month is null) return;
+        Month.StopCommand.Execute(null);
+        Month = null;
     }
 
-    [RelayCommand]
-    void CloseFolders() => SelectedCell = null;
+    /// <summary>
+    /// Atılan dosyaları tablodan düşer (yeniden sayım yok): ayın her atılan dosyası için aynı tür ve boyutta, aynı
+    /// klasördeki (klasör adlarından: ay klasörünün altındaki) bir kayıt silinir; taşınanlar _Ayiklananlar'a eklenir.
+    /// </summary>
+    void Patch(MonthViewModel m)
+    {
+        if (Result is not { } r || m.Discarded.Count == 0) return;
+        foreach (var (file, moved) in m.Discarded)
+        {
+            var dir = Path.GetDirectoryName(Path.GetFullPath(file.Path)) ?? "";
+            int i = r.Entries.FindIndex(e => e.Year == m.Year && e.Month == m.MonthNumber && e.Kind == file.Kind
+                && e.Size == file.Size && InFolder(dir, e.Folder, r.Method));
+            if (i >= 0) r.Entries.RemoveAt(i);
+            if (moved) r.Special[CleanSession.RejectsFolder] = r.Special.GetValueOrDefault(CleanSession.RejectsFolder) + 1;
+        }
+        Rebuild();
+        OnPropertyChanged(nameof(FooterLines));
+    }
 
-    bool ILongRunningPage.IsLocked => false;
-    bool ILongRunningPage.MustConfirmClose => false;
-    string ILongRunningPage.CloseQuestion => "";
-    public void RequestStop() { if (IsCounting) Stop(); }
+    static bool InFolder(string fileDir, string folder, TimelineMethod method)
+    {
+        var f = Path.TrimEndingDirectorySeparator(Path.GetFullPath(folder));
+        return string.Equals(fileDir, f, StringComparison.OrdinalIgnoreCase)
+            || (method == TimelineMethod.FolderNames && fileDir.StartsWith(f + "\\", StringComparison.OrdinalIgnoreCase));
+    }
+
+    public string? LeaveQuestion => Month?.LeaveQuestion;
+
+    bool ILongRunningPage.IsLocked => Month is { IsDiscarding: true };
+    bool ILongRunningPage.MustConfirmClose => Month is { IsDiscarding: true };
+    string ILongRunningPage.CloseQuestion => "Dosyalar atılıyor. Durdurulup pencere kapatılsın mı? Sıradaki dosyalar yerinde kalır.";
+
+    public void RequestStop()
+    {
+        if (IsCounting) Stop();
+        Month?.RequestStop();
+    }
 }

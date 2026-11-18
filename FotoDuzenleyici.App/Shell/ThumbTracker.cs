@@ -14,20 +14,20 @@ static class ThumbTracker
     static ThumbnailLoader? _loader;
     static ThumbnailLoader Loader => _loader ??= new ThumbnailLoader(ThumbnailLoader.DefaultDecode);
 
-    /// <summary>Kartın Loaded olayından çağrılır; kartın DataContext'i bir <see cref="SimilarRow"/> olmalı.</summary>
+    /// <summary>Kartın Loaded olayından çağrılır; kartın DataContext'i bir <see cref="IThumbTarget"/> olmalı.</summary>
     public static void Attach(FrameworkElement card)
     {
         if (card.Tag is null)
         {
             card.Unloaded += (_, _) => Track(card, null);
-            card.DataContextChanged += (_, e) => { if (card.IsLoaded) Track(card, e.NewValue as SimilarRow); };
+            card.DataContextChanged += (_, e) => { if (card.IsLoaded) Track(card, e.NewValue as IThumbTarget); };
         }
-        Track(card, card.DataContext as SimilarRow);
+        Track(card, card.DataContext as IThumbTarget);
     }
 
-    static void Track(FrameworkElement card, SimilarRow? row)
+    static void Track(FrameworkElement card, IThumbTarget? row)
     {
-        if (card.Tag is SimilarRow old && old != row) Loader.Cancel(old);
+        if (card.Tag is IThumbTarget old && old != row) Loader.Cancel(old);
         card.Tag = row ?? (object)false; // false: olaylar bağlandı ama satır yok
         if (row is not null) Loader.Request(row);
     }

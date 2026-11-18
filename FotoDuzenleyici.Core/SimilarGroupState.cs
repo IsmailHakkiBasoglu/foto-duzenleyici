@@ -4,7 +4,7 @@ using System.Windows.Media;
 namespace FotoDuzenleyici.Core;
 
 /// <summary>"Benzerler" sekmesinde bir dosya. Kalsın işareti kaldırılırsa _Benzerler'e gider.</summary>
-public sealed class SimilarRow : INotifyPropertyChanged
+public sealed class SimilarRow : INotifyPropertyChanged, IThumbTarget
 {
     bool _keep = true;
     ImageSource? _thumb;

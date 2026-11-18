@@ -1,4 +1,4 @@
-using System.Windows.Media;
+﻿using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using FotoDuzenleyici.Core;
 using Xunit;
@@ -157,5 +157,24 @@ public class ThumbnailLoaderTests
         loader.Request(a);
         WaitFor(() => a.ThumbFailed);
         Assert.Null(a.Thumb);
+    }
+
+    sealed class Target : IThumbTarget
+    {
+        public required MediaFile File { get; init; }
+        public ImageSource? Thumb { get; set; }
+        public bool ThumbFailed { get; set; }
+    }
+
+    [Fact]
+    public void Request_AcceptsAnyThumbTarget()
+    {
+        var loader = new ThumbnailLoader(new FakeDecoder().Decode);
+        var t = new Target { File = new MediaFile { Path = @"C:\f\t.jpg", Kind = FileKind.Photo } };
+
+        loader.Request(t);
+
+        WaitFor(() => t.Thumb is not null);
+        Assert.False(t.ThumbFailed);
     }
 }

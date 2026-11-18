@@ -19,6 +19,8 @@ public sealed class AppSettings
     public BackupPair? LastBackup { get; set; }
     /// <summary>Zaman çizelgesinde son seçilen klasör.</summary>
     public string? LastTimelineFolder { get; set; }
+    /// <summary>Ay görünümünde son seçilen görünüm: Grid | Calendar.</summary>
+    public string MonthView { get; set; } = "Grid";
     public SourceFolderMode SourceFolder { get; set; } = SourceFolderMode.None;
     public bool RenameWithDate { get; set; }
     public bool AppendSourceToName { get; set; }

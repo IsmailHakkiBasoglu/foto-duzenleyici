@@ -195,38 +195,34 @@ public class TimelineViewModelTests : IDisposable
     }
 
     [Fact]
-    public async Task OpenCell_FolderNames_OpensMonthFolder()
+    public async Task OpenCell_FolderNames_OpensMonthView_NotExplorer()
     {
         var a = Organized();
         var vm = Vm(a);
         await Counted(vm);
         var cell = vm.Table!.Rows[0].Months[10];
         vm.OpenCellCommand.Execute(cell);
-        Assert.Equal(new[] { Path.Combine(a, "2022-11") }, _f.Shell.Opened);
+        Assert.Equal(new[] { Path.Combine(a, "2022-11") }, vm.Month!.Folders);
+        Assert.True(vm.HasMonth);
+        Assert.Empty(_f.Shell.Opened);
     }
 
     [Fact]
-    public async Task OpenCell_CaptureDate_SingleFolder_OpensIt_MultiFolder_SelectsCell()
+    public async Task OpenCell_CaptureDate_MultiFolder_MonthGetsAllFolders()
     {
         var d = Loose();
         var vm = Vm(d);
         await Counted(vm);
-        var aug = vm.Table!.Rows[0].Months[7];
-        vm.OpenCellCommand.Execute(aug);
-        Assert.Equal(new[] { Path.Combine(d, "Tatil") }, _f.Shell.Opened);
-        Assert.Null(vm.SelectedCell);
-
         var jul = vm.Table!.Rows[0].Months[6];
         vm.OpenCellCommand.Execute(jul);
-        Assert.Same(jul, vm.SelectedCell);
-        Assert.Single(_f.Shell.Opened);
+        Assert.Equal(TimelineMethod.CaptureDate, vm.Month!.Method);
+        Assert.Equal(new[] { Path.Combine(d, "Tatil"), Path.Combine(d, "WhatsApp") }, vm.Month.Folders);
+        Assert.True(vm.Month.HasManyFolders);
         Assert.Equal("Tatil", vm.ShortPath(jul.Folders[0].Folder));
         Assert.Equal(".", vm.ShortPath(d));
-        Assert.Equal(new[] { new FolderRow(Path.Combine(d, "Tatil"), "Tatil", 2), new FolderRow(Path.Combine(d, "WhatsApp"), "WhatsApp", 1) },
-            vm.SelectedFolders);
 
-        vm.OpenFolderCommand.Execute(jul.Folders[1].Folder);
-        Assert.Equal(Path.Combine(d, "WhatsApp"), _f.Shell.Opened[1]);
+        vm.Month.OpenFolderCommand.Execute(jul.Folders[1].Folder);
+        Assert.Equal(Path.Combine(d, "WhatsApp"), Assert.Single(_f.Shell.Opened));
     }
 
     [Fact]
@@ -235,6 +231,7 @@ public class TimelineViewModelTests : IDisposable
         var vm = Vm(Organized());
         await Counted(vm);
         vm.OpenCellCommand.Execute(vm.Table!.Rows[0].Months[0]);
+        Assert.Null(vm.Month);
         Assert.Empty(_f.Shell.Opened);
     }
 

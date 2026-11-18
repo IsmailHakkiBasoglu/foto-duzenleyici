@@ -43,7 +43,16 @@ silmez). İstersen "kopyalarda öncelikli klasörler" seçebilirsin; Geri Al hep
 **Zaman çizelgesi** seçtiğin klasördeki fotoğrafları yıl × ay tablosunda gösterir: hangi ayda kaç fotoğraf
 var, boş aylar hangileri. İki sayım yolu var: düzenlenmiş arşivde **Klasör adlarından** (`Yıl-Ay` klasörleri,
 saniyeler sürer), düzenlenmemiş klasörde **Çekim tarihinden** (her dosyanın EXIF tarihi okunur). Foto / Raw /
-Video / Hepsi süzgeci, aya tıklayınca klasörü Gezgin'de açma. Yalnız okur, hiçbir dosyaya dokunmaz.
+Video / Hepsi süzgeci. Tablonun kendisi yalnız okur.
+
+Dolu bir aya tıklayınca **ay görünümü** açılır: o ayın fotoğrafları küçük resimlerle, günlere bölünmüş
+**Izgara** ya da haftalara bölünmüş **Takvim** olarak. **Ayıkla ▶** fotoğrafları tek tek büyük gösterir:
+← → ile gezinirsin, Delete ya da resmi sola sürüklemek "atılsın" diye işaretler, sağa sürüklemek "kalsın" der.
+JPG atılırsa RAW eşi de onunla gider; istersen **RAW'ı tut** ile RAW yerinde kalır. İşaretlediklerin
+**Gözden geçir** ekranında listelenir ve ancak orada onaylarsan Windows'un **Geri Dönüşüm Kutusu**'na gider
+(oradan "Geri yükle" ile dönebilirsin). Kutunun alamadığı dosyalar (USB bellek, SD kart, ağ sürücüsü, kutudan
+büyük dosya) silinmez, `_Ayiklananlar\Ayikla` klasörüne taşınır ve Geri Al ile geri alınabilir. Zaman
+çizelgesine dönünce o ayın sayısı yeniden saymadan güncellenir. "Gezgin'de aç" ⋯ menüsünde.
 
 Eski pencere **Klasik görünüm** olarak
 sağ üstteki ⚙ menüsünde. Eski pencereyi doğrudan açmak için:

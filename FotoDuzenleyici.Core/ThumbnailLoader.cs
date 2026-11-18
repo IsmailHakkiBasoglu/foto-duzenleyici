@@ -20,7 +20,7 @@ public sealed class ThumbnailLoader
     readonly LinkedList<(MediaFile File, ImageSource? Image)> _lru = new();
 
     readonly LinkedList<MediaFile> _queue = new();
-    readonly Dictionary<MediaFile, List<SimilarRow>> _waiting = new();
+    readonly Dictionary<MediaFile, List<IThumbTarget>> _waiting = new();
     int _workers;
 
     public ThumbnailLoader(Func<MediaFile, ImageSource?> decode, int capacity = 600, int parallelism = 4)
@@ -32,7 +32,7 @@ public sealed class ThumbnailLoader
 
     public int CachedCount { get { lock (_sync) return _cache.Count; } }
 
-    public void Request(SimilarRow row)
+    public void Request(IThumbTarget row)
     {
         lock (_sync)
         {
@@ -43,14 +43,14 @@ public sealed class ThumbnailLoader
                 return;
             }
             if (_waiting.TryGetValue(row.File, out var list)) { if (!list.Contains(row)) list.Add(row); return; }
-            _waiting[row.File] = new List<SimilarRow> { row };
+            _waiting[row.File] = new List<IThumbTarget> { row };
             _queue.AddLast(row.File);
             if (_workers < _parallelism) { _workers++; Task.Run(Work); }
         }
     }
 
     /// <summary>Satır artık görünmüyor; dosyayı bekleyen başka satır yoksa ve çözme başlamadıysa istek düşer.</summary>
-    public void Cancel(SimilarRow row)
+    public void Cancel(IThumbTarget row)
     {
         lock (_sync)
         {
@@ -81,7 +81,7 @@ public sealed class ThumbnailLoader
             ImageSource? img;
             try { img = _decode(file); } catch (Exception) { img = null; }
 
-            List<SimilarRow> rows;
+            List<IThumbTarget> rows;
             lock (_sync)
             {
                 _cache[file] = _lru.AddFirst((file, img));
@@ -92,7 +92,7 @@ public sealed class ThumbnailLoader
         }
     }
 
-    void Deliver(SimilarRow row, ImageSource? img, bool immediate)
+    void Deliver(IThumbTarget row, ImageSource? img, bool immediate)
     {
         void Set() { row.Thumb = img; row.ThumbFailed = img is null; }
         if (immediate || _ui is null) Set();
