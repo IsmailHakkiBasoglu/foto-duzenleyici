@@ -50,6 +50,8 @@ public enum PlanAction
     Similar,
     /// <summary>Kullanıcının ayıkladığı bulanık / karanlık kare; _Kusurlu klasörüne alınır.</summary>
     Flawed,
+    /// <summary>Ay görünümünde "atılsın" denen dosya; Geri Dönüşüm Kutusu alamazsa _Ayiklananlar\Ayikla'ya taşınır.</summary>
+    Discard,
 }
 
 public sealed class PlanItem
