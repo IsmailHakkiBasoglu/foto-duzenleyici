@@ -163,7 +163,17 @@
                     <TextBlock Style="{StaticResource Muted}" VerticalAlignment="Center" Text="Okuma durduruldu." />
                 </DockPanel>
                 <!-- Atma sonucu -->
-                <Border Style="{StaticResource Safe}" Padding="12,8" Visibility="{Binding ResultMessage, Converter={StaticResource HasVis}}">
+                <Border Padding="12,8" CornerRadius="8" Visibility="{Binding ResultMessage, Converter={StaticResource HasVis}}">
+                    <Border.Style>
+                        <Style TargetType="Border">
+                            <Setter Property="Background" Value="{DynamicResource SystemFillColorSuccessBackgroundBrush}" />
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding HasFailures}" Value="True">
+                                    <Setter Property="Background" Value="{DynamicResource SystemFillColorCautionBackgroundBrush}" />
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Border.Style>
                     <TextBlock Text="{Binding ResultMessage}" Foreground="{DynamicResource TextFillColorPrimaryBrush}" TextWrapping="Wrap" />
                 </Border>
                 <TextBlock Style="{StaticResource Small}" Margin="0,4,0,0" Visibility="{Binding Errors, Converter={StaticResource HasVis}}"

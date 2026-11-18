@@ -300,7 +300,7 @@ public class MonthTriageTests : IDisposable
 
         await vm.DiscardCommand.ExecuteAsync(null);
 
-        Assert.Equal("1 dosya atıldı, 1 dosya atılamadı", vm.ResultMessage);
+        Assert.StartsWith("1 dosya atıldı, 1 dosya atılamadı: Geri Dönüşüm Kutusu", vm.ResultMessage);
         Assert.False(vm.IsReview);
         Assert.False(vm.IsDiscarding);
         Assert.DoesNotContain(vm.Photos, p => p.Name == "b.jpg");
@@ -393,5 +393,23 @@ public class MonthTriageTests : IDisposable
         await run;
 
         Assert.Equal(0, backs);
+    }
+
+    [Fact]
+    public async Task Discard_LogUnwritable_NothingSent_MessageSaysWhy()
+    {
+        var vm = await Three();
+        File.WriteAllText(_root + "_log", "klasör değil");
+        vm.ToggleMarkCommand.Execute(P(vm, "b.jpg"));
+        vm.OpenReviewCommand.Execute(null);
+
+        await vm.DiscardCommand.ExecuteAsync(null);
+
+        Assert.StartsWith("0 dosya atıldı, 1 dosya atılamadı", vm.ResultMessage);
+        Assert.True(vm.ResultMessage!.Length > "0 dosya atıldı, 1 dosya atılamadı".Length);
+        Assert.True(vm.HasFailures);
+        Assert.True(P(vm, "b.jpg").Marked);
+        Assert.Empty(_f.Bin.Sent);
+        File.Delete(_root + "_log");
     }
 }

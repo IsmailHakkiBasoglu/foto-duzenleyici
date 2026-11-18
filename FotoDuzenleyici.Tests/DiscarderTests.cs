@@ -213,4 +213,47 @@ public class DiscarderTests : IDisposable
         Assert.NotNull(r.MoveJournal);
         Assert.NotNull(r.RecycleJournal);
     }
+
+    [Fact]
+    public void Plan_DriveRoot_NoBin_RoutesToRejects()
+    {
+        var f = new MediaFile { Path = @"Q:\2026-08\a.jpg", Size = 1 };
+
+        var step = Assert.Single(Discarder.Plan(new[] { f }, @"Q:\", new Bin { Can = (_, _) => false }));
+
+        Assert.Equal(@"Q:\_Ayiklananlar\Ayikla\2026-08\a.jpg", step.Target);
+    }
+
+    [Fact]
+    public void Run_MovePhaseFails_KeepsRecycledInDone_ReportsError()
+    {
+        var a = Put(@"2026-08\a.jpg");
+        var big = Put(@"2026-08\b.mp4", size: 50);
+        var bin = new Bin { Can = (_, s) => s < 10 };
+        var steps = Discarder.Plan(new[] { a, big }, _root, bin);
+        File.WriteAllText(Path.Combine(_root, CleanSession.RejectsFolder), "klasör değil"); // _Gunluk kurulamaz
+
+        var r = Discarder.Run(steps, _root, bin, _logs);
+
+        Assert.Equal(a.Path, Assert.Single(r.Done).File.Path);
+        Assert.Equal(big.Path, Assert.Single(r.Failed).Step.File.Path);
+        Assert.NotNull(r.Error);
+        Assert.True(File.Exists(big.Path));
+    }
+
+    [Fact]
+    public void Run_RecycleJournalUnwritable_SendsNothing_ReportsError()
+    {
+        var a = Put(@"2026-08\a.jpg");
+        var bin = new Bin();
+        var steps = Discarder.Plan(new[] { a }, _root, bin);
+        File.WriteAllText(_logs, "klasör değil");
+
+        var r = Discarder.Run(steps, _root, bin, _logs);
+
+        Assert.Empty(r.Done);
+        Assert.Single(r.Failed);
+        Assert.NotNull(r.Error);
+        Assert.True(File.Exists(a.Path)); // kayıt tutulamıyorsa hiçbir şey gönderilmez
+    }
 }

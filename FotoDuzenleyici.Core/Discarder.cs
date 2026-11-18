@@ -24,6 +24,8 @@ public sealed class DiscardResult
     public string? MoveJournal { get; set; }
     /// <summary>Kutuya gönderilenlerin kaydı (uygulama veri klasörü); geri getirme Windows'un "Geri yükle"siyle.</summary>
     public string? RecycleJournal { get; set; }
+    /// <summary>İşlem yarıda kaldıysa nedeni (kayıt yazılamadı, _Gunluk kurulamadı); Done yine geçerlidir.</summary>
+    public string? Error { get; set; }
 }
 
 /// <summary>
@@ -37,6 +39,8 @@ public static class Discarder
     public static List<DiscardStep> Plan(IEnumerable<MediaFile> files, string root, IRecycleBin bin)
     {
         var rootFull = Path.TrimEndingDirectorySeparator(Path.GetFullPath(root));
+        // Sürücü kökü ("E:\") ayıraçla biter: önek ikinci kez eklenmesin.
+        var prefix = Path.EndsInDirectorySeparator(rootFull) ? rootFull : rootFull + Path.DirectorySeparatorChar;
         var baseDir = Path.Combine(rootFull, CleanSession.RejectsFolder, SubFolder);
         var taken = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         var steps = new List<DiscardStep>();
@@ -44,7 +48,7 @@ public static class Discarder
         {
             if (bin.CanRecycle(f.Path, f.Size)) { steps.Add(new DiscardStep(f, DiscardRoute.RecycleBin, null)); continue; }
             var full = Path.GetFullPath(f.Path);
-            if (!full.StartsWith(rootFull + "\\", StringComparison.OrdinalIgnoreCase)) continue; // taşınacak yer yok
+            if (!full.StartsWith(prefix, StringComparison.OrdinalIgnoreCase)) continue; // taşınacak yer yok
             var rel = Path.GetRelativePath(rootFull, full);
             var dir = Path.Combine(baseDir, Path.GetDirectoryName(rel) ?? "");
             var name = CleanSession.FreeName(dir, Path.GetFileName(rel), taken);
@@ -64,31 +68,54 @@ public static class Discarder
 
         if (recycles.Count > 0)
         {
-            Directory.CreateDirectory(logDir);
-            res.RecycleJournal = FreeJournal(logDir, stamp);
-            using var jw = new StreamWriter(res.RecycleJournal, append: true, new System.Text.UTF8Encoding(false)) { AutoFlush = true };
-            foreach (var s in recycles)
+            try { RecyclePhase(recycles, steps.Count, ref n, bin, logDir, stamp, res, progress, ct); }
+            catch (Exception ex)
             {
-                if (ct.IsCancellationRequested) break;
-                progress?.Report((n++, steps.Count, Path.GetFileName(s.File.Path)));
-                var e = new JournalEntry { Source = s.File.Path, Action = PlanAction.Discard.ToString() };
-                try
-                {
-                    if (!File.Exists(s.File.Path)) throw new FileNotFoundException("Dosya yerinde yok");
-                    if (!bin.Send(s.File.Path)) throw new IOException("Geri Dönüşüm Kutusu'na gönderilemedi");
-                    e.State = "Recycled";
-                    res.Done.Add(s);
-                }
-                catch (Exception ex)
-                {
-                    e.State = "Failed"; e.Error = ex.Message;
+                // Kayıt yazılamadı: bu turda gönderilmemiş olanlar "atılamadı"; gönderilenler Done'da kalır.
+                res.Error = ex.Message;
+                foreach (var s in recycles.Where(s => !res.Done.Contains(s) && !res.Failed.Any(f => f.Step == s)))
                     res.Failed.Add((s, ex.Message));
-                }
-                jw.WriteLine(JsonSerializer.Serialize(e));
             }
         }
 
         if (moves.Count > 0 && !ct.IsCancellationRequested)
+            MovePhase(moves, steps.Count, n, root, stamp, res, progress, ct);
+        return res;
+    }
+
+    static void RecyclePhase(List<DiscardStep> recycles, int total, ref int n, IRecycleBin bin, string logDir, string stamp,
+        DiscardResult res, IProgress<(int done, int total, string current)>? progress, CancellationToken ct)
+    {
+        Directory.CreateDirectory(logDir);
+        res.RecycleJournal = FreeJournal(logDir, stamp);
+        using var jw = new StreamWriter(res.RecycleJournal, append: true, new System.Text.UTF8Encoding(false)) { AutoFlush = true };
+        foreach (var s in recycles)
+        {
+            if (ct.IsCancellationRequested) break;
+            progress?.Report((n++, total, Path.GetFileName(s.File.Path)));
+            var e = new JournalEntry { Source = s.File.Path, Action = PlanAction.Discard.ToString() };
+            try
+            {
+                if (!File.Exists(s.File.Path)) throw new FileNotFoundException("Dosya yerinde yok");
+                if (!bin.Send(s.File.Path)) throw new IOException("Geri Dönüşüm Kutusu'na gönderilemedi");
+                e.State = "Recycled";
+                res.Done.Add(s);
+            }
+            catch (Exception ex)
+            {
+                e.State = "Failed"; e.Error = ex.Message;
+                res.Failed.Add((s, ex.Message));
+            }
+            jw.WriteLine(JsonSerializer.Serialize(e));
+        }
+    }
+
+    static void MovePhase(List<DiscardStep> moves, int total, int n, string root, string stamp,
+        DiscardResult res, IProgress<(int done, int total, string current)>? progress, CancellationToken ct)
+    {
+        var er = new ExecuteResult();
+        string? error = null;
+        try
         {
             var gunluk = Path.Combine(Path.GetFullPath(root), CleanSession.RejectsFolder, "_Gunluk");
             Directory.CreateDirectory(gunluk);
@@ -100,18 +127,19 @@ public static class Discarder
             }).ToList();
             int offset = n;
             var inner = progress is null ? null
-                : new Progress(p => progress.Report((offset + p.done, steps.Count, p.current)));
-            ExecuteResult er;
-            try { er = new Executor(res.MoveJournal).Run(items, progress: inner, ct: ct, move: true); }
-            catch (OperationCanceledException) { er = new ExecuteResult(); }
-            foreach (var s in moves)
-            {
-                if (!File.Exists(s.File.Path) && File.Exists(s.Target)) { res.Done.Add(s); continue; }
-                var err = er.Errors.FirstOrDefault(x => x.StartsWith(s.File.Path + ": ", StringComparison.OrdinalIgnoreCase));
-                if (err is not null) res.Failed.Add((s, err[(s.File.Path.Length + 2)..]));
-            }
+                : new Progress(p => progress.Report((offset + p.done, total, p.current)));
+            er = new Executor(res.MoveJournal).Run(items, progress: inner, ct: ct, move: true);
         }
-        return res;
+        catch (OperationCanceledException) { }
+        catch (Exception ex) { error = ex.Message; res.Error = ex.Message; }
+        foreach (var s in moves)
+        {
+            // Diske bakılır: yarıda kesilse de taşınanlar sayılır.
+            if (!File.Exists(s.File.Path) && File.Exists(s.Target)) { res.Done.Add(s); continue; }
+            var err = er.Errors.FirstOrDefault(x => x.StartsWith(s.File.Path + ": ", StringComparison.OrdinalIgnoreCase));
+            if (err is not null) res.Failed.Add((s, err[(s.File.Path.Length + 2)..]));
+            else if (error is not null) res.Failed.Add((s, error));
+        }
     }
 
     /// <summary>Aynı saniyede ikinci bir işlem eskisinin günlüğüne eklenmesin.</summary>

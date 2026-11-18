@@ -177,6 +177,7 @@ public sealed partial class MonthViewModel : ILeaveGuard
     {
         if (!HasMarked || IsDiscarding) return;
         ResultMessage = null;
+        HasFailures = false;
         Replan();
         IsReview = true;
     }
@@ -218,6 +219,8 @@ public sealed partial class MonthViewModel : ILeaveGuard
 
     [ObservableProperty] private bool isDiscarding;
     [ObservableProperty] private string? resultMessage;
+    /// <summary>Son atmada atılamayan dosya oldu (sonuç sarı gösterilir).</summary>
+    [ObservableProperty] private bool hasFailures;
     [ObservableProperty] private string discardProgress = "";
 
     /// <summary>Sürmekte olan atma işlemi (pencere kapanışı bekler).</summary>
@@ -277,9 +280,11 @@ public sealed partial class MonthViewModel : ILeaveGuard
         if (remaining.Count == 0) IsTriage = false;
 
         int failed = res.Failed.Count + notPlanned;
+        HasFailures = failed > 0;
+        var reasons = res.Failed.Select(f => f.Error).Prepend(res.Error).OfType<string>().Distinct().Take(3).ToList();
         ResultMessage = failed == 0
             ? $"{done.Count:N0} dosya atıldı"
-            : $"{done.Count:N0} dosya atıldı, {failed:N0} dosya atılamadı";
+            : $"{done.Count:N0} dosya atıldı, {failed:N0} dosya atılamadı" + (reasons.Count > 0 ? ": " + string.Join("; ", reasons) : "");
     }
 
     /// <summary>Pencere kapanırken: okuma durur, atma sıradaki dosyadan önce durur (o anki dosya yarıda kalmaz).</summary>
