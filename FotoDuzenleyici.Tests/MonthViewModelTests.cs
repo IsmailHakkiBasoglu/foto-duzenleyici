@@ -224,4 +224,28 @@ public class MonthViewModelTests : IDisposable
 
         Assert.Equal(Month, Assert.Single(_f.Shell.Opened));
     }
+
+    [Fact]
+    public async Task OpenFile_OpensInDefaultApp()
+    {
+        var a = Put("v.mp4", Aug15);
+        var vm = await Loaded(KindFilter.Video);
+
+        vm.OpenFileCommand.Execute(vm.Photos[0]);
+
+        Assert.Equal(a, Assert.Single(_f.Shell.Files));
+    }
+
+    [Fact]
+    public async Task Reload_AfterStop_ReadsAgain()
+    {
+        Put("a.jpg", Aug15);
+        var vm = Vm();
+        vm.StopCommand.Execute(null);
+
+        await vm.ReloadCommand.ExecuteAsync(null);
+
+        Assert.False(vm.Stopped);
+        Assert.Single(vm.Photos);
+    }
 }

@@ -107,6 +107,8 @@ public sealed partial class MonthViewModel : ObservableObject
     public IReadOnlyList<DayGroup> Days { get; private set; } = Array.Empty<DayGroup>();
     public IReadOnlyList<IReadOnlyList<CalendarDay>> Weeks { get; private set; } = Array.Empty<IReadOnlyList<CalendarDay>>();
     public IReadOnlyList<string> Errors { get; private set; } = Array.Empty<string>();
+    /// <summary>Okunamayanların ilk 20'si (ipucu metni).</summary>
+    public string ErrorsText => string.Join('\n', Errors.Take(20));
     public bool IsEmpty => !IsLoading && Photos.Count == 0;
 
     public string Summary => $"{Photos.Count:N0} dosya · {Sizes.Text(Photos.Sum(p => p.File.Size))}";
@@ -148,13 +150,13 @@ public sealed partial class MonthViewModel : ObservableObject
             if (gen != _generation || ct.IsCancellationRequested || r.Cancelled) return;
             _files = r.Files;
             Errors = r.Errors;
-            OnPropertyChanged(nameof(Errors));
+            OnPropertyChanged(nameof(Errors)); OnPropertyChanged(nameof(ErrorsText));
             SetPhotos(MonthItems.Build(_files, Filter, Year, MonthNumber));
         }
         catch (Exception ex) when (gen == _generation)
         {
             Errors = new[] { ex.Message };
-            OnPropertyChanged(nameof(Errors));
+            OnPropertyChanged(nameof(Errors)); OnPropertyChanged(nameof(ErrorsText));
         }
         finally
         {
@@ -231,6 +233,16 @@ public sealed partial class MonthViewModel : ObservableObject
     void OpenFolder(string? path)
     {
         if (!string.IsNullOrEmpty(path)) _s.Shell.OpenFolder(path);
+    }
+
+    [RelayCommand]
+    Task Reload() => LoadAsync();
+
+    /// <summary>Video ya da büyük resim: Windows'un varsayılan uygulamasında açılır; dosyaya dokunulmaz.</summary>
+    [RelayCommand]
+    void OpenFile(MonthPhoto? p)
+    {
+        if (p is not null) _s.Shell.OpenFile(p.File.Path);
     }
 
     [RelayCommand]

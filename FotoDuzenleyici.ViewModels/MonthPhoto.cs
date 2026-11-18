@@ -34,7 +34,15 @@ public sealed partial class MonthPhoto : ObservableObject, IThumbTarget
     private bool keepRaw;
 
     [ObservableProperty] private ImageSource? thumb;
-    [ObservableProperty] private bool thumbFailed;
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(NoPreview))]
+    private bool thumbFailed;
+
+    /// <summary>Küçük resim çıkmadı ve video simgesi de yok: "Önizleme yok".</summary>
+    public bool NoPreview => ThumbFailed && !IsVideo;
+
+    /// <summary>Izgarada seçili karo (Delete bununla çalışır); yalnız görünüm durumu.</summary>
+    [ObservableProperty] private bool isSelected;
 
     /// <summary>Izgaradaki gün başlığı (ViewModel kurar).</summary>
     public string DayHeader { get; internal set; } = "";
