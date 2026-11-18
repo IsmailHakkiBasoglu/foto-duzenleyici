@@ -10,9 +10,16 @@ Biçim [Keep a Changelog](https://keepachangelog.com/tr-TR/1.1.0/), sürüm numa
 - **Zaman çizelgesi** (ana ekranda dördüncü kart): seçilen klasördeki fotoğraflar yıl × ay tablosunda; kutu ne
   kadar koyuysa o ay o kadar çok fotoğraf. Sayım yolu seçilir: **Klasör adlarından** (Düzenle'nin `Yıl-Ay`
   klasörleri, hızlı) ya da **Çekim tarihinden** (EXIF; klasör düzenli olmasa da çalışır, ilerleme ve Durdur var).
-  Foto / Raw / Video / Hepsi süzgeci; kutunun üstüne gelince sayı, boyut ve tür dağılımı; tıklayınca o ayın
-  klasörü Gezgin'de açılır. `_Tekrarlar` gibi özel klasörler ve Yıl-Ay dışında kalan dosyalar ayrıca yazılır;
+  Foto / Raw / Video / Hepsi süzgeci; kutunun üstüne gelince sayı, boyut ve tür dağılımı; tıklayınca ay
+  görünümü açılır (aşağıda). `_Tekrarlar` gibi özel klasörler ve Yıl-Ay dışında kalan dosyalar ayrıca yazılır;
   art arda boş yıllar tek satıra toplanır. Hiçbir dosyaya dokunmaz; son seçilen klasör hatırlanır.
+- **Ay görünümü ve hızlı ayıklama:** zaman çizelgesinde dolu bir aya tıklayınca o ayın fotoğrafları küçük
+  resimlerle açılır (günlere bölünmüş Izgara ya da Takvim; son seçilen hatırlanır). **Ayıkla** tek tek büyük
+  görünüm: ← → gezinme, Delete ya da sola sürükleme "atılsın", sağa sürükleme "kalsın". JPG'nin RAW eşi onunla
+  gider; **RAW'ı tut** ile yerinde kalır. **Gözden geçir** ekranında onaylanan dosyalar Geri Dönüşüm Kutusu'na
+  gider; kutunun alamadığı dosyalar (çıkarılabilir / ağ sürücüsü, kutu kapalı, dosya kutudan büyük) kalıcı
+  silinmez, `_Ayiklananlar\Ayikla`'ya taşınır (günlüklü, Geri Al ile geri alınır). Dönüşte ayın sayısı yeniden
+  sayılmadan güncellenir; işaretli dosya varken çıkarken sorulur.
 
 ### Değişti
 - Ana ekran kartları 2 × 2 düzende.

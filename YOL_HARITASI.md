@@ -36,11 +36,10 @@ Durum işaretleri: ✅ bitti · 🔄 sürüyor · ⬜ planlandı
   grup kartları ve korunacak konumu seçme, 0.1.6)
 - ✅ Ay ay zaman çizelgesi: yıl × ay tablosu, ay başına sayı ve boyut; klasör adlarından ya da çekim
   tarihinden sayım (Yayınlanmamış)
-- ⬜ Zaman çizelgesinde aya girme: dolu bir aya (örn. "Ağustos 2026 · 140 foto") tıklayınca o ayın
-  görünümü açılır; ayın günleri ve fotoğrafları küçük resimlerle görünür, geri dönülür. Kullanıcı isteği
-  (2026-11-18). Tasarımda karar verilecek: gün takvimi mi, düz küçük resim ızgarası mı; büyük ayda
-  küçük resimlerin hızı; Gezgin'de açma seçeneği kalır mı. Tasarım:
-  `docs/superpowers/specs/2026-11-18-ay-gorunumu-ayikla-design.md` (Izgara/Takvim, Ayıkla, Geri Dönüşüm Kutusu).
+- ✅ Zaman çizelgesinde aya girme: dolu bir aya tıklayınca ay görünümü (Izgara / Takvim), **Ayıkla** ile tek tek
+  hızlı işaretleme (Delete, sürükleme, RAW'ı tut), **Gözden geçir** ve Geri Dönüşüm Kutusu'na atma (alamadığı
+  dosyalar `_Ayiklananlar`'a). Tasarım: `docs/superpowers/specs/2026-11-18-ay-gorunumu-ayikla-design.md`
+  (Yayınlanmamış)
 - ⬜ **Fotoğraflar uygulaması yerine:** tam ekran görüntüleyici, yakınlaştırma, video oynatma, döndürme,
   klasörler arasında gezinme; Gezgin'e gitmeden taşıma / yeniden adlandırma. Kullanıcı hedefi (2026-11-18);
   ay görünümündeki Ayıkla ekranı ilk parçası.
