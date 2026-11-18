@@ -53,9 +53,13 @@ public interface ISettingsStore
 /// </summary>
 public sealed record Services(IFolderPicker Folders, IFilePicker Files, IDialogs Dialogs, IShell Shell,
     ISettingsStore Settings, Func<string, long> FreeSpace, Action<string>? Recycle = null,
-    CachePaths? Caches = null, Func<TimeSpan, Action, IDisposable>? Schedule = null, ICompare? Compare = null)
+    CachePaths? Caches = null, Func<TimeSpan, Action, IDisposable>? Schedule = null, ICompare? Compare = null,
+    IRecycleBin? Bin = null)
 {
     public CachePaths CacheFiles => Caches ?? CachePaths.Default;
+
+    /// <summary>Ay görünümünde atma: null → Windows Geri Dönüşüm Kutusu; testler sahte kutu verir.</summary>
+    public IRecycleBin RecycleBin => Bin ?? WindowsRecycleBin.Instance;
 
     /// <summary>İşi geciktirerek çalıştırır (Schedule yoksa hemen). Dönen nesne bekleyeni iptal eder.</summary>
     public IDisposable Later(TimeSpan delay, Action work)

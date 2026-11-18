@@ -170,7 +170,7 @@ public class ThumbnailLoaderTests
     public void Request_AcceptsAnyThumbTarget()
     {
         var loader = new ThumbnailLoader(new FakeDecoder().Decode);
-        var t = new Target { File = new MediaFile { Path = @"C:	.jpg", Kind = FileKind.Photo } };
+        var t = new Target { File = new MediaFile { Path = @"C:\f\t.jpg", Kind = FileKind.Photo } };
 
         loader.Request(t);
 
