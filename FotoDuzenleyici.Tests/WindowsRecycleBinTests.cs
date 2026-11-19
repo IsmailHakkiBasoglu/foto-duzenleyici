@@ -34,4 +34,13 @@ public class WindowsRecycleBinTests
         var p = Path.Combine(Path.GetTempPath(), "fd_yok_" + Guid.NewGuid().ToString("N") + ".jpg");
         Assert.False(WindowsRecycleBin.Instance.Send(p));
     }
+
+    [Fact]
+    public void Fits_ComparesToBinMaximum_NotFreeSpace()
+    {
+        // Windows yer açmak için en eski öğeleri boşaltır: kutu dolu olsa da en büyük boyuttan küçük dosya girer.
+        Assert.True(WindowsRecycleBin.Fits(maxMb: 100, size: 99L * 1024 * 1024));
+        Assert.False(WindowsRecycleBin.Fits(maxMb: 100, size: 101L * 1024 * 1024));
+        Assert.False(WindowsRecycleBin.Fits(maxMb: 0, size: 1));
+    }
 }

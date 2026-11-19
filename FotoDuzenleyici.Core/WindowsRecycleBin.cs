@@ -16,6 +16,10 @@ public sealed class WindowsRecycleBin : IRecycleBin
 
     WindowsRecycleBin() { }
 
+    /// <summary>Sürücü başına kutu bilgisi (null → kutu yok); Gözden geçir her tıklamada yeniden planlar.</summary>
+    readonly Dictionary<string, (DateTime At, int? MaxMb, bool HasBin)> _volumes = new(StringComparer.OrdinalIgnoreCase);
+    static readonly TimeSpan VolumeTtl = TimeSpan.FromSeconds(10);
+
     public bool CanRecycle(string path, long size)
     {
         try
@@ -24,26 +28,37 @@ public sealed class WindowsRecycleBin : IRecycleBin
             if (full.StartsWith(@"\\", StringComparison.Ordinal)) return false; // ağ yolu: kutu yok
             var root = Path.GetPathRoot(full);
             if (string.IsNullOrEmpty(root)) return false;
-            var type = new DriveInfo(root).DriveType;
-            if (type is DriveType.Removable or DriveType.Network or DriveType.CDRom or DriveType.NoRootDirectory or DriveType.Unknown)
-                return false;
-
-            var guid = VolumeGuid(root);
-            if (guid is null) return true;
-            using var key = Registry.CurrentUser.OpenSubKey(
-                @"Software\Microsoft\Windows\CurrentVersion\Explorer\BitBucket\Volume\" + guid);
-            if (key is null) return true;
-            if (key.GetValue("NukeOnDelete") is int nuke && nuke != 0) return false;
-            if (key.GetValue("MaxCapacity") is int maxMb)
-            {
-                long used = 0;
-                var info = new SHQUERYRBINFO { cbSize = Marshal.SizeOf<SHQUERYRBINFO>() };
-                if (SHQueryRecycleBinW(root, ref info) == 0) used = info.i64Size;
-                if ((long)maxMb * 1024 * 1024 - used < size) return false;
-            }
-            return true;
+            (DateTime At, int? MaxMb, bool HasBin) v;
+            lock (_volumes)
+                if (!_volumes.TryGetValue(root, out v) || DateTime.UtcNow - v.At > VolumeTtl)
+                    _volumes[root] = v = (DateTime.UtcNow, ReadVolume(root, out var hasBin), hasBin);
+            if (!v.HasBin) return false;
+            return v.MaxMb is not { } max || Fits(max, size);
         }
         catch (Exception) { return true; } // bilinmiyor: Send yine de kalıcı silmeye izin vermez
+    }
+
+    /// <summary>
+    /// Dosya kutunun en büyük boyutuna sığıyor mu. Kutu doluysa Windows yer açmak için en eski öğeleri boşaltır;
+    /// bu yüzden kalan yere değil, en büyük boyuta bakılır.
+    /// </summary>
+    internal static bool Fits(int maxMb, long size) => (long)maxMb * 1024 * 1024 >= size && maxMb > 0;
+
+    /// <returns>Kutunun MB cinsinden en büyük boyutu (ayarlanmamışsa null).</returns>
+    static int? ReadVolume(string root, out bool hasBin)
+    {
+        hasBin = false;
+        var type = new DriveInfo(root).DriveType;
+        if (type is DriveType.Removable or DriveType.Network or DriveType.CDRom or DriveType.NoRootDirectory or DriveType.Unknown)
+            return null;
+        hasBin = true;
+        var guid = VolumeGuid(root);
+        if (guid is null) return null;
+        using var key = Registry.CurrentUser.OpenSubKey(
+            @"Software\Microsoft\Windows\CurrentVersion\Explorer\BitBucket\Volume\" + guid);
+        if (key is null) return null;
+        if (key.GetValue("NukeOnDelete") is int nuke && nuke != 0) { hasBin = false; return null; }
+        return key.GetValue("MaxCapacity") is int maxMb ? maxMb : null;
     }
 
     /// <summary>Windows silmeden önce bu bayrakla "kutuya koyacağım" der; yoksa silme kalıcı olurdu.</summary>
@@ -185,19 +200,8 @@ public sealed class WindowsRecycleBin : IRecycleBin
         [PreserveSig] int GetAnyOperationsAborted([MarshalAs(UnmanagedType.Bool)] out bool pfAnyOperationsAborted);
     }
 
-    [StructLayout(LayoutKind.Sequential)]
-    struct SHQUERYRBINFO
-    {
-        public int cbSize;
-        public long i64Size;
-        public long i64NumItems;
-    }
-
     [DllImport("shell32.dll", CharSet = CharSet.Unicode)]
     static extern int SHCreateItemFromParsingName(string pszPath, IntPtr pbc, ref Guid riid, out IShellItem ppv);
-
-    [DllImport("shell32.dll", CharSet = CharSet.Unicode)]
-    static extern int SHQueryRecycleBinW(string pszRootPath, ref SHQUERYRBINFO info);
 
     [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
     [return: MarshalAs(UnmanagedType.Bool)]
