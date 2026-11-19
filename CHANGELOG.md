@@ -6,6 +6,8 @@ Biçim [Keep a Changelog](https://keepachangelog.com/tr-TR/1.1.0/), sürüm numa
 
 ## [Yayınlanmamış]
 
+## [0.7.0] - 2026-11-19
+
 ### Eklendi
 - **Zaman çizelgesi** (ana ekranda dördüncü kart): seçilen klasördeki fotoğraflar yıl × ay tablosunda; kutu ne
   kadar koyuysa o ay o kadar çok fotoğraf. Sayım yolu seçilir: **Klasör adlarından** (Düzenle'nin `Yıl-Ay`
@@ -318,7 +320,8 @@ Biçim [Keep a Changelog](https://keepachangelog.com/tr-TR/1.1.0/), sürüm numa
   SHA-256 ile birebir kopya tespiti, kopyala → doğrula → Geri Dönüşüm Kutusu ile güvenli
   taşıma, işlem günlüğü ve Geri Al, WPF arayüzü.
 
-[Yayınlanmamış]: https://github.com/IsmailHakkiBasoglu/foto-duzenleyici/compare/v0.6.0...HEAD
+[Yayınlanmamış]: https://github.com/IsmailHakkiBasoglu/foto-duzenleyici/compare/v0.7.0...HEAD
+[0.7.0]: https://github.com/IsmailHakkiBasoglu/foto-duzenleyici/compare/v0.6.0...v0.7.0
 [0.6.0]: https://github.com/IsmailHakkiBasoglu/foto-duzenleyici/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/IsmailHakkiBasoglu/foto-duzenleyici/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/IsmailHakkiBasoglu/foto-duzenleyici/compare/v0.3.0...v0.4.0

@@ -35,11 +35,11 @@ Durum işaretleri: ✅ bitti · 🔄 sürüyor · ⬜ planlandı
 - ✅ Kopya ve benzer grupları yan yana karşılaştırma ekranı (benzerler 0.1.5; Yinelenenler
   grup kartları ve korunacak konumu seçme, 0.1.6)
 - ✅ Ay ay zaman çizelgesi: yıl × ay tablosu, ay başına sayı ve boyut; klasör adlarından ya da çekim
-  tarihinden sayım (Yayınlanmamış)
+  tarihinden sayım (0.7.0)
 - ✅ Zaman çizelgesinde aya girme: dolu bir aya tıklayınca ay görünümü (Izgara / Takvim), **Ayıkla** ile tek tek
   hızlı işaretleme (Delete, sürükleme, RAW'ı tut), **Gözden geçir** ve Geri Dönüşüm Kutusu'na atma (alamadığı
   dosyalar `_Ayiklananlar`'a). Tasarım: `docs/superpowers/specs/2026-11-18-ay-gorunumu-ayikla-design.md`
-  (Yayınlanmamış)
+  (0.7.0)
 - ⬜ **Fotoğraflar uygulaması yerine:** tam ekran görüntüleyici, yakınlaştırma, video oynatma, döndürme,
   klasörler arasında gezinme; Gezgin'e gitmeden taşıma / yeniden adlandırma. Kullanıcı hedefi (2026-11-18);
   ay görünümündeki Ayıkla ekranı ilk parçası.
