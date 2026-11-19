@@ -256,4 +256,25 @@ public class DiscarderTests : IDisposable
         Assert.NotNull(r.Error);
         Assert.True(File.Exists(a.Path)); // kayıt tutulamıyorsa hiçbir şey gönderilmez
     }
+
+    [Fact]
+    public void Run_MoveCancelled_JournalNotLeftUnfinished_FilesStay()
+    {
+        var a = Put(@"2026-08\a.jpg");
+        var b = Put(@"2026-08\b.jpg");
+        var bin = new Bin { Can = (_, _) => false };
+        var steps = Discarder.Plan(new[] { a, b }, _root, bin);
+        using var cts = new CancellationTokenSource();
+
+        var r = Discarder.Run(steps, _root, bin, _logs, new SyncProgress(_ => cts.Cancel()), cts.Token);
+
+        Assert.Empty(r.Done);
+        Assert.True(File.Exists(a.Path) && File.Exists(b.Path));
+        Assert.Empty(Executor.FindUnfinishedIn(Path.Combine(_root, CleanSession.RejectsFolder, "_Gunluk")));
+    }
+
+    sealed class SyncProgress(Action<(int, int, string)> a) : IProgress<(int done, int total, string current)>
+    {
+        public void Report((int done, int total, string current) v) => a(v);
+    }
 }

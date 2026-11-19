@@ -130,7 +130,11 @@ public static class Discarder
                 : new Progress(p => progress.Report((offset + p.done, total, p.current)));
             er = new Executor(res.MoveJournal).Run(items, progress: inner, ct: ct, move: true);
         }
-        catch (OperationCanceledException) { }
+        catch (OperationCanceledException)
+        {
+            // Durdurulan iş "yarım" sayılıp Temizle'de sürdürülmesin: kalanlar Skipped, dosyalar yerinde.
+            try { if (res.MoveJournal is { } j) Executor.Abandon(j); } catch (Exception) { }
+        }
         catch (Exception ex) { error = ex.Message; res.Error = ex.Message; }
         foreach (var s in moves)
         {
