@@ -1,5 +1,7 @@
 # Foto Düzenleyici
 
+**Türkçe** · [English](README.en.md)
+
 Dağınık klasörlerdeki fotoğraf ve videoları **çekim tarihine** (EXIF / video metadata) göre
 `Yıl-Ay` klasörlerine toplayan, aynı içerikli kopyaları bulan Windows masaüstü uygulaması.
 
