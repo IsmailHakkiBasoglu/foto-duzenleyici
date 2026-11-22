@@ -24,6 +24,9 @@ public sealed partial class ShellViewModel : ObservableObject
 
     public AppSettings Settings => _settings;
 
+    /// <summary>Oturum kataloğu: zaman çizelgesi her açılışta aynı depoyu kullanır.</summary>
+    public CatalogStore Catalogs { get; } = new();
+
     [ObservableProperty] private object currentPage;
 
     /// <summary>Zaman çizelgesinden hangi yolla çıkılırsa çıkılsın (Ana ekran, Geri Al…) sayım durur: dosyaları okumaya devam etmesin.</summary>
@@ -65,7 +68,7 @@ public sealed partial class ShellViewModel : ObservableObject
     void StartTimeline()
     {
         if (Locked) return;
-        var vm = new TimelineViewModel(_s, _settings, _startFolder);
+        var vm = new TimelineViewModel(_s, _settings, _startFolder, Catalogs);
         CurrentPage = vm;
         _ = vm.CountAsync();
     }
@@ -73,6 +76,7 @@ public sealed partial class ShellViewModel : ObservableObject
     void StartClean(RecentPair? p)
     {
         _startFolder = null;
+        Catalogs.Invalidate();
         var f = new OrganizeFlowViewModel(_s, _settings, FlowKind.Clean);
         if (p is not null) f.Folders.Load(p);
         CurrentPage = f;
@@ -81,6 +85,7 @@ public sealed partial class ShellViewModel : ObservableObject
     void StartOrganize(RecentPair? p)
     {
         _startFolder = null;
+        Catalogs.Invalidate();
         var f = NewOrganize();
         if (p is not null) f.Folders.Load(p);
         CurrentPage = f;
@@ -120,6 +125,7 @@ public sealed partial class ShellViewModel : ObservableObject
         if (!_s.Dialogs.Confirm("Geri Al", ApplyStepViewModel.UndoText(journal)))
             return;
         // Durdurulmuş bir işin kalanları bırakılır: geri alınan iş sonra "yarım" sanılıp Devam et diye önerilmesin.
+        Catalogs.Invalidate();
         try { if (Executor.Pending(journal).Count > 0) Executor.Abandon(journal); }
         catch (Exception ex) { ErrorMessage = ex.Message; return; }
         var f = NewOrganize();

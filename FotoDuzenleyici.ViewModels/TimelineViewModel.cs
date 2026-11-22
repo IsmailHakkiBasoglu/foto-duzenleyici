@@ -17,10 +17,12 @@ public sealed partial class TimelineViewModel : ObservableObject, ILongRunningPa
     TimelineMethod? _defaultMethod;
 
     /// <param name="startFolder">Sağ tıkla açılmış klasör; yoksa son zaman çizelgesi klasörü, o da yoksa son arşiv.</param>
-    public TimelineViewModel(Services s, AppSettings settings, string? startFolder = null)
+    /// <param name="catalogs">Oturum kataloğu deposu (kabuktan); null → bu sayfaya özel.</param>
+    public TimelineViewModel(Services s, AppSettings settings, string? startFolder = null, CatalogStore? catalogs = null)
     {
         _s = s;
         _settings = settings;
+        Catalogs = catalogs ?? new CatalogStore();
         folder = new[] { startFolder, settings.LastTimelineFolder, settings.Recent.FirstOrDefault()?.Archive }
             .FirstOrDefault(f => !string.IsNullOrWhiteSpace(f) && Directory.Exists(f));
         if (folder is not null)
@@ -29,6 +31,8 @@ public sealed partial class TimelineViewModel : ObservableObject, ILongRunningPa
             method = _defaultMethod.Value;
         }
     }
+
+    public CatalogStore Catalogs { get; }
 
     [ObservableProperty] private string? folder;
     [ObservableProperty] private TimelineMethod method;
