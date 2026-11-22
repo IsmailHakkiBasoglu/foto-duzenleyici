@@ -28,7 +28,10 @@ public sealed class ThumbnailLoader
         _decode = decode; _capacity = capacity; _parallelism = parallelism;
     }
 
-    public static ImageSource? DefaultDecode(MediaFile f) => ImageHasher.Decode(f.Path, f.Orientation, 256);
+    /// <summary>Fotoğraflar WIC ile; videolar Windows'un kendi küçük resmiyle (WIC video açamaz).</summary>
+    public static ImageSource? DefaultDecode(MediaFile f) => f.Kind == FileKind.Video
+        ? ShellThumbnail.Get(f.Path, 256)
+        : ImageHasher.Decode(f.Path, f.Orientation, 256);
 
     public int CachedCount { get { lock (_sync) return _cache.Count; } }
 
