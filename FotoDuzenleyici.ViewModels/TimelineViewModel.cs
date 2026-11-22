@@ -158,7 +158,10 @@ public sealed partial class TimelineViewModel : ObservableObject, ILongRunningPa
 
     /// <summary>Galeri için: katalog yoksa (klasör adlarından hızlı sayımdan sonra) okur.</summary>
     public Task EnsureCatalogAsync() =>
-        Catalog is not null || Folder is null || IsCounting ? _countTask ?? Task.CompletedTask : CountAsync();
+        Catalog is not null || Folder is null || (IsCounting && _countFull) ? _countTask ?? Task.CompletedTask : CountAsync();
+
+    /// <summary>Süren sayım katalog okuyor mu (klasör adlarından hızlı sayım değil mi).</summary>
+    bool _countFull;
 
     void SetCatalog(MediaCatalog? c)
     {
@@ -204,6 +207,7 @@ public sealed partial class TimelineViewModel : ObservableObject, ILongRunningPa
         if (Catalog is not null) SetCatalog(null);
         IsCounting = true;
         bool full = m == TimelineMethod.CaptureDate || View == TimelineViewKind.Gallery;
+        _countFull = full;
         var task = Run(f, m, full, gen, _cts.Token);
         _countTask = task;
         return task;
@@ -286,7 +290,7 @@ public sealed partial class TimelineViewModel : ObservableObject, ILongRunningPa
         var m = new MonthViewModel(_s, _settings, Result.Root, Result.Method, cell.Year, cell.Month,
             cell.Folders.Select(f => f.Folder).ToList(), Filter, ReadForTest,
             preloaded: Catalog?.FilesOf(cell.Year, cell.Month));
-        m.BackRequested += () => { if (ReferenceEquals(Month, m)) { Patch(m); CloseMonth(); } };
+        m.BackRequested += () => { if (ReferenceEquals(Month, m)) { CloseMonth(); Patch(m); } };
         Month = m;
         _ = m.LoadAsync();
     }
@@ -311,7 +315,11 @@ public sealed partial class TimelineViewModel : ObservableObject, ILongRunningPa
     /// </summary>
     void Patch(MonthViewModel m)
     {
+        // Her çıkış yolunda bir kez (Geri, Ana ekran, pencere kapanışı): atılanlar oturum kataloğunda kalmasın.
+        if (!_patched.Add(m)) return;
         if (Result is not { } r || m.Discarded.Count == 0) return;
+        // Bu sayfa katalogsuz (hızlı tablo) çalışıyorsa depodaki başka yöntemin kataloğu eskidi.
+        if (Catalog is null) Catalogs.Invalidate();
         if (Catalog is { } cat)
         {
             cat.Remove(m.Discarded.Select(d => d.File.Path));
@@ -349,9 +357,13 @@ public sealed partial class TimelineViewModel : ObservableObject, ILongRunningPa
     bool ILongRunningPage.MustConfirmClose => Month is { IsDiscarding: true };
     string ILongRunningPage.CloseQuestion => "Dosyalar atılıyor. Durdurulup pencere kapatılsın mı? Sıradaki dosyalar yerinde kalır.";
 
+    readonly HashSet<MonthViewModel> _patched = new();
+
     public void RequestStop()
     {
         if (IsCounting) Stop();
         Month?.RequestStop();
+        // Ana ekrana ya da başka sayfaya çıkılırken de atılanlar katalogdan düşülür.
+        if (Month is { } m) Patch(m);
     }
 }

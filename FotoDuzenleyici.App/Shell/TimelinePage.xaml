@@ -127,9 +127,16 @@
 
         </StackPanel>
 
-        <!-- Galeri: bütün aylar yeniden eskiye, sağda zaman çubuğu -->
-        <local:GalleryView Grid.Row="1" Margin="8,12,0,0" DataContext="{Binding Gallery}"
-                           Visibility="{Binding DataContext.View, ElementName=Root, Converter={StaticResource EqVis}, ConverterParameter=Gallery}" />
+        <!-- Galeri: bütün aylar yeniden eskiye, sağda zaman çubuğu; üstünde okunamayan / dışarıda kalan satırları -->
+        <DockPanel Grid.Row="1" Visibility="{Binding View, Converter={StaticResource EqVis}, ConverterParameter=Gallery}">
+            <ItemsControl DockPanel.Dock="Top" MaxWidth="900" Margin="20,8,20,0" ItemsSource="{Binding FooterLines}">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate><TextBlock Style="{StaticResource Small}" Text="{Binding}" TextWrapping="Wrap" Margin="0,1" /></DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        <local:GalleryView Margin="8,12,0,0" DataContext="{Binding Gallery}"
+ />
+        </DockPanel>
 
         <!-- Tablo -->
         <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto"

@@ -14,8 +14,11 @@ public sealed class CatalogStore
     public MediaCatalog? Get(string root, TimelineMethod method) =>
         _current is { } c && c.Method == method && Same(c.Root, root) ? c : null;
 
-    /// <summary>Öncekini bırakır. Yarıda kesilmiş katalog saklanmaz.</summary>
-    public void Set(MediaCatalog c) => _current = c.Cancelled ? null : c;
+    /// <summary>
+    /// Öncekini bırakır. Yarıda kesilmiş ya da hiç okunamamış (kök yok, sürücü çıkarılmış: hiç öğe yok ve hata var)
+    /// katalog saklanmaz; sürücü takılınca yeniden okunsun.
+    /// </summary>
+    public void Set(MediaCatalog c) => _current = c.Cancelled || (c.Items.Count == 0 && c.Errors.Count > 0) ? null : c;
 
     public void Invalidate() => _current = null;
 

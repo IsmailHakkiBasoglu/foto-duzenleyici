@@ -146,6 +146,8 @@ public sealed partial class ShellViewModel : ObservableObject
                 _settings.RenameWithDate, _settings.AppendSourceToName, _settings.SeparateRawFolder, _settings.RecycleSource);
         // Klasik pencere karar dosyasını açılışta okur: bekleyen kararlar önce yazılsın.
         Flow?.FlushReviews();
+        // Klasik pencerede Düzenle dosya taşıyabilir: oturum kataloğu eskir.
+        Catalogs.Invalidate();
         _s.Shell.OpenClassic(start);
     }
 

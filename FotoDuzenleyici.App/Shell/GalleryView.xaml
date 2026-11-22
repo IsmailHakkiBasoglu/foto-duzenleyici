@@ -101,7 +101,7 @@
 
         <local:TimeScrubber x:Name="Scrubber" Grid.Column="1" Margin="0,0,4,8" />
 
-        <TextBlock Style="{StaticResource Muted}" Margin="12,16,0,0" Text="Bu süzgeçte dosya yok."
+        <TextBlock Style="{StaticResource Muted}" Margin="12,16,0,0" Text="Gösterilecek dosya yok (süzgeci ya da klasörü değiştir)."
                    Visibility="{Binding IsEmpty, Converter={StaticResource BoolVis}, FallbackValue=Collapsed}" />
     </Grid>
 </UserControl>
