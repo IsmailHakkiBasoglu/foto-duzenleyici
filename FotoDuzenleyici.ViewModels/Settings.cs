@@ -21,6 +21,8 @@ public sealed class AppSettings
     public string? LastTimelineFolder { get; set; }
     /// <summary>Ay görünümünde son seçilen görünüm: Grid | Calendar.</summary>
     public string MonthView { get; set; } = "Grid";
+    /// <summary>Zaman çizelgesi: "Gallery" (sürekli galeri) ya da "Table".</summary>
+    public string TimelineView { get; set; } = "Gallery";
     public SourceFolderMode SourceFolder { get; set; } = SourceFolderMode.None;
     public bool RenameWithDate { get; set; }
     public bool AppendSourceToName { get; set; }

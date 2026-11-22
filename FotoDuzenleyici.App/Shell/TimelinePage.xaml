@@ -105,7 +105,7 @@
 
             <!-- Durduruldu -->
             <DockPanel Margin="0,16,0,0" Visibility="{Binding Stopped, Converter={StaticResource BoolVis}}">
-                <ui:Button DockPanel.Dock="Right" Content="Yeniden say" Icon="{ui:SymbolIcon ArrowClockwise24}" Command="{Binding RecountCommand}" />
+                <ui:Button DockPanel.Dock="Right" Content="Yeniden tara" Icon="{ui:SymbolIcon ArrowClockwise24}" Command="{Binding RecountCommand}" />
                 <TextBlock Style="{StaticResource Muted}" VerticalAlignment="Center" Text="Sayım durduruldu." />
             </DockPanel>
 

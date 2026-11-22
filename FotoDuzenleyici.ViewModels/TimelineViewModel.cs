@@ -7,6 +7,9 @@ namespace FotoDuzenleyici.ViewModels;
 /// Zaman çizelgesi: seçilen klasördeki dosyalar yıl × ay tablosunda. Salt okunur; gezinmeyi kilitlemez,
 /// sayfadan çıkışta ve pencere kapanışında sayım sessizce durur.
 /// </summary>
+/// <summary>Zaman çizelgesinin görünümü: sürekli galeri ya da yıl × ay tablosu.</summary>
+public enum TimelineViewKind { Gallery, Table }
+
 public sealed partial class TimelineViewModel : ObservableObject, ILongRunningPage, ILeaveGuard
 {
     readonly Services _s;
@@ -23,6 +26,7 @@ public sealed partial class TimelineViewModel : ObservableObject, ILongRunningPa
         _s = s;
         _settings = settings;
         Catalogs = catalogs ?? new CatalogStore();
+        view = Enum.TryParse<TimelineViewKind>(settings.TimelineView, out var v) ? v : TimelineViewKind.Gallery;
         folder = new[] { startFolder, settings.LastTimelineFolder, settings.Recent.FirstOrDefault()?.Archive }
             .FirstOrDefault(f => !string.IsNullOrWhiteSpace(f) && Directory.Exists(f));
         if (folder is not null)
@@ -33,6 +37,17 @@ public sealed partial class TimelineViewModel : ObservableObject, ILongRunningPa
     }
 
     public CatalogStore Catalogs { get; }
+
+    /// <summary>Okunmuş katalog (galeri ve ay görünümü bunu kullanır); klasör adlarından hızlı tablo sayımında null.</summary>
+    public MediaCatalog? Catalog { get; private set; }
+
+    /// <summary>Katalog değişti (okundu, tazelendi, atılanlar düşüldü): galeri yeniden kurulsun.</summary>
+    public event Action? CatalogChanged;
+
+    [ObservableProperty] private TimelineViewKind view;
+
+    /// <summary>Test kancası: katalog ve ay görünümü okuyucusu; null → <see cref="Scanner.ReadFile"/>.</summary>
+    internal Func<string, MediaFile>? ReadForTest { get; set; }
 
     [ObservableProperty] private string? folder;
     [ObservableProperty] private TimelineMethod method;
@@ -119,6 +134,24 @@ public sealed partial class TimelineViewModel : ObservableObject, ILongRunningPa
 
     partial void OnFilterChanged(KindFilter value) => Rebuild();
 
+    partial void OnViewChanged(TimelineViewKind value)
+    {
+        _settings.TimelineView = value.ToString();
+        _s.Settings.TrySave(_settings);
+        if (value == TimelineViewKind.Gallery) _ = EnsureCatalogAsync();
+    }
+
+    /// <summary>Galeri için: katalog yoksa (klasör adlarından hızlı sayımdan sonra) okur.</summary>
+    public Task EnsureCatalogAsync() =>
+        Catalog is not null || Folder is null || IsCounting ? _countTask ?? Task.CompletedTask : CountAsync();
+
+    void SetCatalog(MediaCatalog? c)
+    {
+        Catalog = c;
+        OnPropertyChanged(nameof(Catalog));
+        CatalogChanged?.Invoke();
+    }
+
     void Rebuild()
     {
         Table = Result is null ? null : TimelineTable.Build(Result.Entries, Filter);
@@ -143,13 +176,24 @@ public sealed partial class TimelineViewModel : ObservableObject, ILongRunningPa
         CloseMonth();
         Done = 0;
         Total = 0;
+        if (Catalogs.Get(f, m) is { } cached)
+        {
+            SetCatalog(cached);
+            Result = cached.ToResult();
+            Rebuild();
+            IsCounting = false;
+            _countTask = Task.CompletedTask;
+            return _countTask;
+        }
+        if (Catalog is not null) SetCatalog(null);
         IsCounting = true;
-        var task = Run(f, m, gen, _cts.Token);
+        bool full = m == TimelineMethod.CaptureDate || View == TimelineViewKind.Gallery;
+        var task = Run(f, m, full, gen, _cts.Token);
         _countTask = task;
         return task;
     }
 
-    async Task Run(string f, TimelineMethod m, int gen, CancellationToken ct)
+    async Task Run(string f, TimelineMethod m, bool full, int gen, CancellationToken ct)
     {
         // Bildirimler sırasız gelebilir (Progress arka plandan gönderir): sayaç geri gitmesin.
         IProgress<(int done, int total)> ui = new Progress<(int done, int total)>(v =>
@@ -159,15 +203,20 @@ public sealed partial class TimelineViewModel : ObservableObject, ILongRunningPa
             Total = v.total;
         });
         var hook = BeforeCountForTest;
+        var read = ReadForTest;
         try
         {
-            var r = await Task.Run(() =>
+            // Tam okuma: her dosya bir kez okunur, katalog depoya; tablo katalogdan. Yoksa klasör adlarından hızlı sayım.
+            var (r, c) = await Task.Run(() =>
             {
                 hook?.Invoke(f);
-                return m == TimelineMethod.FolderNames ? Timeline.ByFolders(f, ct) : Timeline.ByCaptureDate(f, ui, ct);
+                if (!full) return (Timeline.ByFolders(f, ct), (MediaCatalog?)null);
+                var cat = CatalogReader.Read(f, m, ui, ct, read);
+                return (cat.ToResult(), cat);
             });
             if (gen != _generation || ct.IsCancellationRequested || r.Cancelled) return;
-            if (m == TimelineMethod.CaptureDate) { Total = Math.Max(Total, r.Entries.Count); Done = Total; }
+            if (full) { Total = Math.Max(Total, r.Entries.Count); Done = Total; }
+            if (c is not null) { Catalogs.Set(c); SetCatalog(c); }
             Result = r;
             Rebuild();
         }
@@ -192,8 +241,13 @@ public sealed partial class TimelineViewModel : ObservableObject, ILongRunningPa
         Folder = picked;
     }
 
+    /// <summary>"Yeniden tara": oturum kataloğu bırakılır, her şey baştan okunur.</summary>
     [RelayCommand]
-    void Recount() => _ = CountAsync();
+    void Recount()
+    {
+        Catalogs.Invalidate();
+        _ = CountAsync();
+    }
 
     [RelayCommand]
     void Stop()
@@ -214,10 +268,18 @@ public sealed partial class TimelineViewModel : ObservableObject, ILongRunningPa
     {
         if (cell is not { IsEmpty: false } || cell.Folders.Count == 0 || Result is null || Month is not null) return;
         var m = new MonthViewModel(_s, _settings, Result.Root, Result.Method, cell.Year, cell.Month,
-            cell.Folders.Select(f => f.Folder).ToList(), Filter);
+            cell.Folders.Select(f => f.Folder).ToList(), Filter, ReadForTest,
+            preloaded: Catalog?.FilesOf(cell.Year, cell.Month));
         m.BackRequested += () => { if (ReferenceEquals(Month, m)) { Patch(m); CloseMonth(); } };
         Month = m;
         _ = m.LoadAsync();
+    }
+
+    /// <summary>Galerideki ay başlığından: o ayın ay görünümü (tablodaki hücreyle aynı iş).</summary>
+    public void OpenMonth(int year, int month)
+    {
+        var cell = Table?.Rows.SelectMany(r => r.Months).FirstOrDefault(c => c.Year == year && c.Month == month);
+        OpenCell(cell);
     }
 
     void CloseMonth()
@@ -234,6 +296,17 @@ public sealed partial class TimelineViewModel : ObservableObject, ILongRunningPa
     void Patch(MonthViewModel m)
     {
         if (Result is not { } r || m.Discarded.Count == 0) return;
+        if (Catalog is { } cat)
+        {
+            cat.Remove(m.Discarded.Select(d => d.File.Path));
+            int moved = m.Discarded.Count(d => d.Moved);
+            if (moved > 0) cat.Special[CleanSession.RejectsFolder] = cat.Special.GetValueOrDefault(CleanSession.RejectsFolder) + moved;
+            Result = cat.ToResult();
+            Rebuild();
+            OnPropertyChanged(nameof(FooterLines));
+            CatalogChanged?.Invoke();
+            return;
+        }
         foreach (var (file, moved) in m.Discarded)
         {
             var dir = Path.GetDirectoryName(Path.GetFullPath(file.Path)) ?? "";

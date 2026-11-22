@@ -59,12 +59,15 @@ public sealed partial class MonthViewModel : ObservableObject
     CancellationTokenSource? _cts;
     int _generation;
     List<MediaFile> _files = new();
+    readonly IReadOnlyList<MediaFile>? _preloaded;
 
     /// <param name="logDir">Geri Dönüşüm Kutusu'na gönderilenlerin kaydı; null → karar dosyasının klasörü\Ayikla
     /// (uygulama veri klasörü).</param>
     public MonthViewModel(Services s, AppSettings settings, string root, TimelineMethod method, int year, int month,
-        IReadOnlyList<string> folders, KindFilter filter, Func<string, MediaFile>? read = null, string? logDir = null)
+        IReadOnlyList<string> folders, KindFilter filter, Func<string, MediaFile>? read = null, string? logDir = null,
+        IReadOnlyList<MediaFile>? preloaded = null)
     {
+        _preloaded = preloaded;
         _s = s;
         _settings = settings;
         _read = read;
@@ -146,7 +149,10 @@ public sealed partial class MonthViewModel : ObservableObject
         try
         {
             var (method, y, m, folders, read) = (Method, Year, MonthNumber, Folders, _read);
-            var r = await Task.Run(() => MonthReader.Read(method, y, m, folders, ui, ct, read));
+            // Oturum kataloğu doluysa ay yeniden okunmaz.
+            var pre = _preloaded;
+            var r = pre is not null ? Preloaded(pre)
+                : await Task.Run(() => MonthReader.Read(method, y, m, folders, ui, ct, read));
             if (gen != _generation || ct.IsCancellationRequested || r.Cancelled) return;
             _files = r.Files;
             Errors = r.Errors;
@@ -162,6 +168,13 @@ public sealed partial class MonthViewModel : ObservableObject
         {
             if (gen == _generation) { IsLoading = false; OnPropertyChanged(nameof(IsEmpty)); }
         }
+    }
+
+    static MonthResult Preloaded(IReadOnlyList<MediaFile> files)
+    {
+        var r = new MonthResult();
+        r.Files.AddRange(files);
+        return r;
     }
 
     void SetPhotos(IReadOnlyList<MonthPhoto> photos)
