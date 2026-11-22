@@ -46,6 +46,17 @@ public sealed partial class TimelineViewModel : ObservableObject, ILongRunningPa
 
     [ObservableProperty] private TimelineViewKind view;
 
+    /// <summary>Sürekli galeri: katalog ya da süzgeç değişince yeniden kurulur; katalog yokken null.</summary>
+    [ObservableProperty] private GalleryViewModel? gallery;
+
+    void RebuildGallery()
+    {
+        if (Catalog is null) { Gallery = null; return; }
+        var g = GalleryViewModel.Build(Catalog, Filter, _s);
+        g.MonthRequested += OpenMonth;
+        Gallery = g;
+    }
+
     /// <summary>Test kancası: katalog ve ay görünümü okuyucusu; null → <see cref="Scanner.ReadFile"/>.</summary>
     internal Func<string, MediaFile>? ReadForTest { get; set; }
 
@@ -132,7 +143,11 @@ public sealed partial class TimelineViewModel : ObservableObject, ILongRunningPa
         if (!_quietMethod) _ = CountAsync();
     }
 
-    partial void OnFilterChanged(KindFilter value) => Rebuild();
+    partial void OnFilterChanged(KindFilter value)
+    {
+        Rebuild();
+        RebuildGallery();
+    }
 
     partial void OnViewChanged(TimelineViewKind value)
     {
@@ -149,6 +164,7 @@ public sealed partial class TimelineViewModel : ObservableObject, ILongRunningPa
     {
         Catalog = c;
         OnPropertyChanged(nameof(Catalog));
+        RebuildGallery();
         CatalogChanged?.Invoke();
     }
 
@@ -304,6 +320,7 @@ public sealed partial class TimelineViewModel : ObservableObject, ILongRunningPa
             Result = cat.ToResult();
             Rebuild();
             OnPropertyChanged(nameof(FooterLines));
+            RebuildGallery();
             CatalogChanged?.Invoke();
             return;
         }

@@ -170,6 +170,22 @@ public class TimelineCatalogTests : IDisposable
     }
 
     [Fact]
+    public async Task Gallery_FollowsCatalogFilterAndHeader()
+    {
+        var vm = New(TimelineViewKind.Gallery);
+        Assert.Null(vm.Gallery);
+        await vm.CountAsync();
+
+        Assert.Equal(new[] { 9, 8 }, vm.Gallery!.Months.Select(m => m.Month));
+        vm.Filter = KindFilter.Video;
+        Assert.True(vm.Gallery!.IsEmpty);
+        vm.Filter = KindFilter.Photo;
+
+        vm.Gallery!.OpenMonthCommand.Execute(vm.Gallery.Months[1]);
+        Assert.Equal(8, vm.Month!.MonthNumber);
+    }
+
+    [Fact]
     public void View_Persisted()
     {
         var vm = New(TimelineViewKind.Gallery);
