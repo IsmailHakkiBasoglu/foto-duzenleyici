@@ -60,32 +60,44 @@ public static class Timeline
         var r = new TimelineResult { Root = root, Method = TimelineMethod.FolderNames };
         try
         {
-            string[] subs, files;
-            try { subs = Directory.GetDirectories(root); files = Directory.GetFiles(root); }
-            catch (Exception ex) { r.Errors.Add($"{root}: {ex.Message}"); return r; }
-
-            r.Outside += files.Count(Counted);
-            foreach (var dir in subs)
-            {
-                ct.ThrowIfCancellationRequested();
-                if (Skipped(dir, r)) continue;
-                var name = Path.GetFileName(dir);
-                if (SpecialFolderNames.Contains(name))
-                {
-                    int n = Walk(dir, r, ct).Count();
-                    if (n > 0) r.Special[name] = n;
-                }
-                else if (IsMonthFolderName(name))
-                {
-                    int year = int.Parse(name[..4]), month = int.Parse(name[5..]);
-                    foreach (var f in Walk(dir, r, ct))
-                        r.Entries.Add(new TimelineEntry(year, month, FileClassifier.Classify(f), Length(f, r), dir, DateSource.None));
-                }
-                else r.Outside += Walk(dir, r, ct).Count();
-            }
+            foreach (var (f, year, month, dir) in FolderPaths(root, r, ct))
+                r.Entries.Add(new TimelineEntry(year, month, FileClassifier.Classify(f), Length(f, r), dir, DateSource.None));
         }
         catch (OperationCanceledException) { r.Entries.Clear(); r.Cancelled = true; }
         return r;
+    }
+
+    /// <summary>
+    /// Klasör adlarından sayımın dosyaları: ay klasörlerinin altındaki sayılan dosyalar (ay klasörünün yılı, ayı ve
+    /// tam yoluyla). Kök dosyaları ve ay dışı klasörler <see cref="TimelineResult.Outside"/>'a, özel klasörler
+    /// <see cref="TimelineResult.Special"/>'a sayılır. İptalde OperationCanceledException.
+    /// </summary>
+    internal static List<(string Path, int Year, int Month, string Folder)> FolderPaths(string root, TimelineResult r, CancellationToken ct)
+    {
+        var list = new List<(string, int, int, string)>();
+        string[] subs, files;
+        try { subs = Directory.GetDirectories(root); files = Directory.GetFiles(root); }
+        catch (Exception ex) { r.Errors.Add($"{root}: {ex.Message}"); return list; }
+
+        r.Outside += files.Count(Counted);
+        foreach (var dir in subs)
+        {
+            ct.ThrowIfCancellationRequested();
+            if (Skipped(dir, r)) continue;
+            var name = Path.GetFileName(dir);
+            if (SpecialFolderNames.Contains(name))
+            {
+                int n = Walk(dir, r, ct).Count();
+                if (n > 0) r.Special[name] = n;
+            }
+            else if (IsMonthFolderName(name))
+            {
+                int year = int.Parse(name[..4]), month = int.Parse(name[5..]);
+                foreach (var f in Walk(dir, r, ct)) list.Add((f, year, month, dir));
+            }
+            else r.Outside += Walk(dir, r, ct).Count();
+        }
+        return list;
     }
 
     /// <param name="read">Dosya okuyucu; null → <see cref="Scanner.ReadFile"/>. Atarsa dosya "okunamadı" sayılır.</param>
@@ -94,30 +106,9 @@ public static class Timeline
     {
         read ??= Scanner.ReadFile;
         var r = new TimelineResult { Root = root, Method = TimelineMethod.CaptureDate };
-        // Kullanıcı özel bir klasörün kendisini seçtiyse (ör. Arsiv\Tarihsiz) kökü dışlama: tablo sessizce boş kalmasın.
-        var excluded = new HashSet<string>(SpecialFolderNames, StringComparer.OrdinalIgnoreCase);
-        excluded.Remove(Path.GetFileName(Path.TrimEndingDirectorySeparator(root)));
-        var opt = new ScanOptions
-        {
-            Roots = { root },
-            IncludedKinds = { FileKind.Photo, FileKind.Raw, FileKind.Video },
-            ExcludedFolderNames = excluded,
-        };
-        opt.IncludedKinds.Remove(FileKind.Pdf);
-        var scanner = new Scanner(opt);
         try
         {
-            if (!Directory.Exists(root)) { r.Errors.Add($"{root}: klasör bulunamadı"); return r; }
-            foreach (var dir in Directory.GetDirectories(root))
-            {
-                var name = Path.GetFileName(dir);
-                if (!SpecialFolderNames.Contains(name) || Skipped(dir, r)) continue;
-                int n = Walk(dir, r, ct).Count();
-                if (n > 0) r.Special[name] = n;
-            }
-
-            var paths = new List<string>();
-            foreach (var p in scanner.EnumerateFiles()) { ct.ThrowIfCancellationRequested(); paths.Add(p); }
+            var paths = CapturePaths(root, r, ct);
             var found = new TimelineEntry?[paths.Count];
             int done = 0;
             Parallel.For(0, paths.Count, new ParallelOptions { MaxDegreeOfParallelism = 4, CancellationToken = ct }, i =>
@@ -133,11 +124,41 @@ public static class Timeline
                 progress?.Report((Interlocked.Increment(ref done), paths.Count));
             });
             r.Entries.AddRange(found.OfType<TimelineEntry>());
-            r.Errors.AddRange(scanner.Errors);
         }
         catch (OperationCanceledException) { r.Entries.Clear(); r.Cancelled = true; }
         catch (Exception ex) { r.Errors.Add($"{root}: {ex.Message}"); }
         return r;
+    }
+
+    /// <summary>
+    /// Çekim tarihinden sayımın dosyaları: kökün altındaki her sayılan dosya (özel klasörler hariç; onlar
+    /// <see cref="TimelineResult.Special"/>'a sayılır). Kök yoksa hata satırı ve boş liste.
+    /// </summary>
+    internal static List<string> CapturePaths(string root, TimelineResult r, CancellationToken ct)
+    {
+        // Kullanıcı özel bir klasörün kendisini seçtiyse (ör. Arsiv\Tarihsiz) kökü dışlama: tablo sessizce boş kalmasın.
+        var excluded = new HashSet<string>(SpecialFolderNames, StringComparer.OrdinalIgnoreCase);
+        excluded.Remove(Path.GetFileName(Path.TrimEndingDirectorySeparator(root)));
+        var opt = new ScanOptions
+        {
+            Roots = { root },
+            IncludedKinds = { FileKind.Photo, FileKind.Raw, FileKind.Video },
+            ExcludedFolderNames = excluded,
+        };
+        opt.IncludedKinds.Remove(FileKind.Pdf);
+        var scanner = new Scanner(opt);
+        var paths = new List<string>();
+        if (!Directory.Exists(root)) { r.Errors.Add($"{root}: klasör bulunamadı"); return paths; }
+        foreach (var dir in Directory.GetDirectories(root))
+        {
+            var name = Path.GetFileName(dir);
+            if (!SpecialFolderNames.Contains(name) || Skipped(dir, r)) continue;
+            int n = Walk(dir, r, ct).Count();
+            if (n > 0) r.Special[name] = n;
+        }
+        foreach (var p in scanner.EnumerateFiles()) { ct.ThrowIfCancellationRequested(); paths.Add(p); }
+        r.Errors.AddRange(scanner.Errors);
+        return paths;
     }
 
     /// <summary>Klasörün altındaki sayılan dosyalar; özel, gizli+sistem ve bağlantı klasörlerine girmez.</summary>
@@ -167,7 +188,7 @@ public static class Timeline
         catch (Exception ex) { lock (r.Errors) r.Errors.Add($"{dir}: {ex.Message}"); return true; }
     }
 
-    static long Length(string f, TimelineResult r)
+    internal static long Length(string f, TimelineResult r)
     {
         try { return new FileInfo(f).Length; }
         catch (Exception ex) { lock (r.Errors) r.Errors.Add($"{f}: {ex.Message}"); return 0; }
