@@ -177,4 +177,20 @@ public class ThumbnailLoaderTests
         WaitFor(() => t.Thumb is not null);
         Assert.False(t.ThumbFailed);
     }
+
+    [Fact]
+    public void Paused_QueuesUntilResumed()
+    {
+        var d = new FakeDecoder();
+        var loader = new ThumbnailLoader(d.Decode) { Paused = true };
+        var a = Row("a.jpg");
+
+        loader.Request(a);
+        Thread.Sleep(100);
+        Assert.Equal(0, d.CountOf("a.jpg"));
+
+        loader.Paused = false;
+        WaitFor(() => a.Thumb is not null);
+        Assert.Equal(1, d.CountOf("a.jpg"));
+    }
 }

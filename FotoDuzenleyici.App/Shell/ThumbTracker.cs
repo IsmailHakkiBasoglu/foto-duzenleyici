@@ -1,4 +1,4 @@
-using System.Windows;
+﻿using System.Windows;
 using FotoDuzenleyici.Core;
 
 namespace FotoDuzenleyici.App.Shell;
@@ -34,4 +34,7 @@ static class ThumbTracker
 
     /// <summary>Yeniden taramada: önbellek ve bekleyen istekler bırakılır.</summary>
     public static void Clear() => _loader?.Clear();
+
+    /// <summary>Zaman çizelgesi sürüklenirken çözme bekletilir; bırakınca görünenler yüklenir.</summary>
+    public static void Pause(bool paused) => Loader.Paused = paused;
 }

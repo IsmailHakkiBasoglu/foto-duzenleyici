@@ -1,4 +1,4 @@
-using System.Windows.Media;
+﻿using System.Windows.Media;
 
 namespace FotoDuzenleyici.Core;
 
@@ -35,6 +35,28 @@ public sealed class ThumbnailLoader
 
     public int CachedCount { get { lock (_sync) return _cache.Count; } }
 
+    bool _paused;
+
+    /// <summary>true iken istekler kuyrukta bekler, çözme başlamaz (zaman çubuğu sürüklenirken); false olunca sürer.</summary>
+    public bool Paused
+    {
+        get { lock (_sync) return _paused; }
+        set
+        {
+            lock (_sync)
+            {
+                _paused = value;
+                if (!value) StartWorkers();
+            }
+        }
+    }
+
+    /// <summary>Kuyruk boş değilse en fazla <c>parallelism</c> çalışan. Kilit içinde çağrılır.</summary>
+    void StartWorkers()
+    {
+        while (!_paused && _workers < _parallelism && _workers < _queue.Count) { _workers++; Task.Run(Work); }
+    }
+
     public void Request(IThumbTarget row)
     {
         lock (_sync)
@@ -48,7 +70,7 @@ public sealed class ThumbnailLoader
             if (_waiting.TryGetValue(row.File, out var list)) { if (!list.Contains(row)) list.Add(row); return; }
             _waiting[row.File] = new List<IThumbTarget> { row };
             _queue.AddLast(row.File);
-            if (_workers < _parallelism) { _workers++; Task.Run(Work); }
+            StartWorkers();
         }
     }
 
@@ -76,7 +98,7 @@ public sealed class ThumbnailLoader
             MediaFile file;
             lock (_sync)
             {
-                if (_queue.First is null) { _workers--; return; }
+                if (_queue.First is null || _paused) { _workers--; return; }
                 file = _queue.First.Value;
                 _queue.RemoveFirst();
             }

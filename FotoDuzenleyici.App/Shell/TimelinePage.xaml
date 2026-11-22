@@ -1,4 +1,4 @@
-<UserControl x:Class="FotoDuzenleyici.App.Shell.TimelinePage"
+﻿<UserControl x:Class="FotoDuzenleyici.App.Shell.TimelinePage"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
@@ -39,9 +39,25 @@
     <Grid>
     <!-- Dolu bir aya tıklanınca ay görünümü tablonun yerine geçer; tablo arkada aynı yerde kalır -->
     <local:MonthView DataContext="{Binding Month}" Visibility="{Binding DataContext.HasMonth, ElementName=Root, Converter={StaticResource BoolVis}}" />
-    <ScrollViewer VerticalScrollBarVisibility="Auto" Visibility="{Binding HasMonth, Converter={StaticResource HasVis}, ConverterParameter=!}">
-        <StackPanel MaxWidth="900" Margin="20,16,20,24">
-            <TextBlock Text="Zaman çizelgesi" Style="{StaticResource H1}" />
+    <Grid Visibility="{Binding HasMonth, Converter={StaticResource HasVis}, ConverterParameter=!}">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+        <StackPanel MaxWidth="900" Margin="20,16,20,0">
+            <DockPanel>
+                <!-- Galeri | Tablo; Yeniden tara oturum kataloğunu bırakıp baştan okur -->
+                <ui:Button DockPanel.Dock="Right" Margin="12,0,0,0" Content="Yeniden tara" Icon="{ui:SymbolIcon ArrowClockwise24}"
+                           Command="{Binding RecountCommand}" VerticalAlignment="Center"
+                           Visibility="{Binding HasFolder, Converter={StaticResource BoolVis}}" />
+                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
+                    <RadioButton GroupName="TlView" Content="Galeri" MinWidth="0" Margin="0,0,10,0"
+                                 IsChecked="{Binding View, Converter={StaticResource EnumBool}, ConverterParameter=Gallery}" />
+                    <RadioButton GroupName="TlView" Content="Tablo" MinWidth="0"
+                                 IsChecked="{Binding View, Converter={StaticResource EnumBool}, ConverterParameter=Table}" />
+                </StackPanel>
+                <TextBlock Text="Zaman çizelgesi" Style="{StaticResource H1}" />
+            </DockPanel>
             <TextBlock Style="{StaticResource Muted}" Margin="0,0,0,14" TextWrapping="Wrap"
                        Text="Hangi ayda ne kadar fotoğraf var. Yalnız okunur; hiçbir dosyaya dokunulmaz." />
 
@@ -109,7 +125,16 @@
                 <TextBlock Style="{StaticResource Muted}" VerticalAlignment="Center" Text="Sayım durduruldu." />
             </DockPanel>
 
-            <!-- Tablo -->
+        </StackPanel>
+
+        <!-- Galeri: bütün aylar yeniden eskiye, sağda zaman çubuğu -->
+        <local:GalleryView Grid.Row="1" Margin="8,12,0,0" DataContext="{Binding Gallery}"
+                           Visibility="{Binding DataContext.View, ElementName=Root, Converter={StaticResource EqVis}, ConverterParameter=Gallery}" />
+
+        <!-- Tablo -->
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto"
+                      Visibility="{Binding View, Converter={StaticResource EqVis}, ConverterParameter=Table}">
+        <StackPanel MaxWidth="900" Margin="20,0,20,24">
             <StackPanel Margin="0,16,0,0" Visibility="{Binding Table, Converter={StaticResource HasVis}}">
                 <TextBlock Text="{Binding Table.Summary}" FontWeight="SemiBold" Margin="0,0,0,10" TextWrapping="Wrap"
                            Foreground="{DynamicResource TextFillColorPrimaryBrush}" />
@@ -181,6 +206,7 @@
                            Visibility="{Binding CanUseCaptureDate, Converter={StaticResource BoolVis}}" />
             </StackPanel>
         </StackPanel>
-    </ScrollViewer>
+        </ScrollViewer>
+    </Grid>
     </Grid>
 </UserControl>
