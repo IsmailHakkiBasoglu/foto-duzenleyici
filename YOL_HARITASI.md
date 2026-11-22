@@ -42,7 +42,9 @@ Durum işaretleri: ✅ bitti · 🔄 sürüyor · ⬜ planlandı
   (0.7.0)
 - ⬜ **Fotoğraflar uygulaması yerine:** tam ekran görüntüleyici, yakınlaştırma, video oynatma, döndürme,
   klasörler arasında gezinme; Gezgin'e gitmeden taşıma / yeniden adlandırma. Kullanıcı hedefi (2026-11-18);
-  ay görünümündeki Ayıkla ekranı ilk parçası.
+  ay görünümündeki Ayıkla ekranı ilk parçası. 🔄 1. parça: sürekli galeri, zaman çubuğu, oturum kataloğu,
+  video küçük resimleri (tasarım `docs/superpowers/specs/2026-11-20-surekli-galeri-design.md`). 2. parça:
+  görüntüleyici (bilgi paneli, video oynatma, yığınlar, kayıpsız döndürme).
 - 🔄 Koyu tema, modern görünüm (WPF-UI / Fluent): 1. parça kabuk + Düzenle akışı (0.2.0); 2. parça
   inceleme ekranları (Yinelenenler, Benzerler, Kusurlu, 0.3.0); Temizle ekranı (0.4.0); Yedekle ekranı (0.5.0)
 

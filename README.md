@@ -47,6 +47,12 @@ var, boş aylar hangileri. İki sayım yolu var: düzenlenmiş arşivde **Klasö
 saniyeler sürer), düzenlenmemiş klasörde **Çekim tarihinden** (her dosyanın EXIF tarihi okunur). Foto / Raw /
 Video / Hepsi süzgeci. Tablonun kendisi yalnız okur.
 
+Zaman çizelgesi açılınca **Galeri** görünür: bütün aylar tek bir uzun ızgarada, en yeniden en eskiye, ay
+başlıklarıyla. Sağ kenardaki **zaman çubuğunu** tutup sürükleyerek yıllar arasında atlarsın; yanda hangi ayda
+olduğun yazar. Ay başlığındaki **Ayıkla ▶** o ayı aşağıdaki ay görünümünde açar. Dosyalar bir kez okunur ve
+uygulama açık kaldıkça hatırlanır; Gezgin'de değişiklik yaptıysan **Yeniden tara**'ya bas. **Tablo** seçeneği
+yıl × ay tablosunu gösterir.
+
 Dolu bir aya tıklayınca **ay görünümü** açılır: o ayın fotoğrafları küçük resimlerle, günlere bölünmüş
 **Izgara** ya da haftalara bölünmüş **Takvim** olarak. **Ayıkla ▶** fotoğrafları tek tek büyük gösterir:
 ← → ile gezinirsin, Delete ya da resmi sola sürüklemek "atılsın" diye işaretler, sağa sürüklemek "kalsın" der.

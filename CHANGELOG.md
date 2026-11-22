@@ -6,6 +6,21 @@ Biçim [Keep a Changelog](https://keepachangelog.com/tr-TR/1.1.0/), sürüm numa
 
 ## [Yayınlanmamış]
 
+### Eklendi
+- **Sürekli galeri** (zaman çizelgesinin yeni varsayılan görünümü): seçilen klasördeki bütün aylar tek bir uzun
+  ızgarada, yeniden eskiye; ay başlığında dosya sayısı ve **Ayıkla ▶** (o ayın ay görünümünü açar, dönünce galeri
+  aynı yerde kalır). Sağ kenarda **zaman çubuğu**: yıl etiketleri ve ay çentikleri; tutup sürükleyince ya da
+  tıklayınca o tarihe atlar, sürüklerken yanda "Ekim 2026" balonu. Çift tık / Enter dosyayı varsayılan uygulamada
+  açar. **Galeri | Tablo** seçimi hatırlanır; tablo ve galeri aynı sayıları gösterir.
+- **Videolara küçük resim:** Gezgin'in kullandığı Windows küçük resmi (galeride ve ay görünümünde); codec yoksa
+  eskisi gibi 🎬 yer tutucusu.
+
+### Değişti
+- Zaman çizelgesi dosyaları **bir kez okur** ve uygulama açık kaldıkça bellekte tutar: sayfaya dönünce, ay
+  görünümüne girince yeniden okunmaz. "Yeniden say" düğmesi **Yeniden tara** oldu ve her şeyi baştan okur.
+  Düzenle, Temizle ya da Geri Al başlayınca bellekteki bilgi bırakılır, zaman çizelgesine dönünce yeniden okunur.
+  Gezgin'de yapılan değişiklikler için Yeniden tara.
+
 ## [0.7.0] - 2026-11-19
 
 ### Eklendi

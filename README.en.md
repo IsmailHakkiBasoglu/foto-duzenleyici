@@ -50,6 +50,12 @@ photos each month has and which months are empty. There are two ways to count: *
 organized archive (`Year-Month` folders, takes seconds) and **From capture date** for an unorganized folder
 (each file's EXIF date is read). Photo / Raw / Video / All filter. The table only reads.
 
+The timeline opens on the **Gallery**: all months in one long grid, newest first, with month headers. Grab
+the **time bar** on the right edge and drag to jump between years; a label shows which month you're in.
+**Triage ▶** (Ayıkla) on a month header opens that month in the month view below. Files are read once and
+remembered while the app is open; if you changed something in Explorer, press **Rescan** (Yeniden tara).
+**Table** shows the year × month table.
+
 Clicking a month opens the **month view**: that month's photos as thumbnails, either as a **Grid** split by
 day or a **Calendar** split by week. **Triage ▶** (Ayıkla) shows the photos one by one, large: move with ← →,
 Delete or dragging the image left marks it "discard", dragging right says "keep". When a JPG is discarded its
